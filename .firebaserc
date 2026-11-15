@@ -1,5 +1,18 @@
 {
   "projects": {
     "default": "cost-of-life-f23b2"
-  }
+  },
+  "targets": {
+    "cost-of-life-f23b2": {
+      "hosting": {
+        "landing": [
+          "worthward-landing"
+        ],
+        "app": [
+          "cost-of-life-f23b2"
+        ]
+      }
+    }
+  },
+  "etags": {}
 }
