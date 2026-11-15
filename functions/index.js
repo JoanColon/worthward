@@ -2,6 +2,7 @@ import { setGlobalOptions } from 'firebase-functions'
 import { initializeApp } from 'firebase-admin/app'
 
 export { mutateFinancialModel } from './features/financial-model/callable.js'
+export { verifyGooglePlaySubscription } from './features/billing/callable.js'
 export { ensureFinancialYear } from './features/financial-years/callable.js'
 export {
   readInvestmentPortfolioSheet,

@@ -23,6 +23,11 @@ describe('subscription entitlements', () => {
     expect(resolveUserEntitlements({ plan: 'pro', entitlementActive: false }).isPro).toBe(false)
   })
 
+  it('preserves provider states that do not grant access', () => {
+    expect(normalizeSubscription({ status: 'pending' }).status).toBe('pending')
+    expect(normalizeSubscription({ status: 'paused' }).status).toBe('paused')
+  })
+
   it('only grants Pro when the backend projection activates the entitlement', () => {
     const entitlements = resolveUserEntitlements({
       plan: 'pro',

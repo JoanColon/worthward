@@ -17,3 +17,16 @@
     </div>
   </div>
 </template>
+
+<script setup>
+import { onMounted } from 'vue'
+import { hideNativeSplashWhenReady } from '@/services/splash-screen'
+
+onMounted(async () => {
+  try {
+    await hideNativeSplashWhenReady()
+  } catch {
+    // The splash watchdog will retry without blocking the fallback page.
+  }
+})
+</script>

@@ -41,12 +41,17 @@
     xcode "^4.0.0"
     xml2js "^0.6.2"
 
-"@capacitor/core@^8.0.0":
+"@capacitor/core@^8.0.0", "@capacitor/core@>=8.0.0":
   version "8.6.2"
   resolved "https://registry.yarnpkg.com/@capacitor/core/-/core-8.6.2.tgz#43562e44527cf395d9cc3d11d09016b3b51956a5"
   integrity sha512-UEb9crRuqEAe2Iu2eGOEuQ8rLQxpwg7ZZIpl17UJoytEpnV1e4oXXW0K7yYS2NsCOGmJjyLeKjNlgG7tkAoX8g==
   dependencies:
     tslib "^2.1.0"
+
+"@capacitor/splash-screen@^8.0.2":
+  version "8.0.2"
+  resolved "https://registry.npmjs.org/@capacitor/splash-screen/-/splash-screen-8.0.2.tgz"
+  integrity sha512-0C6rYScr13WfAE9nPl4ScOQynmjFv9NT3Th+RZkD4ezYHmER6mcl1/lDYsv7jg3Rj3FOvLrlTlmNkUrr83kZzQ==
 
 "@capgo/native-purchases@^8.9.16":
   version "8.9.16"

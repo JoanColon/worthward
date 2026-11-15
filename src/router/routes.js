@@ -20,6 +20,11 @@ const routes = [
         component: () => import('@/pages/HomePage.vue'),
       },
       {
+        path: 'pro',
+        name: 'pro',
+        component: () => import('@/pages/ProPage.vue'),
+      },
+      {
         path: 'workspaces/new',
         name: 'create-workspace',
         component: () => import('@/pages/CreateWorkspacePage.vue'),

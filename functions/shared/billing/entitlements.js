@@ -15,9 +15,11 @@ export const SUBSCRIPTION_PLANS = Object.freeze({
 
 export const SUBSCRIPTION_STATUSES = Object.freeze({
   NONE: 'none',
+  PENDING: 'pending',
   ACTIVE: 'active',
   GRACE_PERIOD: 'grace_period',
   ON_HOLD: 'on_hold',
+  PAUSED: 'paused',
   CANCELED: 'canceled',
   EXPIRED: 'expired',
   REVOKED: 'revoked',

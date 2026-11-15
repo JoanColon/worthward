@@ -132,6 +132,7 @@ import {
   signIn,
   signInWithGoogle,
 } from '@/services/auth'
+import { hideNativeSplashWhenReady } from '@/services/splash-screen'
 
 const $q = useQuasar()
 const { t } = useI18n()
@@ -155,11 +156,17 @@ const passwordRules = [
 ]
 
 onMounted(async () => {
+  let redirected = false
   try {
     const result = await finishGoogleRedirect()
-    if (result) await goToDestination()
+    if (result) {
+      redirected = true
+      await goToDestination()
+    }
   } catch (error) {
     errorMessage.value = getAuthErrorMessage(error)
+  } finally {
+    if (!redirected) await finishNativeStartup()
   }
 })
 
@@ -250,6 +257,14 @@ function getAuthErrorMessage(error) {
   }
 
   return messages[error?.code] || t('auth.errors.generic')
+}
+
+async function finishNativeStartup() {
+  try {
+    await hideNativeSplashWhenReady()
+  } catch {
+    // The splash watchdog will retry without blocking sign-in.
+  }
 }
 </script>
 

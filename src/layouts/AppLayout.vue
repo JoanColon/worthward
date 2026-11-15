@@ -67,6 +67,21 @@
           <q-item-section avatar><q-icon name="add_business" /></q-item-section>
           <q-item-section>{{ t('navigation.createWorkspace') }}</q-item-section>
         </q-item>
+
+        <q-item
+          v-ripple
+          clickable
+          :to="{ name: 'pro' }"
+          exact
+          active-class="active-nav-item"
+          @click="closeMobileDrawer"
+        >
+          <q-item-section avatar><q-icon name="workspace_premium" /></q-item-section>
+          <q-item-section>{{ t('navigation.pro') }}</q-item-section>
+          <q-item-section v-if="entitlementsStore.entitlements.isPro" side>
+            <q-badge color="positive" :label="t('pro.activeBadge')" />
+          </q-item-section>
+        </q-item>
       </q-list>
 
       <q-separator class="q-my-sm" />
@@ -155,6 +170,7 @@ import {
   currentFinancialYear,
 } from '../../functions/shared/positions/annual-projection.js'
 import { authUser, signOut } from '@/services/auth'
+import { hideNativeSplashWhenReady } from '@/services/splash-screen'
 import { syncWorkspaceInvestmentPortfolios } from '@/services/firebase/investment-portfolios.service'
 import { useAssetsStore } from '@/stores/assets-store'
 import { useExpensesStore } from '@/stores/expenses-store'
@@ -261,10 +277,14 @@ onMounted(async () => {
   periodTimer = setInterval(refreshFinancialPeriod, 60_000)
   document.addEventListener('visibilitychange', revalidateMilestonesOnResume)
   window.addEventListener('focus', revalidateMilestonesOnResume)
-  if (!authUser.value) return
+  if (!authUser.value) {
+    await finishNativeStartup()
+    return
+  }
 
   entitlementsStore.start(authUser.value.uid)
   await loadWorkspaces()
+  await finishNativeStartup()
 })
 
 onBeforeUnmount(() => {
@@ -434,6 +454,14 @@ function revalidateMilestonesOnResume() {
 
 function currentPeriodKey() {
   return `${currentFinancialYear()}-${currentFinancialDate()}`
+}
+
+async function finishNativeStartup() {
+  try {
+    await hideNativeSplashWhenReady()
+  } catch {
+    // The splash watchdog will retry without blocking the web app.
+  }
 }
 </script>
 

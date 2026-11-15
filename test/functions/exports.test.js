@@ -15,6 +15,7 @@ const publicFunctionNames = [
   'syncWorkspaceInvestmentPortfolios',
   'updateInvestmentPortfolio',
   'updateWorkspaceSettings',
+  'verifyGooglePlaySubscription',
 ]
 
 describe('Firebase Functions public entry points', () => {

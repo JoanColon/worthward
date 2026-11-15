@@ -12,5 +12,9 @@ module.exports = defineCapacitorConfig({
       // Purchases are acknowledged only after the backend has verified and granted access.
       autoFinishTransactions: false,
     },
+    SplashScreen: {
+      launchAutoHide: false,
+      androidScaleType: 'CENTER_CROP',
+    },
   },
 })

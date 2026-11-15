@@ -63,6 +63,7 @@ import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { authUser } from '@/services/auth'
 import { acceptWorkspaceInvite, getWorkspaceInvite } from '@/services/firebase/workspace.service'
+import { hideNativeSplashWhenReady } from '@/services/splash-screen'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 
 const { t } = useI18n()
@@ -90,6 +91,11 @@ async function loadInvite() {
     loadError.value = inviteErrorMessage(error)
   } finally {
     loading.value = false
+    try {
+      await hideNativeSplashWhenReady()
+    } catch {
+      // The splash watchdog will retry without blocking the invitation page.
+    }
   }
 }
 
