@@ -158,6 +158,7 @@ import { authUser, signOut } from '@/services/auth'
 import { syncWorkspaceInvestmentPortfolios } from '@/services/firebase/investment-portfolios.service'
 import { useAssetsStore } from '@/stores/assets-store'
 import { useExpensesStore } from '@/stores/expenses-store'
+import { useEntitlementsStore } from '@/stores/entitlements-store'
 import { useExpenseTrackingStore } from '@/stores/expense-tracking-store'
 import { useFinancialScopeStore } from '@/stores/financial-scope-store'
 import { useFinancialYearsStore } from '@/stores/financial-years-store'
@@ -176,6 +177,7 @@ const route = useRoute()
 const router = useRouter()
 const assetsStore = useAssetsStore()
 const expensesStore = useExpensesStore()
+const entitlementsStore = useEntitlementsStore()
 const expenseTrackingStore = useExpenseTrackingStore()
 const liabilitiesStore = useLiabilitiesStore()
 const incomeStore = useIncomeStore()
@@ -261,6 +263,7 @@ onMounted(async () => {
   window.addEventListener('focus', revalidateMilestonesOnResume)
   if (!authUser.value) return
 
+  entitlementsStore.start(authUser.value.uid)
   await loadWorkspaces()
 })
 
@@ -294,6 +297,7 @@ async function handleAuthChange(user, previousUser) {
 
   if (previousUser?.uid !== user.uid) {
     if (previousUser?.uid) resetApplicationState()
+    entitlementsStore.start(user.uid)
     await loadWorkspaces()
   }
 }
@@ -376,6 +380,7 @@ function resetApplicationState() {
   portfolioSyncStarted.clear()
   assetsStore.reset()
   expensesStore.reset()
+  entitlementsStore.reset()
   expenseTrackingStore.reset()
   liabilitiesStore.reset()
   incomeStore.reset()

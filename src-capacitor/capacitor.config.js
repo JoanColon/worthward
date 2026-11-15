@@ -8,5 +8,9 @@ module.exports = defineCapacitorConfig({
       providers: ['google.com'],
       skipNativeAuth: true,
     },
+    NativePurchases: {
+      // Purchases are acknowledged only after the backend has verified and granted access.
+      autoFinishTransactions: false,
+    },
   },
 })

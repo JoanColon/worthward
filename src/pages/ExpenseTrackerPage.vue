@@ -2034,8 +2034,10 @@ h1 {
     font-size: 0.7rem;
   }
 
-  .monthly-overview:not(.review-overview) .month-metric :deep(.metric-value strong) {
+  .monthly-overview:not(.review-overview) .month-metric :deep(.metric-value strong),
+  .review-overview .month-metric :deep(.metric-value strong) {
     font-size: 1.4rem;
+    letter-spacing: -0.025em;
   }
 
   .monthly-overview:not(.review-overview) .track-mode-nav {

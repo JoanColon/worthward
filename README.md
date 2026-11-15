@@ -59,7 +59,7 @@ Los activos y pasivos representan una posición observada en un mes. Los ingreso
 | Tests          | Vitest 5 para dominio, stores, servicios y lógica de Functions |
 | Calidad        | ESLint + Prettier                                              |
 | Hosting        | Firebase Hosting desde `dist/spa`                              |
-| Android        | Capacitor 8, API 36, package `com.costoflife.app`              |
+| Android        | Capacitor 8, API 36, package `com.worthward.app`               |
 | Región backend | `europe-west1`                                                 |
 
 El cliente está conectado directamente al proyecto Firebase `cost-of-life-f23b2` desde [`src/firebase/firebase.js`](src/firebase/firebase.js). No hacen falta variables de entorno para arrancar la SPA. `VITE_APP_URL` es opcional y solo se usa como origen de los enlaces de invitación en una build Capacitor; si no existe, se usa la URL pública de Firebase Hosting.
@@ -118,7 +118,9 @@ El proyecto Firebase por defecto está fijado en [`.firebaserc`](.firebaserc). R
 
 ### Android
 
-El proyecto nativo vive en `src-capacitor/android`, apunta a Android 16/API 36 y está registrado en Firebase como `com.costoflife.app`. El login de Google usa el plugin nativo de Firebase Authentication y entrega su credencial al SDK JavaScript, de modo que Firestore y Functions conservan una única sesión.
+El proyecto nativo vive en `src-capacitor/android`, apunta a Android 16/API 36 y está registrado en Firebase como `com.worthward.app`. El login de Google usa el plugin nativo de Firebase Authentication y entrega su credencial al SDK JavaScript, de modo que Firestore y Functions conservan una única sesión.
+
+El proyecto Android incluye `@capgo/native-purchases` y el permiso `com.android.vending.BILLING`, por lo que un AAB nuevo anuncia compatibilidad con Google Play Billing. El reconocimiento de derechos ya existe, pero el catálogo, la compra anual, la verificación del token y las notificaciones de renovación siguen pendientes.
 
 La huella del certificado debug está registrada en Firebase. Antes de publicar se debe crear una clave de subida fuera del repositorio, configurar el firmado release y añadir a Firebase las huellas de la clave de subida y de Play App Signing. Los archivos `*.jks` y `*.keystore` están ignorados.
 

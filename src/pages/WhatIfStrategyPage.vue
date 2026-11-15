@@ -872,7 +872,6 @@
             class="detail-sheet-section"
           >
             <div class="detail-section-heading investment-detail-heading">
-              <h3>{{ t('whatIf.strategy.investmentStrategy') }}</h3>
               <div class="projection-view-switch detail-view-switch">
                 <button
                   type="button"
@@ -1020,7 +1019,6 @@
             class="detail-sheet-section"
           >
             <div class="detail-section-heading">
-              <h3>{{ t('whatIf.strategy.debtProjection.title') }}</h3>
               <q-select
                 :model-value="selectedDebt.id"
                 :options="liabilityOptions"
@@ -1066,7 +1064,6 @@
             <div v-else class="debt-projection-fallback">
               <q-icon name="info_outline" />
               <div>
-                <strong>{{ t('whatIf.strategy.debtProjection.title') }}</strong>
                 <p>{{ t('whatIf.strategy.debtDisclaimer') }}</p>
               </div>
             </div>

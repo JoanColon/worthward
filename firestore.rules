@@ -71,6 +71,11 @@ service cloud.firestore {
         && hasValidUserPreferences(request.resource.data)
         && request.resource.data.updatedAt == request.time;
       allow delete: if false;
+
+      match /private/subscription {
+        allow read: if isSignedIn() && request.auth.uid == userId;
+        allow write: if false;
+      }
     }
 
     match /workspaces/{workspaceId} {

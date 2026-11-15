@@ -772,15 +772,15 @@ Where will that take me?
 Publicar Worthward en Google Play como aplicación Android construida con Quasar + Capacitor y monetizarla con un único nivel Pro:
 
 - Free: aplicación financiera completa para un workspace personal.
-- Pro mensual: 3,99 EUR/mes.
 - Pro anual: 34,99 EUR/año.
+- Pro mensual: previsto para una fase posterior.
 - Prueba promocional: 30 días, activada voluntariamente y sin medio de pago.
 - Los invitados no pagan: heredan las capacidades del propietario dentro del workspace compartido.
 - La pérdida de Pro nunca borra datos.
 
 ### Decisiones de producto para la primera versión
 
-1. Un solo producto de suscripción de Google Play, con dos planes base: mensual y anual.
+1. Un solo producto de suscripción de Google Play. La primera versión ofrece el plan base anual; el mensual se añadirá después al mismo producto.
 2. La prueba de 30 días será un derecho promocional gestionado por Worthward, no una prueba autorrenovable de Google Play. Así no requiere tarjeta ni produce un cobro al terminar.
 3. La prueba se activa a petición del usuario, una sola vez por cuenta.
 4. Máximo de 5 miembros totales por workspace, incluido el propietario.
@@ -898,9 +898,9 @@ Entregables:
   - Pro: Plan/Your Strategy, What If, Life Decisions, modelos L3, simuladores y proyecciones.
 - Elegir el workspace principal cuando existan varios. Recomendación: marcarlo de forma explícita y no inferirlo por fecha.
 - Reservar identificadores estables:
-  - package: `com.costoflife.app` (confirmar antes de generar y publicar);
-  - subscription product: `cost_of_life_pro`;
-  - base plans: `monthly` y `annual`.
+  - package: `com.worthward.app`;
+  - subscription product: `worthward_pro`;
+  - base plan inicial: `annual`; `monthly` se añadirá en una fase posterior.
 - Definir textos de paywall, restauración, caducidad y solo lectura.
 
 Criterio de salida: existe una matriz de capacidades única que pueden consumir cliente, Functions y tests.
@@ -955,7 +955,7 @@ Verificación:
 Trabajo en Play Console:
 
 - Crear la ficha de la aplicación y completar la verificación de cuenta/pagos.
-- Crear `cost_of_life_pro`, con planes base mensual y anual y precios localizados.
+- Crear `worthward_pro`, con el plan base `annual` y precio localizado; añadir `monthly` más adelante dentro del mismo producto.
 - Configurar periodo de gracia y account hold.
 - Vincular Play Console con el proyecto de Google Cloud/Firebase.
 - Crear el topic de Pub/Sub para Real-time Developer Notifications y su suscripción push.
@@ -980,7 +980,7 @@ Trabajo en Functions:
 Verificación:
 
 - License testers y tracks de prueba interna/cerrada.
-- Compra mensual y anual.
+- Compra anual.
 - Compra pendiente que después se completa y que se cancela.
 - Cancelación con acceso hasta fin de periodo.
 - Renovación, periodo de gracia, account hold, recuperación, expiración, reembolso y revocación.
@@ -1081,7 +1081,7 @@ Total técnico aproximado: 23–38 días laborables. La parte de mayor riesgo es
 - La aplicación se instala desde un track de Google Play y autentica correctamente.
 - Free puede gestionar un workspace personal sin límites de registros.
 - La prueba se activa una sola vez, dura 30 días de servidor y no cobra al terminar.
-- Las compras mensual y anual conceden Pro sólo tras validación de backend.
+- La compra anual concede Pro sólo tras validación de backend; el plan mensual posterior seguirá el mismo flujo.
 - Renovaciones, cancelaciones, gracia, hold, expiración y reembolsos actualizan los derechos.
 - Un invitado Free usa capacidades Pro dentro del workspace de un propietario Pro.
 - Al perder Pro, los workspaces definidos pasan a solo lectura sin pérdida de datos.
