@@ -35,9 +35,10 @@ function calculatePositionsAt({ assets = [], liabilities = [], asOfDate }) {
  */
 function effectiveLiabilityBalance(liability, asOfDate) {
   const mortgage = liability?.detail?.mortgage
-  if (liability?.categoryId !== 'mortgage' || mortgage?.schemaVersion !== 2) {
+  if (liability?.categoryId !== 'mortgage' || !mortgage) {
     return Number(liability?.balance || 0)
   }
+  if (mortgage.schemaVersion !== 2) throw new Error('Unsupported mortgage model version')
   return calculateMortgageBalanceFromAnchor(mortgage, asOfDate)
 }
 
@@ -46,7 +47,8 @@ function effectiveLiabilityBalance(liability, asOfDate) {
  */
 function isLiabilityPaymentDueInMonth(liability, year, monthIndex) {
   const mortgage = liability?.detail?.mortgage
-  if (liability?.categoryId !== 'mortgage' || mortgage?.schemaVersion !== 2) return null
+  if (liability?.categoryId !== 'mortgage' || !mortgage) return null
+  if (mortgage.schemaVersion !== 2) throw new Error('Unsupported mortgage model version')
   return isMortgagePaymentDueInCalendarMonth(mortgage, year, monthIndex)
 }
 

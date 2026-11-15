@@ -244,7 +244,6 @@ const periodLabel = computed(() =>
   @media (min-width: 1024px) {
     display: flex;
     flex-direction: column;
-    height: 100%;
 
     .desktop-period-switch {
       display: flex;
@@ -266,8 +265,8 @@ const periodLabel = computed(() =>
 
     .equation-card {
       align-content: center;
-      height: 100%;
-      min-height: 0;
+      height: auto;
+      min-height: 9.75rem;
       padding: 0.35rem 0.45rem 1.25rem;
     }
 
@@ -365,6 +364,70 @@ const periodLabel = computed(() =>
     .equation-card small {
       margin-top: 0.25rem;
       font-size: 0.6rem;
+    }
+  }
+
+  @container (max-width: 42rem) {
+    .desktop-period-switch {
+      display: none;
+    }
+
+    .body-period-switch {
+      display: flex;
+    }
+
+    .equation-card {
+      height: auto;
+      min-height: 9.75rem;
+      padding: 1rem 0.45rem;
+    }
+
+    .equation-icon {
+      width: 3rem;
+      height: 3rem;
+      font-size: 1.45rem;
+    }
+
+    .equation-card strong {
+      font-size: clamp(1.35rem, 7cqi, 2rem);
+    }
+  }
+
+  @container (max-width: 30rem) {
+    .cost-equation {
+      grid-template-columns: 1fr;
+    }
+
+    .equation-card {
+      grid-template-columns: auto minmax(0, 1fr);
+      grid-template-areas:
+        'icon value'
+        'icon label'
+        'icon period';
+      align-items: center;
+      justify-items: start;
+      min-height: 0;
+      column-gap: 0.8rem;
+      padding: 0.85rem;
+      text-align: left;
+    }
+
+    .equation-icon {
+      grid-area: icon;
+      margin: 0;
+    }
+
+    .equation-card strong {
+      grid-area: value;
+    }
+
+    .equation-card span {
+      grid-area: label;
+      margin-top: 0.1rem;
+    }
+
+    .equation-card small {
+      grid-area: period;
     }
   }
 }

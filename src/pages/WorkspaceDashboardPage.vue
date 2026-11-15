@@ -581,43 +581,27 @@ function liabilityCategoryName(categoryId) {
 
 @media (min-width: 1024px) {
   .workspace-dashboard-page {
-    height: calc(100vh - 64px);
-    height: calc(100dvh - 64px);
-    min-height: 0;
+    min-height: calc(100vh - 64px);
+    min-height: calc(100dvh - 64px);
     padding: clamp(0.75rem, 1.8vh, 1.15rem) clamp(1rem, 2vw, 1.75rem);
-    overflow: hidden;
   }
 
   .dashboard-shell {
     display: flex;
     flex-direction: column;
-    height: 100%;
   }
 
   .dashboard-grid {
-    grid-template-rows: minmax(0, 1.06fr) minmax(0, 0.94fr);
-    flex: 1 1 auto;
-    min-height: 0;
+    grid-template-rows: auto auto;
     gap: clamp(0.65rem, 1.4vh, 0.9rem);
   }
 
   .dashboard-grid > * {
     min-height: 0;
-    overflow: hidden;
   }
 
   .workspace-dashboard-page:has(.setup-guide) {
-    height: auto;
     min-height: calc(100dvh - 64px);
-    overflow: visible;
-  }
-
-  .workspace-dashboard-page:has(.setup-guide) .dashboard-shell {
-    height: auto;
-  }
-
-  .workspace-dashboard-page:has(.setup-guide) .dashboard-grid {
-    grid-template-rows: auto auto;
   }
 }
 

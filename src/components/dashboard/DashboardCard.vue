@@ -152,4 +152,18 @@ p {
     font-size: 0.78rem;
   }
 }
+
+@container (max-width: 38rem) {
+  .card-header {
+    flex-wrap: wrap;
+  }
+
+  .card-heading {
+    flex: 1 1 15rem;
+  }
+
+  .card-action {
+    max-width: 100%;
+  }
+}
 </style>

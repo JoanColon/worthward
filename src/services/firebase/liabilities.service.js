@@ -99,6 +99,9 @@ function canonicalLiability(liability) {
 }
 
 function canonicalMortgageDetail(mortgage) {
+  if (mortgage.schemaVersion !== 2) {
+    throw new Error('Only mortgage model version 2 is supported')
+  }
   const originalPrincipal = normalizeNonNegativeMoneyOrNull(mortgage.originalPrincipal)
   const monthlyPayment = normalizeNonNegativeMoneyOrNull(mortgage.monthlyPayment)
   const annualInterestRate = Number(mortgage.annualInterestRate)
@@ -116,19 +119,14 @@ function canonicalMortgageDetail(mortgage) {
   }
   if (!isIsoDate(startDate)) throw new Error('A valid mortgage start date is required')
 
-  const schemaVersion = mortgage.schemaVersion === 2 ? 2 : 1
-  let balanceAnchor
-  if (schemaVersion === 2) {
-    const amount = normalizeNonNegativeMoneyOrNull(mortgage.balanceAnchor?.amount)
-    const date = String(mortgage.balanceAnchor?.date || '').trim()
-    if (amount === null || !isIsoDate(date)) {
-      throw new Error('A valid mortgage balance anchor is required')
-    }
-    balanceAnchor = { amount, date }
+  const amount = normalizeNonNegativeMoneyOrNull(mortgage.balanceAnchor?.amount)
+  const date = String(mortgage.balanceAnchor?.date || '').trim()
+  if (amount === null || !isIsoDate(date)) {
+    throw new Error('A valid mortgage balance anchor is required')
   }
 
   return {
-    schemaVersion,
+    schemaVersion: 2,
     originalPrincipal,
     annualInterestRate,
     monthlyPayment,
@@ -136,7 +134,7 @@ function canonicalMortgageDetail(mortgage) {
     termMonths,
     amortizationType: 'french',
     fixedRate: true,
-    ...(balanceAnchor ? { balanceAnchor } : {}),
+    balanceAnchor: { amount, date },
   }
 }
 

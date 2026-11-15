@@ -265,11 +265,10 @@ const { t } = useI18n()
   }
 
   @media (min-width: 1024px) {
-    height: 100%;
     padding-bottom: 0.75rem;
 
     .card-header {
-      margin-bottom: 0;
+      margin-bottom: 0.65rem;
     }
 
     .card-heading {
@@ -290,7 +289,7 @@ const { t } = useI18n()
 
     .plan-result,
     .plan-empty {
-      min-height: 0;
+      min-height: 11rem;
     }
 
     .strategy-plan-result {
@@ -365,6 +364,30 @@ const { t } = useI18n()
       min-height: 1.25rem;
       padding-top: 0.45rem;
       font-size: 0.84rem;
+    }
+  }
+
+  @container (max-width: 28rem) {
+    .strategy-plan-result {
+      justify-content: flex-start;
+      padding-top: 0.75rem;
+    }
+
+    .strategy-summary strong {
+      max-width: 100%;
+      font-size: clamp(1.35rem, 8cqi, 1.8rem);
+    }
+
+    .strategy-summary span {
+      max-width: 100%;
+      line-height: 1.25;
+      text-align: center;
+      white-space: normal;
+    }
+
+    .strategy-outcomes strong {
+      flex: 0 1 70%;
+      overflow-wrap: anywhere;
     }
   }
 }

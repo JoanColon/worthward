@@ -471,7 +471,7 @@ function validatedCanonicalItem(section, item = {}) {
  * Validates canonical mortgage and throws a descriptive error when its contract is not satisfied.
  */
 function assertCanonicalMortgage(mortgage, currentBalance) {
-  if (!isPlainObject(mortgage) || ![1, 2].includes(mortgage.schemaVersion)) {
+  if (!isPlainObject(mortgage) || mortgage.schemaVersion !== 2) {
     throw new Error('A canonical mortgage model is required')
   }
   assertNonNegativeMoney(mortgage.originalPrincipal, 'A valid original principal is required')
@@ -498,21 +498,19 @@ function assertCanonicalMortgage(mortgage, currentBalance) {
   if (mortgage.amortizationType !== 'french' || mortgage.fixedRate !== true) {
     throw new Error('Only fixed-rate French amortization is supported')
   }
-  if (mortgage.schemaVersion === 2) {
-    if (!isPlainObject(mortgage.balanceAnchor)) {
-      throw new Error('A valid mortgage balance anchor is required')
-    }
-    assertNonNegativeMoney(
-      mortgage.balanceAnchor.amount,
-      'A valid mortgage balance anchor is required',
-    )
-    if (
-      !isCanonicalIsoDate(mortgage.balanceAnchor.date) ||
-      mortgage.balanceAnchor.date < mortgage.startDate ||
-      mortgage.balanceAnchor.amount > mortgage.originalPrincipal
-    ) {
-      throw new Error('A valid mortgage balance anchor is required')
-    }
+  if (!isPlainObject(mortgage.balanceAnchor)) {
+    throw new Error('A valid mortgage balance anchor is required')
+  }
+  assertNonNegativeMoney(
+    mortgage.balanceAnchor.amount,
+    'A valid mortgage balance anchor is required',
+  )
+  if (
+    !isCanonicalIsoDate(mortgage.balanceAnchor.date) ||
+    mortgage.balanceAnchor.date < mortgage.startDate ||
+    mortgage.balanceAnchor.amount > mortgage.originalPrincipal
+  ) {
+    throw new Error('A valid mortgage balance anchor is required')
   }
   if (currentBalance > mortgage.originalPrincipal) {
     throw new Error('The current balance cannot exceed the original principal')
@@ -529,7 +527,7 @@ function assertCanonicalMortgage(mortgage, currentBalance) {
         error instanceof RangeError &&
         error.message === 'The monthly payment does not cover the accrued interest'
       ) {
-        throw new Error('The monthly payment must cover the accrued interest')
+        throw new Error('The monthly payment must cover the accrued interest', { cause: error })
       }
       throw error
     }

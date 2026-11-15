@@ -9,6 +9,21 @@ body,
   min-height: 100%;
 }
 
+.q-layout,
+.q-page-container,
+.q-page,
+main,
+section,
+article {
+  min-width: 0;
+}
+
+img,
+svg,
+canvas {
+  max-width: 100%;
+}
+
 body {
   margin: 0;
   overflow-x: hidden;

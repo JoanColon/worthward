@@ -320,7 +320,6 @@ describe('financial year persistence', () => {
       assetsUpdated: 1,
       liabilitiesUpdated: 0,
       expensesUpdated: 0,
-      mortgagesMigrated: 0,
     })
     expect(updates[0].reference).toBe(assetReference)
     expect(updates[0].data).toMatchObject({ currentValue: 110_381.29, valueSource: 'model' })
@@ -357,7 +356,7 @@ describe('financial year persistence', () => {
     expect(updates[0].data.balance).toBe(8_191)
   })
 
-  it('anchors an existing mortgage without changing its balance during migration', async () => {
+  it('rejects unsupported legacy mortgage models', async () => {
     const { firestore, updates } = createPositionRefreshFirestore({
       mortgages: [
         {
@@ -380,19 +379,10 @@ describe('financial year persistence', () => {
       ],
     })
 
-    const result = await refreshModeledPositions(
-      firestore,
-      'workspace-a',
-      'member-a',
-      '2026-11-01',
-    )
-
-    expect(result).toMatchObject({ liabilitiesUpdated: 0, mortgagesMigrated: 1 })
-    expect(updates[0].data['detail.mortgage'].balanceAnchor).toEqual({
-      amount: 104_000,
-      date: '2026-11-01',
-    })
-    expect(updates[0].data.balance).toBeUndefined()
+    await expect(
+      refreshModeledPositions(firestore, 'workspace-a', 'member-a', '2026-11-01'),
+    ).rejects.toThrow('Unsupported mortgage model version')
+    expect(updates).toEqual([])
   })
 
   it('keeps the contractual mortgage expense when the modeled balance reaches zero', async () => {

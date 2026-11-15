@@ -835,18 +835,15 @@ function liabilityCategoryName(categoryId) {
 
 @media (min-width: 1024px) {
   .plan-page {
-    height: calc(100vh - 64px);
-    height: calc(100dvh - 64px);
-    min-height: 0;
+    min-height: calc(100vh - 64px);
+    min-height: calc(100dvh - 64px);
     padding: clamp(0.75rem, 1.8vh, 1.15rem) clamp(1rem, 2vw, 1.75rem);
-    overflow: hidden;
   }
 
   .plan-shell {
     display: grid;
     grid-template-rows: auto auto auto auto;
     align-content: start;
-    height: 100%;
   }
 
   .capacity-card {

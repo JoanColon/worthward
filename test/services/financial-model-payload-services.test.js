@@ -197,11 +197,13 @@ describe('financial model service payloads', () => {
         ownership,
         detail: {
           mortgage: {
+            schemaVersion: 2,
             originalPrincipal: '220000',
             annualInterestRate: '2.41',
             monthlyPayment: '812',
             startDate: '2013-03-01',
             termMonths: '360',
+            balanceAnchor: { amount: '146230', date: '2026-11-15' },
           },
         },
       },
@@ -216,7 +218,7 @@ describe('financial model service payloads', () => {
         balance: 146_230,
         detail: {
           mortgage: {
-            schemaVersion: 1,
+            schemaVersion: 2,
             originalPrincipal: 220_000,
             annualInterestRate: 2.41,
             monthlyPayment: 812,
@@ -224,10 +226,31 @@ describe('financial model service payloads', () => {
             termMonths: 360,
             amortizationType: 'french',
             fixedRate: true,
+            balanceAnchor: { amount: 146_230, date: '2026-11-15' },
           },
         },
       }),
     )
+  })
+
+  it('rejects legacy mortgage models', async () => {
+    await expect(
+      updateLiability(
+        'workspace-a',
+        'mortgage-a',
+        {
+          categoryId: 'mortgage',
+          subcategoryId: 'mortgage',
+          itemName: 'Home loan',
+          notes: '',
+          balance: 146_230,
+          ownership,
+          detail: { mortgage: { schemaVersion: 1 } },
+        },
+        ['member-a'],
+      ),
+    ).rejects.toThrow('Only mortgage model version 2 is supported')
+    expect(updateFinancialModelItem).not.toHaveBeenCalled()
   })
 
   it('passes the selected mortgage expense as relationship metadata', async () => {

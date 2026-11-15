@@ -146,7 +146,7 @@ describe('atomic financial model mutations', () => {
       ownership,
       detail: {
         mortgage: {
-          schemaVersion: 1,
+          schemaVersion: 2,
           originalPrincipal: 220_000,
           annualInterestRate: 2.41,
           monthlyPayment: 812,
@@ -154,6 +154,7 @@ describe('atomic financial model mutations', () => {
           termMonths: 360,
           amortizationType: 'french',
           fixedRate: true,
+          balanceAnchor: { amount: 146_230, date: madridToday() },
         },
       },
     }
@@ -809,7 +810,7 @@ describe('atomic financial model mutations', () => {
       ownership,
       detail: {
         mortgage: {
-          schemaVersion: 1,
+          schemaVersion: 2,
           originalPrincipal: 150_000,
           annualInterestRate: 2,
           monthlyPayment: 600,
@@ -817,6 +818,7 @@ describe('atomic financial model mutations', () => {
           termMonths: 360,
           amortizationType: 'french',
           fixedRate: true,
+          balanceAnchor: { amount: 100_000, date: madridToday() },
         },
       },
     }

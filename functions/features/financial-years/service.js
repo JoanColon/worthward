@@ -302,7 +302,6 @@ async function refreshModeledPositions(
     assetsUpdated: 0,
     liabilitiesUpdated: 0,
     expensesUpdated: 0,
-    mortgagesMigrated: 0,
   }
   await firestore.runTransaction(async (transaction) => {
     const [assetsSnapshot, mortgagesSnapshot] = await Promise.all([
@@ -335,20 +334,6 @@ async function refreshModeledPositions(
       const liability = document.data()
       const mortgage = liability.detail?.mortgage
       if (!mortgage) continue
-      if (mortgage.schemaVersion === 1) {
-        transaction.update(document.ref, {
-          'detail.mortgage': {
-            ...mortgage,
-            schemaVersion: 2,
-            balanceAnchor: { amount: Number(liability.balance || 0), date: asOfDate },
-          },
-          updatedAt: FieldValue.serverTimestamp(),
-          updatedBy: userId,
-        })
-        result.mortgagesMigrated += 1
-        continue
-      }
-      if (mortgage.schemaVersion !== 2) continue
       const balance = liabilitiesById.get(document.id).balance
       if (Number(liability.balance) === balance) continue
       transaction.update(document.ref, {
