@@ -4,3 +4,6 @@ functions/
 .firebase/
 dist/
 node_modules/
+src-capacitor/www/
+src-capacitor/android/**/build/
+src-capacitor/android/app/src/main/assets/

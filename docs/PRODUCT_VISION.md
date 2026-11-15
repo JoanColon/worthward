@@ -759,3 +759,332 @@ What can I save?
 What happens if something changes?
 Where will that take me?
 ```
+
+---
+
+## 18. Hoja de ruta: Android, Freemium y Pro
+
+> Estado: planificación de producto. Esta sección no describe funcionalidad ya implementada;
+> el estado real del repositorio se documenta en el `README.md`.
+
+### Objetivo
+
+Publicar Cost of Life en Google Play como aplicación Android construida con Quasar + Capacitor y monetizarla con un único nivel Pro:
+
+- Free: aplicación financiera completa para un workspace personal.
+- Pro mensual: 3,99 EUR/mes.
+- Pro anual: 34,99 EUR/año.
+- Prueba promocional: 30 días, activada voluntariamente y sin medio de pago.
+- Los invitados no pagan: heredan las capacidades del propietario dentro del workspace compartido.
+- La pérdida de Pro nunca borra datos.
+
+### Decisiones de producto para la primera versión
+
+1. Un solo producto de suscripción de Google Play, con dos planes base: mensual y anual.
+2. La prueba de 30 días será un derecho promocional gestionado por Cost of Life, no una prueba autorrenovable de Google Play. Así no requiere tarjeta ni produce un cobro al terminar.
+3. La prueba se activa a petición del usuario, una sola vez por cuenta.
+4. Máximo de 5 miembros totales por workspace, incluido el propietario.
+5. Un usuario Free puede tener un workspace propio editable y participar en workspaces Pro de terceros.
+6. Al caducar Pro:
+   - el workspace propio principal continúa editable con capacidades Free;
+   - los workspaces adicionales quedan en solo lectura;
+   - los workspaces compartidos propiedad del usuario quedan en solo lectura para todos;
+   - no se elimina ningún documento;
+   - si el propietario recupera Pro, se recupera la edición sin migraciones.
+7. La primera versión será Google Play solamente. La arquitectura de derechos será independiente del proveedor para poder añadir App Store o web después.
+
+### Arquitectura propuesta
+
+#### Fuente de verdad
+
+Google Play es la fuente de verdad de la compra. Firestore mantiene una proyección de la suscripción para resolver permisos con rapidez. El cliente nunca puede concederse Pro escribiendo en Firestore.
+
+Flujo de una compra:
+
+1. La app obtiene de Google Play los planes y precios localizados.
+2. El usuario inicia la compra en el flujo nativo de Play.
+3. La app envía el `purchaseToken` a una Firebase Callable Function.
+4. La Function consulta Google Play Developer API y valida paquete, producto, estado y cuenta.
+5. El backend persiste la compra y recalcula los derechos del usuario.
+6. El backend confirma la compra a Google Play cuando corresponde.
+7. Las Real-time Developer Notifications mantienen Firestore sincronizado ante renovaciones, cancelaciones, reembolsos, periodos de gracia y suspensiones.
+
+#### Modelo de datos mínimo
+
+No se guardará una propiedad editable `isPro` en el perfil público del usuario.
+
+```text
+users/{uid}/private/subscription
+  plan: "free" | "pro"
+  source: "trial" | "google_play" | null
+  status: "none" | "trialing" | "active" | "grace_period" |
+          "on_hold" | "canceled" | "expired" | "revoked"
+  entitlementActive: boolean
+  trialStartedAt: Timestamp | null
+  trialEndsAt: Timestamp | null
+  trialConsumed: boolean
+  currentPeriodEndsAt: Timestamp | null
+  productId: string | null
+  basePlanId: string | null
+  purchaseTokenHash: string | null
+  updatedAt: Timestamp
+
+billingPurchases/{purchaseTokenHash}
+  userId: string
+  provider: "google_play"
+  packageName: string
+  productId: string
+  basePlanId: string
+  purchaseToken: string             # sólo backend; valorar cifrado/KMS
+  externalAccountId: string
+  providerState: string
+  expiryTime: Timestamp | null
+  acknowledgementState: string
+  latestOrderId: string | null
+  updatedAt: Timestamp
+
+billingEvents/{providerMessageId}
+  type: string
+  processedAt: Timestamp
+  purchaseTokenHash: string
+
+workspaces/{workspaceId}
+  ownerId: string                   # añadir explícitamente
+  type: "personal" | "shared"
+  memberIds: string[]
+  members: map
+  createdAt: Timestamp
+```
+
+`billingEvents` permite procesar notificaciones de forma idempotente. Los documentos de facturación no serán legibles ni escribibles directamente por el cliente.
+
+#### Resolución de derechos
+
+Una función compartida de backend calculará, como mínimo:
+
+```text
+userEntitlements(userId)
+  canCreateAdditionalWorkspace
+  canCreateSharedWorkspace
+  canUseAdvancedModelsInPersonalWorkspace
+
+workspaceEntitlements(workspaceId, userId)
+  isMember
+  isOwner
+  tier: "free" | "pro"
+  canRead
+  canWrite
+  canInvite
+  canUseAdvancedModels
+  reason
+```
+
+Reglas principales:
+
+- El nivel efectivo del workspace depende de la suscripción o prueba del propietario.
+- Ser invitado de un workspace Pro sólo concede Pro dentro de ese workspace.
+- Sólo el propietario administra invitaciones, miembros, transferencia y borrado.
+- Todo write sensible se vuelve a validar en Functions o reglas; el bloqueo visual es únicamente UX.
+
+### Fases de implementación
+
+#### Fase 0 — Cerrar contrato de producto y catálogo
+
+Entregables:
+
+- Confirmar el límite de 5 miembros totales.
+- Clasificar cada ruta/capacidad como Free o Pro. Primera propuesta:
+  - Free: Home básico, Assets, Liabilities, Income, Expenses, Tracker, Review, Progress y achievements.
+  - Pro: Plan/Your Strategy, What If, Life Decisions, modelos L3, simuladores y proyecciones.
+- Elegir el workspace principal cuando existan varios. Recomendación: marcarlo de forma explícita y no inferirlo por fecha.
+- Reservar identificadores estables:
+  - package: `com.costoflife.app` (confirmar antes de generar y publicar);
+  - subscription product: `cost_of_life_pro`;
+  - base plans: `monthly` y `annual`.
+- Definir textos de paywall, restauración, caducidad y solo lectura.
+
+Criterio de salida: existe una matriz de capacidades única que pueden consumir cliente, Functions y tests.
+
+#### Fase 1 — Crear la aplicación Capacitor Android
+
+Trabajo:
+
+- Comprobar Java, Android Studio y Android SDK compatibles con la versión de Capacitor elegida.
+- Añadir modo Capacitor a Quasar con el package y nombre definitivos.
+- Generar `src-capacitor` y la plataforma Android.
+- Añadir scripts reproducibles para desarrollo, sincronización y build Android.
+- Configurar icono adaptativo, splash, nombre, colores, versión y orientación.
+- Configurar app links/deep links para invitaciones.
+- Sustituir o adaptar el login de Google basado en popup/redirect web por un flujo compatible con Android nativo.
+- Registrar la aplicación Android en Firebase y añadir la configuración Android sin versionar secretos innecesarios.
+- Generar una clave de subida y guardarla fuera del repositorio; activar Play App Signing.
+
+Verificación:
+
+- Compilación debug limpia.
+- Login, logout y persistencia de sesión en emulador y dispositivo físico.
+- Apertura de una invitación desde un enlace.
+- Lectura y escritura de un workspace existente.
+- Build `.aab` release firmado.
+
+#### Fase 2 — Núcleo de suscripciones y derechos
+
+Trabajo:
+
+- Añadir el modelo privado de suscripción y el historial de compras.
+- Implementar `startProTrial`, transaccional e idempotente:
+  - usuario autenticado;
+  - `trialConsumed == false`;
+  - fija 30 días usando reloj del servidor;
+  - no admite reinicio ni extensión desde cliente.
+- Crear el resolvedor central de derechos.
+- Añadir `ownerId` explícito a nuevos workspaces y migrar los actuales desde el miembro con rol `owner`.
+- Mover la creación de workspaces a una Callable Function para aplicar el límite Free de forma atómica.
+- Restringir creación de invitaciones a propietarios Pro y máximo de 5 miembros.
+- Añadir transferencia de propiedad a otro miembro Pro antes de que sea necesaria operativamente.
+- Exponer al cliente una vista segura y mínima de sus derechos efectivos.
+
+Verificación:
+
+- Tests unitarios de la máquina de estados y la matriz Free/Pro/invitado.
+- Tests de concurrencia: doble activación de prueba, dos creaciones simultáneas y dos aceptaciones para la última plaza.
+- Tests que prueben que el cliente no puede modificar su suscripción.
+
+#### Fase 3 — Google Play Billing
+
+Trabajo en Play Console:
+
+- Crear la ficha de la aplicación y completar la verificación de cuenta/pagos.
+- Crear `cost_of_life_pro`, con planes base mensual y anual y precios localizados.
+- Configurar periodo de gracia y account hold.
+- Vincular Play Console con el proyecto de Google Cloud/Firebase.
+- Crear el topic de Pub/Sub para Real-time Developer Notifications y su suscripción push.
+- Dar a la identidad del backend únicamente los permisos necesarios de Android Publisher.
+
+Trabajo en la app:
+
+- Seleccionar e integrar una capa de compras Capacitor mantenida y compatible con la versión actual de Google Play Billing. Congelar la elección tras un pequeño prototipo técnico.
+- Consultar productos y precios en tiempo real; no codificar `3,99 €` en el botón de compra.
+- Implementar compra, restauración/reconciliación, compras pendientes, errores y apertura de la gestión de suscripción.
+- Asociar la compra al UID mediante un identificador ofuscado, nunca enviando el UID en claro a Play.
+
+Trabajo en Functions:
+
+- `verifyGooglePlaySubscription(purchaseToken, productId)`.
+- Endpoint push para RTDN con autenticación y deduplicación por `messageId`.
+- Consulta a `purchases.subscriptionsv2.get`; no confiar en el payload de Pub/Sub como estado final.
+- Confirmación de compras nuevas verificadas.
+- Reconciliación periódica de suscripciones activas como red de seguridad.
+- Manejo explícito de `ACTIVE`, periodo de gracia, `ON_HOLD`, cancelada con acceso hasta expiración, expirada y revocada.
+
+Verificación:
+
+- License testers y tracks de prueba interna/cerrada.
+- Compra mensual y anual.
+- Compra pendiente que después se completa y que se cancela.
+- Cancelación con acceso hasta fin de periodo.
+- Renovación, periodo de gracia, account hold, recuperación, expiración, reembolso y revocación.
+- Restauración al reinstalar y al iniciar sesión en otro dispositivo.
+- La misma compra no puede concederse a dos cuentas de Cost of Life.
+
+#### Fase 4 — Aplicar monetización a workspaces y funciones Pro
+
+Trabajo:
+
+- Añadir guardas de ruta y componentes de paywall con una única fuente de capacidades.
+- Ocultar o marcar como Pro las funciones avanzadas sin eliminar rutas necesarias para explicar la mejora.
+- Validar en Functions todas las mutaciones de modelos avanzados.
+- Reforzar Firestore Rules para que un workspace bloqueado sólo permita lectura.
+- Impedir a un Free crear workspaces adicionales o invitaciones.
+- Mantener acceso Pro completo a invitados Free dentro de un workspace cuyo propietario tenga derecho activo.
+- Implementar estados de solo lectura claros, con CTA para renovar o transferir propiedad cuando corresponda.
+- Evitar escrituras indirectas en segundo plano (sincronización de portfolios, milestones, etc.) cuando el workspace está bloqueado.
+
+Verificación:
+
+- Matriz completa con propietario Free, trial, Pro, gracia, on-hold y expirado; invitado Free y Pro.
+- Ningún test se limita a comprobar botones: se intentan writes directos y Callables.
+- La caducidad no borra ni modifica datos financieros.
+
+#### Fase 5 — Experiencia comercial y cumplimiento
+
+Pantallas:
+
+- Comparativa Free/Pro.
+- Activación voluntaria de prueba y contador de días.
+- Paywall con precios localizados de Play y condiciones de renovación.
+- Estado de suscripción, fecha de próxima renovación/fin de acceso y botón “Gestionar en Google Play”.
+- Mensajes de periodo de gracia, pago rechazado, solo lectura y expiración.
+- Política de privacidad, términos, soporte y eliminación de cuenta/datos.
+
+Cumplimiento para publicación:
+
+- Usar Google Play Billing para desbloquear estas funciones digitales dentro de la app distribuida por Play.
+- Completar Data safety, clasificación de contenido, audiencia, acceso para revisión y declaraciones financieras pertinentes.
+- Revisar SDK Data Safety de Firebase y del plugin de compras.
+- Publicar Android App Bundle apuntando al nivel de API exigido en la fecha de envío.
+- No mostrar enlaces o llamadas a un pago web dentro de la app salvo que se adopte formalmente un programa permitido por Google para la región aplicable.
+
+#### Fase 6 — Lanzamiento gradual y observabilidad
+
+Orden recomendado:
+
+1. Prueba interna con cuentas de licencia.
+2. Prueba cerrada con un grupo pequeño.
+3. Producción gradual: 5 %, 20 %, 50 %, 100 %.
+
+Telemetría mínima, sin datos financieros:
+
+- prueba iniciada y finalizada;
+- paywall visto;
+- flujo de compra iniciado, completado, pendiente o cancelado;
+- validación/confirmación fallida;
+- RTDN recibida y procesada;
+- transición de estado de suscripción;
+- workspace pasado a solo lectura o recuperado.
+
+Alertas:
+
+- errores sostenidos de Android Publisher API;
+- mensajes RTDN en dead-letter queue;
+- compras sin confirmar;
+- divergencia entre Firestore y Google Play;
+- Functions de billing con error o latencia anormal.
+
+### Orden de pull requests recomendado
+
+1. `android/capacitor-bootstrap`: scaffold Android, identidad, Firebase Android, login y build firmado de prueba.
+2. `billing/entitlements-domain`: esquema, máquina de estados, resolvedor y tests.
+3. `billing/trial`: activación de prueba, UI y antiabuso básico.
+4. `workspaces/ownership-and-limits`: `ownerId`, migración, creación en backend, 5 miembros y transferencia.
+5. `billing/play-client`: catálogo, compra, restauración y estados de UI.
+6. `billing/play-backend`: verificación, confirmación, RTDN y reconciliación.
+7. `billing/enforcement`: Functions, reglas, rutas, writes de fondo y solo lectura.
+8. `release/play-console`: cumplimiento, observabilidad, pruebas cerradas y AAB de producción.
+
+Cada PR debe poder desplegarse sin habilitar la monetización mediante un feature flag administrado en backend. El flag sólo controla exposición; nunca sustituye las comprobaciones de permisos.
+
+### Estimación orientativa
+
+Para una persona familiarizada con el proyecto:
+
+- Capacitor, Android, autenticación y build: 3–5 días.
+- Dominio de derechos, prueba y workspaces: 5–8 días.
+- Play Billing, backend y RTDN: 6–10 días.
+- Paywalls, solo lectura y enforcement completo: 5–8 días.
+- QA, cumplimiento y publicación: 4–7 días, sin contar esperas de revisión o verificación de Google.
+
+Total técnico aproximado: 23–38 días laborables. La parte de mayor riesgo es el ciclo completo de billing y su sincronización, no el scaffold de Capacitor.
+
+### Definition of Done para el MVP monetizado
+
+- La aplicación se instala desde un track de Google Play y autentica correctamente.
+- Free puede gestionar un workspace personal sin límites de registros.
+- La prueba se activa una sola vez, dura 30 días de servidor y no cobra al terminar.
+- Las compras mensual y anual conceden Pro sólo tras validación de backend.
+- Renovaciones, cancelaciones, gracia, hold, expiración y reembolsos actualizan los derechos.
+- Un invitado Free usa capacidades Pro dentro del workspace de un propietario Pro.
+- Al perder Pro, los workspaces definidos pasan a solo lectura sin pérdida de datos.
+- El cliente no puede saltarse ninguna restricción manipulando Firestore o invocando una Function.
+- Existe restauración/reconciliación, métricas, alertas y procedimiento de soporte.
+- El AAB cumple los requisitos vigentes de Google Play y supera pruebas internas y cerradas.

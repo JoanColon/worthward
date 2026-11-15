@@ -186,8 +186,9 @@ async function submitGoogle() {
   loading.value = 'google'
 
   try {
-    const redirect = $q.platform.is.mobile && !$q.platform.is.capacitor
-    await signInWithGoogle({ redirect })
+    const native = $q.platform.is.capacitor
+    const redirect = $q.platform.is.mobile && !native
+    await signInWithGoogle({ native, redirect })
     if (!redirect) await goToDestination()
   } catch (error) {
     errorMessage.value = getAuthErrorMessage(error)

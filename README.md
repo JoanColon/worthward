@@ -2,7 +2,7 @@
 
 Aplicación web _mobile-first_ para entender la posición financiera de una persona o un hogar: patrimonio neto, coste real de vida, capacidad de ahorro y progreso hacia hitos financieros.
 
-Este README es la puerta de entrada técnica al proyecto y debe mantenerse como fuente primaria para desarrolladores y agentes de código. Describe lo que existe hoy. La visión de producto más amplia, incluidas ideas todavía no implementadas, vive en [`docs/PRODUCT_VISION.md`](docs/PRODUCT_VISION.md).
+Este README es la puerta de entrada técnica al proyecto y debe mantenerse como fuente primaria para desarrolladores y agentes de código. Describe lo que existe hoy. La visión de producto, las decisiones abiertas y las hojas de ruta de funcionalidades todavía no implementadas viven en [`docs/PRODUCT_VISION.md`](docs/PRODUCT_VISION.md).
 
 ## Estado actual
 
@@ -23,7 +23,7 @@ La aplicación permite:
 - simular recortes de gasto, ahorro adicional y estrategias guardadas de efectivo, inversión y deuda;
 - comparar la evolución histórica de patrimonio, activos, deuda, ingresos y coste de vida.
 
-La implementación actual es una SPA en JavaScript y tanto la aplicación como Functions usan ES Modules. Aunque la visión de producto menciona TypeScript, Capacitor y funcionalidades futuras, no se debe asumir que estén implementados.
+La implementación comparte una SPA JavaScript entre web y una aplicación Android generada con Capacitor. Tanto la aplicación como Functions usan ES Modules. Aunque la visión de producto menciona TypeScript y funcionalidades futuras, no se debe asumir que estén implementados.
 
 ## Modelo mental del producto
 
@@ -59,6 +59,7 @@ Los activos y pasivos representan una posición observada en un mes. Los ingreso
 | Tests          | Vitest 5 para dominio, stores, servicios y lógica de Functions |
 | Calidad        | ESLint + Prettier                                              |
 | Hosting        | Firebase Hosting desde `dist/spa`                              |
+| Android        | Capacitor 8, API 36, package `com.costoflife.app`              |
 | Región backend | `europe-west1`                                                 |
 
 El cliente está conectado directamente al proyecto Firebase `cost-of-life-f23b2` desde [`src/firebase/firebase.js`](src/firebase/firebase.js). No hacen falta variables de entorno para arrancar la SPA. `VITE_APP_URL` es opcional y solo se usa como origen de los enlaces de invitación en una build Capacitor; si no existe, se usa la URL pública de Firebase Hosting.
@@ -70,12 +71,14 @@ El cliente está conectado directamente al proyecto Firebase `cost-of-life-f23b2
 - Node.js `^22.12`, `^24` o `>=26`, tal como exige `package.json` (el runtime desplegado de Functions es Node 24).
 - Yarn Classic para el frontend. Functions conserva su propio `package-lock.json` y se instala con npm.
 - Google Chrome para el flujo local de Google Auth; `yarn dev` intenta abrirlo automáticamente.
+- Java 21, Android Studio y Android SDK 36 para compilar la aplicación Android.
 - Firebase CLI solo para emuladores o despliegue.
 
 Instala por separado las dependencias del frontend y de Functions:
 
 ```bash
 yarn install --frozen-lockfile
+yarn --cwd src-capacitor install --frozen-lockfile
 npm --prefix functions ci
 yarn dev
 ```
@@ -91,6 +94,10 @@ La aplicación se sirve en el host local que muestre Quasar. Firebase Auth debe 
 | `yarn lint:check`                   | Comprueba formato y lint del frontend y Functions sin corregir. |
 | `yarn lint`                         | Reescribe formato y aplica autofix; es un comando mutante.      |
 | `yarn build`                        | Genera la SPA de producción en `dist/spa`.                      |
+| `yarn android:dev`                  | Abre la app Android con HMR mediante Capacitor.                 |
+| `yarn android:sync`                 | Sincroniza plugins y assets con el proyecto Android.            |
+| `yarn android:build`                | Compila la aplicación Android release mediante Quasar/Gradle.   |
+| `yarn android:bundle`               | Genera el Android App Bundle release para Google Play.          |
 | `npm --prefix functions run serve`  | Arranca únicamente el emulador de Functions.                    |
 | `npm --prefix functions run shell`  | Abre Firebase Functions Shell.                                  |
 | `npm --prefix functions run deploy` | Despliega todas las Functions.                                  |
@@ -106,6 +113,21 @@ npm --prefix functions run deploy
 ```
 
 El proyecto Firebase por defecto está fijado en [`.firebaserc`](.firebaserc). Revisa siempre el proyecto activo antes de desplegar.
+
+### Android
+
+El proyecto nativo vive en `src-capacitor/android`, apunta a Android 16/API 36 y está registrado en Firebase como `com.costoflife.app`. El login de Google usa el plugin nativo de Firebase Authentication y entrega su credencial al SDK JavaScript, de modo que Firestore y Functions conservan una única sesión.
+
+La huella del certificado debug está registrada en Firebase. Antes de publicar se debe crear una clave de subida fuera del repositorio, configurar el firmado release y añadir a Firebase las huellas de la clave de subida y de Play App Signing. Los archivos `*.jks` y `*.keystore` están ignorados.
+
+Los enlaces HTTPS `https://cost-of-life-f23b2.web.app/invite/:token` abren directamente la invitación en Android. `public/.well-known/assetlinks.json` contiene por ahora la huella debug; debe añadirse la huella de Play App Signing antes de producción y desplegarse Firebase Hosting.
+
+Para forzar Java 21 si existe otra versión activa:
+
+```bash
+export JAVA_HOME=$(/usr/libexec/java_home -v 21)
+yarn android:bundle
+```
 
 ## Organización del repositorio
 
@@ -146,7 +168,7 @@ cost-of-life/
 │   ├── services/                Transacciones y lógica de aplicación
 │   └── index.js                 Registro de exports de Functions
 ├── test/                        Tests Vitest, reflejando las capas del código
-├── docs/PRODUCT_VISION.md       Dirección de producto, no inventario de features
+├── docs/PRODUCT_VISION.md       Visión, decisiones y hojas de ruta futuras
 ├── references/                 Proyectos externos de consulta: solo lectura
 ├── firestore.rules             Autorización y contratos de escritura cliente
 ├── firestore.indexes.json      Configuración de índices de Firestore
@@ -448,7 +470,7 @@ Además:
 - No hay conexión cliente configurada a Auth/Firestore/Functions Emulator.
 - No hay una estrategia offline implementada; Firestore usa su comportamiento web por defecto.
 - La app se construye como SPA web en modo hash. La configuración Quasar conserva secciones de otros targets, pero no demuestra que Electron, PWA, Cordova o Capacitor estén operativos.
-- `docs/PRODUCT_VISION.md` contiene fases y decisiones abiertas; no debe usarse como prueba de que una feature existe.
+- `docs/PRODUCT_VISION.md` contiene la visión, fases, decisiones abiertas y la hoja de ruta Android/Freemium/Pro; no debe usarse como prueba de que una feature existe.
 - El historial depende de snapshots `financialYears`; no se reconstruyen años cerrados desde la UI.
 - La integración de portfolios depende de una hoja accesible por enlace, de nombres/columnas concretos y de Google GViz; no usa OAuth ni detecta automáticamente cambios de plantilla.
 - No hay tests de Firestore Rules ni de integración contra emuladores en la suite actual; los tests existentes ejercitan dominio y servicios con dobles de Firestore.

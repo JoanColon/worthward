@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.costoflife.app",
+      "sha256_cert_fingerprints": [
+        "90:66:BF:A7:75:83:1B:7C:27:71:D6:86:5F:48:5D:7A:8E:1B:B0:EB:4B:0C:BA:CF:C8:2E:5B:F9:FB:F7:06:D1"
+      ]
+    }
+  }
+]

@@ -5,6 +5,7 @@ import {
   getRedirectResult,
   onAuthStateChanged,
   sendPasswordResetEmail,
+  signInWithCredential,
   signInWithEmailAndPassword,
   signInWithPopup,
   signInWithRedirect,
@@ -40,7 +41,23 @@ export function createAccount(email, password) {
   return createUserWithEmailAndPassword(auth, email, password)
 }
 
-export function signInWithGoogle({ redirect = false } = {}) {
+export async function signInWithGoogle({ native = false, redirect = false } = {}) {
+  if (native) {
+    const { FirebaseAuthentication } = await import('@capacitor-firebase/authentication')
+    const result = await FirebaseAuthentication.signInWithGoogle({
+      skipNativeAuth: true,
+      useCredentialManager: true,
+    })
+    const idToken = result.credential?.idToken
+    if (!idToken) throw new Error('Google Sign-In did not return an ID token')
+
+    const credential = GoogleAuthProvider.credential(
+      idToken,
+      result.credential?.accessToken || null,
+    )
+    return signInWithCredential(auth, credential)
+  }
+
   const provider = new GoogleAuthProvider()
   provider.setCustomParameters({ prompt: 'select_account' })
 

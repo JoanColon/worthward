@@ -238,11 +238,10 @@ async function generateInvite() {
   inviteError.value = null
   try {
     const { token } = await createWorkspaceInvite(workspaceToInvite.value.id)
-    const routePath = router.resolve({ name: 'workspace-invite', params: { token } }).href
     const appOrigin = $q.platform.is.capacitor
       ? import.meta.env.VITE_APP_URL || 'https://cost-of-life-f23b2.web.app'
       : window.location.origin
-    inviteLink.value = new URL(routePath, appOrigin).href
+    inviteLink.value = new URL(`/invite/${token}`, appOrigin).href
   } catch (error) {
     inviteError.value = error
   } finally {

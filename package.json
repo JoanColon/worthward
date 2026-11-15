@@ -11,6 +11,10 @@
     "test": "vitest run",
     "dev": "quasar dev",
     "build": "quasar build",
+    "android:dev": "quasar dev -m capacitor -T android",
+    "android:sync": "yarn --cwd src-capacitor cap sync android",
+    "android:build": "quasar build -m capacitor -T android",
+    "android:bundle": "quasar build -m capacitor -T android --skip-pkg && yarn --cwd src-capacitor bundle:android",
     "postinstall": "quasar prepare --silent"
   },
   "dependencies": {

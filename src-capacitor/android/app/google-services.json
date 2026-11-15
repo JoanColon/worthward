@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "472858873731",
+    "project_id": "cost-of-life-f23b2",
+    "storage_bucket": "cost-of-life-f23b2.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:472858873731:android:5a2032175bc478e562b0b6",
+        "android_client_info": {
+          "package_name": "com.costoflife.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "472858873731-irn9fksn6jmj8ngonl7k79glsm25c3q7.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.costoflife.app",
+            "certificate_hash": "069c2ee63ab1f7c24da80714d56677832b2b85fc"
+          }
+        },
+        {
+          "client_id": "472858873731-1ritgsg0o2b1uo7u71qbb1jfu5vrl6d9.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAvkAnoMPIEPeRhybZirs7x3SrpYMZNz-s"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "472858873731-1ritgsg0o2b1uo7u71qbb1jfu5vrl6d9.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
