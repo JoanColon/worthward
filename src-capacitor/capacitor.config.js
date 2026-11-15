@@ -1,8 +1,8 @@
 const { defineCapacitorConfig } = require('@quasar/app-vite/capacitor')
 
 module.exports = defineCapacitorConfig({
-  appId: 'com.costoflife.app',
-  appName: 'Cost of Life',
+  appId: 'com.worthward.app',
+  appName: 'Worthward',
   plugins: {
     FirebaseAuthentication: {
       providers: ['google.com'],

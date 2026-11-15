@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Cost of Life</string>
-    <string name="title_activity_main">Cost of Life</string>
-    <string name="package_name">com.costoflife.app</string>
-    <string name="custom_url_scheme">com.costoflife.app</string>
+    <string name="app_name">Worthward</string>
+    <string name="title_activity_main">Worthward</string>
+    <string name="package_name">com.worthward.app</string>
+    <string name="custom_url_scheme">com.worthward.app</string>
 </resources>

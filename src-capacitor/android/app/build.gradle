@@ -1,14 +1,26 @@
 apply plugin: 'com.android.application'
 
+def releaseStoreFile = System.getenv("WORTHWARD_STORE_FILE")
+def releaseStorePassword = System.getenv("WORTHWARD_STORE_PASSWORD")
+def releaseKeyAlias = System.getenv("WORTHWARD_KEY_ALIAS")
+def releaseKeyPassword = System.getenv("WORTHWARD_KEY_PASSWORD")
+def hasReleaseSigning = releaseStoreFile && releaseStorePassword && releaseKeyAlias && releaseKeyPassword
+
+gradle.taskGraph.whenReady { taskGraph ->
+    if (taskGraph.allTasks.any { it.name.toLowerCase().contains("release") } && !hasReleaseSigning) {
+        throw new GradleException("Release signing requires WORTHWARD_STORE_FILE, WORTHWARD_STORE_PASSWORD, WORTHWARD_KEY_ALIAS, and WORTHWARD_KEY_PASSWORD.")
+    }
+}
+
 android {
-    namespace = "com.costoflife.app"
+    namespace = "com.worthward.app"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "com.costoflife.app"
+        applicationId "com.worthward.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
-        versionName "1.0"
+        versionName "0.1"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -16,8 +28,21 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        release {
+            if (hasReleaseSigning) {
+                storeFile file(releaseStoreFile)
+                storePassword releaseStorePassword
+                keyAlias releaseKeyAlias
+                keyPassword releaseKeyPassword
+            }
+        }
+    }
     buildTypes {
         release {
+            if (hasReleaseSigning) {
+                signingConfig signingConfigs.release
+            }
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }

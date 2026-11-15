@@ -7,18 +7,18 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:472858873731:android:5a2032175bc478e562b0b6",
+        "mobilesdk_app_id": "1:472858873731:android:79a52ed322068f4962b0b6",
         "android_client_info": {
-          "package_name": "com.costoflife.app"
+          "package_name": "com.worthward.app"
         }
       },
       "oauth_client": [
         {
-          "client_id": "472858873731-irn9fksn6jmj8ngonl7k79glsm25c3q7.apps.googleusercontent.com",
+          "client_id": "472858873731-sc2llvshjt2u3lruic43dgacsnr62mf1.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
-            "package_name": "com.costoflife.app",
-            "certificate_hash": "069c2ee63ab1f7c24da80714d56677832b2b85fc"
+            "package_name": "com.worthward.app",
+            "certificate_hash": "f3971057baf51c2547113fccbaab87093555b1f8"
           }
         },
         {

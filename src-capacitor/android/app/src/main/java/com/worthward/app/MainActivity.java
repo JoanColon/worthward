@@ -1,4 +1,4 @@
-package com.costoflife.app;
+package com.worthward.app;
 
 import com.getcapacitor.BridgeActivity;
 
