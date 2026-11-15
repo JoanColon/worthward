@@ -1,8 +1,8 @@
 {
-  "name": "cost-of-life",
+  "name": "worthward",
   "version": "0.0.1",
-  "description": "A Quasar Project",
-  "productName": "Cost of Life",
+  "description": "Worthward personal finance workspace",
+  "productName": "Worthward",
   "type": "module",
   "private": true,
   "scripts": {

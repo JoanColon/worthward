@@ -1,4 +1,4 @@
-# Cost of Life
+# Worthward
 
 Aplicación web _mobile-first_ para entender la posición financiera de una persona o un hogar: patrimonio neto, coste real de vida, capacidad de ahorro y progreso hacia hitos financieros.
 
@@ -63,6 +63,8 @@ Los activos y pasivos representan una posición observada en un mes. Los ingreso
 | Región backend | `europe-west1`                                                 |
 
 El cliente está conectado directamente al proyecto Firebase `cost-of-life-f23b2` desde [`src/firebase/firebase.js`](src/firebase/firebase.js). No hacen falta variables de entorno para arrancar la SPA. `VITE_APP_URL` es opcional y solo se usa como origen de los enlaces de invitación en una build Capacitor; si no existe, se usa la URL pública de Firebase Hosting.
+
+La identidad comercial es **Worthward**. La SPA centraliza el nombre y la URL operativa en `src/config/brand.js`; la landing mantiene una configuración equivalente e independiente en `landing/src/config/brand.js`. Los dominios previstos `worthward.com` y `app.worthward.com` aún no están activos: producción debe continuar utilizando los sitios actuales de Firebase Hosting hasta completar la configuración descrita en [`docs/BRAND_MIGRATION.md`](docs/BRAND_MIGRATION.md).
 
 ## Puesta en marcha
 
@@ -444,7 +446,7 @@ Todo lo que haya bajo `references/` pertenece a otros proyectos copiados para co
 - editar, borrar, renombrar, mover o formatear contenido de `references/`;
 - ejecutar migraciones o actualizaciones de dependencias dentro de esos proyectos;
 - importar código de `references/` desde la aplicación activa;
-- incluir cambios destinados a esos proyectos en un commit de Cost of Life.
+- incluir cambios destinados a esos proyectos en un commit de Worthward.
 
 Si una idea resulta útil, reimplémentala dentro de `src/` o `functions/` con los contratos de este proyecto.
 

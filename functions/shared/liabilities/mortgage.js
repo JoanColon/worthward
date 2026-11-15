@@ -13,7 +13,7 @@ const MAX_MORTGAGE_SCHEDULE_MONTHS = 1_200
 
 /**
  * Calculates one French-amortization payment from a known opening balance.
- * Interest is rounded before principal, matching the persisted Cost of Life mortgage contract.
+ * Interest is rounded before principal, matching the persisted mortgage contract.
  */
 export function calculateFrenchMortgagePaymentStep({
   balance,

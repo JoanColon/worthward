@@ -179,6 +179,7 @@ import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import AppPageHeader from '@/components/layout/AppPageHeader.vue'
 import WorkspaceForm from '@/components/workspace/WorkspaceForm.vue'
+import { BRAND } from '@/config/brand'
 import { authUser } from '@/services/auth'
 import { createWorkspaceInvite } from '@/services/firebase/workspace.service'
 import { useFinancialYearsStore } from '@/stores/financial-years-store'
@@ -238,9 +239,7 @@ async function generateInvite() {
   inviteError.value = null
   try {
     const { token } = await createWorkspaceInvite(workspaceToInvite.value.id)
-    const appOrigin = $q.platform.is.capacitor
-      ? import.meta.env.VITE_APP_URL || 'https://cost-of-life-f23b2.web.app'
-      : window.location.origin
+    const appOrigin = $q.platform.is.capacitor ? BRAND.currentAppUrl : window.location.origin
     inviteLink.value = new URL(`/invite/${token}`, appOrigin).href
   } catch (error) {
     inviteError.value = error

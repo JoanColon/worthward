@@ -10,8 +10,8 @@
           :aria-label="t('navigation.workspaces')"
           @click="drawerOpen = !drawerOpen"
         />
-        <div class="mini-mark">C</div>
-        <q-toolbar-title class="app-title">Cost of Life</q-toolbar-title>
+        <div class="mini-mark">{{ BRAND.mark }}</div>
+        <q-toolbar-title class="app-title">{{ BRAND.name }}</q-toolbar-title>
 
         <MemberScopeSelector
           v-if="routeWorkspaceId && members.length"
@@ -36,9 +36,9 @@
 
     <q-drawer v-model="drawerOpen" show-if-above bordered :width="280" class="app-drawer">
       <div class="drawer-brand">
-        <div class="drawer-mark">C</div>
+        <div class="drawer-mark">{{ BRAND.mark }}</div>
         <div>
-          <div class="drawer-title">Cost of Life</div>
+          <div class="drawer-title">{{ BRAND.name }}</div>
           <div class="drawer-caption">{{ authUser?.email }}</div>
         </div>
       </div>
@@ -149,6 +149,7 @@ import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import MemberScopeSelector from '@/components/dashboard/MemberScopeSelector.vue'
 import MobileBottomNav from '@/components/dashboard/MobileBottomNav.vue'
+import { BRAND } from '@/config/brand'
 import {
   currentFinancialDate,
   currentFinancialYear,

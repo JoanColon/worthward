@@ -3,9 +3,9 @@
     <q-page-container>
       <q-page class="auth-page">
         <section class="auth-intro">
-          <div class="brand-mark" aria-hidden="true">C</div>
+          <div class="brand-mark" aria-hidden="true">{{ BRAND.mark }}</div>
           <div>
-            <div class="brand-name">Cost of Life</div>
+            <div class="brand-name">{{ BRAND.name }}</div>
             <p class="brand-copy">{{ t('auth.brandMessage') }}</p>
           </div>
         </section>
@@ -124,6 +124,7 @@ import { onMounted, ref } from 'vue'
 import { useQuasar } from 'quasar'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
+import { BRAND } from '@/config/brand'
 import {
   createAccount,
   finishGoogleRedirect,

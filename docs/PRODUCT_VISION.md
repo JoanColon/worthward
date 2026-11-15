@@ -1,9 +1,9 @@
-# Cost of Life — Product Vision
+# Worthward — Product Vision
 
 ## Document status
 
 This document describes the intended product direction, core domain rules, and
-initial architectural boundaries for Cost of Life.
+initial architectural boundaries for Worthward.
 
 It is a product reference, not a claim that every feature described here is
 already implemented. Sections marked as open decisions must be resolved before
@@ -13,7 +13,7 @@ their corresponding implementation phase begins.
 
 ## 1. Product vision
 
-Cost of Life is a mobile-first personal-finance workspace built with Vue,
+Worthward is a mobile-first personal-finance workspace built with Vue,
 Quasar, Capacitor, TypeScript, Firebase Authentication, Cloud Firestore, and
 Pinia.
 
@@ -29,7 +29,7 @@ people understand:
 
 The central promise is:
 
-> Know what your life really costs.
+> Know your worth today. Find your way forward.
 
 The product must remain useful even when users do not record every individual
 expense. Its core learning loop is:
@@ -46,7 +46,7 @@ financial model.
 
 ## 2. Product positioning
 
-Cost of Life should be understood as a **Personal Finance Workspace**, not as
+Worthward should be understood as a **Personal Finance Workspace**, not as
 an expense tracker.
 
 It is organized around four questions:
@@ -470,7 +470,7 @@ expected return, inflation, horizon, goals, and optional FIRE assumptions.
 Possible outputs include projected portfolios, FIRE targets and dates, Coast
 FIRE, and milestones.
 
-Cost of Life is not a FIRE-only product. FIRE is an advanced planning layer.
+Worthward is not a FIRE-only product. FIRE is an advanced planning layer.
 The app must not recommend specific financial products.
 
 Savings capacity and planned investment are not equivalent:
@@ -769,7 +769,7 @@ Where will that take me?
 
 ### Objetivo
 
-Publicar Cost of Life en Google Play como aplicación Android construida con Quasar + Capacitor y monetizarla con un único nivel Pro:
+Publicar Worthward en Google Play como aplicación Android construida con Quasar + Capacitor y monetizarla con un único nivel Pro:
 
 - Free: aplicación financiera completa para un workspace personal.
 - Pro mensual: 3,99 EUR/mes.
@@ -781,7 +781,7 @@ Publicar Cost of Life en Google Play como aplicación Android construida con Qua
 ### Decisiones de producto para la primera versión
 
 1. Un solo producto de suscripción de Google Play, con dos planes base: mensual y anual.
-2. La prueba de 30 días será un derecho promocional gestionado por Cost of Life, no una prueba autorrenovable de Google Play. Así no requiere tarjeta ni produce un cobro al terminar.
+2. La prueba de 30 días será un derecho promocional gestionado por Worthward, no una prueba autorrenovable de Google Play. Así no requiere tarjeta ni produce un cobro al terminar.
 3. La prueba se activa a petición del usuario, una sola vez por cuenta.
 4. Máximo de 5 miembros totales por workspace, incluido el propietario.
 5. Un usuario Free puede tener un workspace propio editable y participar en workspaces Pro de terceros.
@@ -985,7 +985,7 @@ Verificación:
 - Cancelación con acceso hasta fin de periodo.
 - Renovación, periodo de gracia, account hold, recuperación, expiración, reembolso y revocación.
 - Restauración al reinstalar y al iniciar sesión en otro dispositivo.
-- La misma compra no puede concederse a dos cuentas de Cost of Life.
+- La misma compra no puede concederse a dos cuentas de Worthward.
 
 #### Fase 4 — Aplicar monetización a workspaces y funciones Pro
 

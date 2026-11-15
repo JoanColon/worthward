@@ -21,7 +21,7 @@ export default {
     },
   },
   auth: {
-    brandMessage: 'Know your costs. Make better money decisions.',
+    brandMessage: 'Know your worth today. Find your way forward.',
     signInTitle: 'Sign in',
     registerTitle: 'Create your account',
     signInSubtitle: 'Continue where you left off.',
@@ -110,7 +110,7 @@ export default {
       copied: 'Invite link copied.',
       share: 'Share',
       shareTitle: 'Workspace invitation',
-      shareText: 'Join my “{name}” workspace in Cost of Life.',
+      shareText: 'Join my “{name}” workspace in Worthward.',
       errors: {
         create: 'We could not create the invitation. Try again.',
         copy: 'We could not copy the invitation link.',
@@ -125,7 +125,7 @@ export default {
       join: 'Join workspace',
       signInToJoin: 'Sign in or create an account',
       unavailableTitle: 'Invitation unavailable',
-      goHome: 'Continue to Cost of Life',
+      goHome: 'Continue to Worthward',
       errors: {
         expired: 'This invitation has expired. Ask the workspace owner for a new link.',
         used: 'This invitation has already been used.',

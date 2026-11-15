@@ -3,6 +3,11 @@ functions/
 .quasar/
 .firebase/
 dist/
+landing/.vite-ssg-temp/
+landing/README.md
+landing/src/components/GrowthBackdrop.vue
+landing/src/css/app.scss
+landing/src/router/index.js
 node_modules/
 src-capacitor/www/
 src-capacitor/android/**/build/
