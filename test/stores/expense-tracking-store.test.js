@@ -1,18 +1,23 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 
-const { createTrackedExpense, getExpenseTrackingMonth, getExpenseTrackingPreferences } = vi.hoisted(
-  () => ({
-    createTrackedExpense: vi.fn(),
-    getExpenseTrackingMonth: vi.fn(),
-    getExpenseTrackingPreferences: vi.fn(),
-  }),
-)
+const {
+  createTrackedExpense,
+  getExpenseTrackingMonth,
+  getExpenseTrackingPreferences,
+  getExpenseTrackingYear,
+} = vi.hoisted(() => ({
+  createTrackedExpense: vi.fn(),
+  getExpenseTrackingMonth: vi.fn(),
+  getExpenseTrackingPreferences: vi.fn(),
+  getExpenseTrackingYear: vi.fn(),
+}))
 
 vi.mock('@/services/firebase/expense-tracking.service', () => ({
   createTrackedExpense,
   getExpenseTrackingMonth,
   getExpenseTrackingPreferences,
+  getExpenseTrackingYear,
   removeTrackedExpense: vi.fn(),
   saveExpenseTrackingPreferences: vi.fn(),
   saveTrackingReconciliation: vi.fn(),
@@ -27,11 +32,15 @@ describe('expense tracking store', () => {
     setActivePinia(createPinia())
     getExpenseTrackingMonth.mockReset()
     getExpenseTrackingPreferences.mockReset()
+    getExpenseTrackingYear.mockReset()
     createTrackedExpense.mockReset()
     getExpenseTrackingMonth.mockImplementation(async (_, period) => ({ period, categories: {} }))
     getExpenseTrackingPreferences.mockResolvedValue({
       enabledSubcategories: ['groceries'],
     })
+    getExpenseTrackingYear.mockImplementation(async (_, year) => ({
+      '01': { year, month: 1, categories: {} },
+    }))
   })
 
   it('reuses workspace preferences while loading different months', async () => {
@@ -53,6 +62,17 @@ describe('expense tracking store', () => {
     await store.load('workspace-a', '2026-10', true)
 
     expect(getExpenseTrackingPreferences).toHaveBeenCalledTimes(2)
+  })
+
+  it('loads and caches the selected tracking year independently from the active month', async () => {
+    const store = useExpenseTrackingStore()
+
+    await store.loadYear('workspace-a', 2026)
+    await store.loadYear('workspace-a', 2026)
+    await store.loadYear('workspace-a', 2027)
+
+    expect(getExpenseTrackingYear).toHaveBeenCalledTimes(2)
+    expect(store.yearMonths['01'].year).toBe(2027)
   })
 
   it('ignores a completed mutation after the user has moved to another month', async () => {

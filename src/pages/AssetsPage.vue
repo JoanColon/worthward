@@ -140,68 +140,29 @@
       </q-card>
     </q-dialog>
 
-    <q-dialog v-model="confirmDisable">
-      <q-card class="confirm-card">
-        <q-btn
-          flat
-          round
-          dense
-          icon="close"
-          class="dialog-close"
-          :aria-label="t('common.cancel')"
-          v-close-popup
-        />
-        <q-card-section>
-          <h2>{{ t('assets.setup.disableTitle') }}</h2>
-          <p>{{ t('assets.setup.disableDescription') }}</p>
-        </q-card-section>
-        <q-card-actions align="right">
-          <q-btn flat no-caps :label="t('common.cancel')" v-close-popup />
-          <q-btn
-            unelevated
-            no-caps
-            color="primary"
-            :label="t('assets.setup.disableAction')"
-            @click="savePendingCategories"
-          />
-        </q-card-actions>
-      </q-card>
-    </q-dialog>
+    <AppConfirmDialog
+      v-model="confirmDisable"
+      :title="t('assets.setup.disableTitle')"
+      :message="t('assets.setup.disableDescription')"
+      :cancel-label="t('common.cancel')"
+      :confirm-label="t('assets.setup.disableAction')"
+      @confirm="savePendingCategories"
+    />
 
-    <q-dialog v-model="confirmCategoryDelete">
-      <q-card class="confirm-card">
-        <q-btn
-          flat
-          round
-          dense
-          icon="close"
-          class="dialog-close"
-          :aria-label="t('common.cancel')"
-          v-close-popup
-        />
-        <q-card-section>
-          <h2>{{ t('assets.deleteCategory.title') }}</h2>
-          <p>
-            {{
-              t('assets.deleteCategory.description', {
-                name: deletingCategory ? t(deletingCategory.nameKey) : '',
-              })
-            }}
-          </p>
-        </q-card-section>
-        <q-card-actions align="right">
-          <q-btn flat no-caps :label="t('common.cancel')" v-close-popup />
-          <q-btn
-            unelevated
-            no-caps
-            color="negative"
-            :label="t('common.delete')"
-            :loading="saving"
-            @click="deleteCategory"
-          />
-        </q-card-actions>
-      </q-card>
-    </q-dialog>
+    <AppConfirmDialog
+      v-model="confirmCategoryDelete"
+      :title="t('assets.deleteCategory.title')"
+      :message="
+        t('assets.deleteCategory.description', {
+          name: deletingCategory ? t(deletingCategory.nameKey) : '',
+        })
+      "
+      :cancel-label="t('common.cancel')"
+      :confirm-label="t('common.delete')"
+      confirm-color="negative"
+      :loading="saving"
+      @confirm="deleteCategory"
+    />
 
     <q-dialog v-model="ownershipDialog">
       <q-card class="ownership-dialog-card">
@@ -249,6 +210,7 @@ import OwnershipEditor from '@/components/financial/OwnershipEditor.vue'
 import PositionCategorySetup from '@/components/financial/PositionCategorySetup.vue'
 import SimpleValueEditor from '@/components/financial/SimpleValueEditor.vue'
 import AppPageHeader from '@/components/layout/AppPageHeader.vue'
+import AppConfirmDialog from '@/components/ui/AppConfirmDialog.vue'
 import { assetCategories } from '@/config/asset-categories'
 import {
   currentFinancialMonth,

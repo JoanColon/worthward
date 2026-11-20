@@ -4,6 +4,7 @@ import {
   createTrackedExpense,
   getExpenseTrackingMonth,
   getExpenseTrackingPreferences,
+  getExpenseTrackingYear,
   removeTrackedExpense,
   saveExpenseTrackingPreferences,
   saveTrackingReconciliation,
@@ -14,13 +15,16 @@ import {
 export const useExpenseTrackingStore = defineStore('expense-tracking', () => {
   const month = ref(null)
   const enabledSubcategories = ref([])
+  const yearMonths = ref({})
   const loading = ref(false)
   const saving = ref(false)
   const error = ref(null)
   const loadedKey = ref(null)
   const loadedPreferencesWorkspaceId = ref(null)
+  const loadedYearKey = ref(null)
   let requestId = 0
   let preferencesRequestId = 0
+  let yearRequestId = 0
   let pendingPreferences = null
 
   async function load(workspaceId, period, force = false) {
@@ -64,6 +68,23 @@ export const useExpenseTrackingStore = defineStore('expense-tracking', () => {
     }
   }
 
+  async function loadYear(workspaceId, year, force = false) {
+    const key = `${workspaceId}:${year}`
+    if (!force && loadedYearKey.value === key) return
+    const currentRequest = ++yearRequestId
+    error.value = null
+    try {
+      const months = await getExpenseTrackingYear(workspaceId, year)
+      if (currentRequest !== yearRequestId) return
+      yearMonths.value = months
+      loadedYearKey.value = key
+    } catch (loadError) {
+      if (currentRequest !== yearRequestId) return
+      error.value = loadError
+      throw loadError
+    }
+  }
+
   function invalidatePreferences(workspaceId) {
     if (
       loadedPreferencesWorkspaceId.value !== workspaceId &&
@@ -72,6 +93,7 @@ export const useExpenseTrackingStore = defineStore('expense-tracking', () => {
       return
     }
     preferencesRequestId += 1
+    yearRequestId += 1
     pendingPreferences = null
     loadedPreferencesWorkspaceId.value = null
   }
@@ -163,21 +185,25 @@ export const useExpenseTrackingStore = defineStore('expense-tracking', () => {
     pendingPreferences = null
     month.value = null
     enabledSubcategories.value = []
+    yearMonths.value = {}
     loading.value = false
     saving.value = false
     error.value = null
     loadedKey.value = null
     loadedPreferencesWorkspaceId.value = null
+    loadedYearKey.value = null
   }
 
   return {
     month,
+    yearMonths,
     enabledSubcategories,
     loading,
     saving,
     error,
     load,
     loadPreferences,
+    loadYear,
     invalidatePreferences,
     savePreferences,
     add,

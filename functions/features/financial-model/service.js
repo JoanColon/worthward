@@ -612,10 +612,15 @@ function canonicalExpense(item, category) {
   assertCanonicalTextField(item.notes, 'Canonical expense notes are required')
   assertNonNegativeMoney(item.estimate?.amount, 'A valid expense estimate is required')
   const frequency = item.estimate?.frequency
-  if (
-    !['monthly', 'every_two_months', 'quarterly', 'yearly'].includes(frequency)
-  ) {
+  if (!['monthly', 'every_two_months', 'quarterly', 'yearly', 'irregular'].includes(frequency)) {
     throw new Error('A valid expense estimate is required')
+  }
+  const frequenciesWithStartMonth = ['every_two_months', 'quarterly', 'yearly']
+  if (
+    item.estimate?.startMonth != null &&
+    (!frequenciesWithStartMonth.includes(frequency) || !MONTHS.includes(item.estimate.startMonth))
+  ) {
+    throw new Error('A valid expense payment month is required')
   }
   if (!['fixed', 'variable'].includes(item.variability)) {
     throw new Error('Valid expense behavior is required')

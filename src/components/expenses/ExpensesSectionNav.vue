@@ -24,12 +24,8 @@
         </q-card-section>
         <q-card-section class="info-copy">
           <p>
-            <strong>{{ t('expenses.views.plan') }}</strong> —
-            {{ t('expenses.views.info.plan') }}
-          </p>
-          <p>
-            <strong>{{ t('expenses.views.track') }}</strong> —
-            {{ t('expenses.views.info.track') }}
+            <strong>{{ t('expenseTracker.modes.record') }}</strong> —
+            {{ t('expenses.views.info.record') }}
           </p>
           <p>
             <strong>{{ t('expenses.views.review') }}</strong> —
@@ -56,17 +52,12 @@ const openInfo = () => {
 }
 const items = computed(() => [
   {
-    key: 'plan',
-    label: 'expenses.views.plan',
-    to: { name: 'expenses', params: { workspaceId: props.workspaceId } },
-  },
-  {
-    key: 'track',
-    label: 'expenses.views.track',
+    key: 'record',
+    label: 'expenseTracker.modes.record',
     to: {
       name: 'expense-tracker',
       params: { workspaceId: props.workspaceId },
-      query: { view: 'track', mode: 'record' },
+      query: { view: 'record' },
     },
   },
   {
@@ -93,7 +84,7 @@ const items = computed(() => [
 }
 .expenses-section-nav {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   width: 100%;
   margin-top: 0.75rem;
   border-bottom: 1px solid var(--color-line-strong);

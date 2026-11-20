@@ -38,25 +38,12 @@
             />
             <h1>{{ mortgage.itemName }}</h1>
           </div>
-          <q-btn
-            v-if="configured && !editing"
-            outline
-            no-caps
-            color="primary"
-            icon="edit"
-            :label="t('liabilities.mortgage.editModel')"
-            @click="startEditing"
-          />
         </header>
 
-        <section v-if="!configured || editing" class="setup-card">
+        <section v-if="!configured" class="setup-card">
           <span class="setup-icon"><q-icon name="account_balance" /></span>
           <div class="setup-copy">
-            <h2>
-              {{
-                t(configured ? 'liabilities.mortgage.editTitle' : 'liabilities.mortgage.setupTitle')
-              }}
-            </h2>
+            <h2>{{ t('liabilities.mortgage.setupTitle') }}</h2>
             <p>{{ t('liabilities.mortgage.setupDescription') }}</p>
           </div>
 
@@ -202,13 +189,6 @@
 
             <div class="form-actions">
               <q-btn
-                v-if="configured"
-                flat
-                no-caps
-                :label="t('common.cancel')"
-                @click="cancelEditing"
-              />
-              <q-btn
                 unelevated
                 no-caps
                 color="primary"
@@ -221,52 +201,54 @@
         </section>
 
         <template v-else-if="projection">
-          <section class="mortgage-summary">
-            <span class="summary-icon"><q-icon name="house_siding" /></span>
-            <div>
-              <span>{{ t('liabilities.mortgage.title') }}</span>
-              <strong
-                >{{ formatCurrency(mortgage.balance) }}
-                {{ t('liabilities.mortgage.remaining') }}</strong
-              >
-              <p>
-                {{ formatRate(mortgageModel.annualInterestRate) }}
-                {{ t('liabilities.mortgage.fixed') }} ·
-                {{ formatCurrency(mortgageModel.monthlyPayment)
-                }}{{ t('liabilities.mortgage.perMonth') }}
-              </p>
-              <small
-                >{{ formatDuration(projection.remainingPayments) }}
-                {{ t('liabilities.mortgage.remaining') }}</small
-              >
+          <section class="mortgage-overview">
+            <div class="mortgage-summary">
+              <span class="summary-icon"><q-icon name="house_siding" /></span>
+              <div>
+                <span>{{ t('liabilities.mortgage.title') }}</span>
+                <strong
+                  >{{ formatCurrency(mortgage.balance) }}
+                  {{ t('liabilities.mortgage.remaining') }}</strong
+                >
+                <p>
+                  {{ formatRate(mortgageModel.annualInterestRate) }}
+                  {{ t('liabilities.mortgage.fixed') }} ·
+                  {{ formatCurrency(mortgageModel.monthlyPayment)
+                  }}{{ t('liabilities.mortgage.perMonth') }}
+                </p>
+                <small
+                  >{{ formatDuration(projection.remainingPayments) }}
+                  {{ t('liabilities.mortgage.remaining') }}</small
+                >
+              </div>
             </div>
-          </section>
 
-          <section class="next-payment-card">
-            <div class="section-heading">
-              <span class="section-icon"><q-icon name="calendar_month" /></span>
-              <div>
-                <h2>{{ t('liabilities.mortgage.nextPayment') }}</h2>
-                <small v-if="projection.nextPayment">{{
-                  formatMonthYear(projection.nextPayment.date)
-                }}</small>
+            <div class="next-payment">
+              <div class="section-heading">
+                <span class="section-icon"><q-icon name="calendar_month" /></span>
+                <div>
+                  <h2>{{ t('liabilities.mortgage.nextPayment') }}</h2>
+                  <small v-if="projection.nextPayment">{{
+                    formatMonthYear(projection.nextPayment.date)
+                  }}</small>
+                </div>
               </div>
+              <div v-if="projection.nextPayment" class="payment-values">
+                <div>
+                  <span>{{ t('liabilities.mortgage.payment') }}</span>
+                  <strong>{{ formatCurrency(projection.nextPayment.payment) }}</strong>
+                </div>
+                <div>
+                  <span>{{ t('liabilities.mortgage.interest') }}</span>
+                  <strong>{{ formatCurrency(projection.nextPayment.interest) }}</strong>
+                </div>
+                <div>
+                  <span>{{ t('liabilities.mortgage.principal') }}</span>
+                  <strong>{{ formatCurrency(projection.nextPayment.principal) }}</strong>
+                </div>
+              </div>
+              <p v-else class="paid-off">{{ t('liabilities.mortgage.paidOff') }}</p>
             </div>
-            <div v-if="projection.nextPayment" class="payment-values">
-              <div>
-                <span>{{ t('liabilities.mortgage.payment') }}</span>
-                <strong>{{ formatCurrency(projection.nextPayment.payment) }}</strong>
-              </div>
-              <div>
-                <span>{{ t('liabilities.mortgage.interest') }}</span>
-                <strong>{{ formatCurrency(projection.nextPayment.interest) }}</strong>
-              </div>
-              <div>
-                <span>{{ t('liabilities.mortgage.principal') }}</span>
-                <strong>{{ formatCurrency(projection.nextPayment.principal) }}</strong>
-              </div>
-            </div>
-            <p v-else class="paid-off">{{ t('liabilities.mortgage.paidOff') }}</p>
           </section>
 
           <section class="chart-card">
@@ -296,6 +278,184 @@
               :current-label="t('liabilities.mortgage.currentMonth')"
               :aria-label="t('liabilities.mortgage.balanceChartAria')"
             />
+          </section>
+
+          <section class="model-parameters">
+            <q-expansion-item
+              v-model="editing"
+              expand-icon="chevron_right"
+              expanded-icon="expand_more"
+              @before-show="resetForm"
+            >
+              <template #header>
+                <q-item-section avatar>
+                  <div class="parameters-icon"><q-icon name="trending_up" /></div>
+                </q-item-section>
+                <q-item-section>
+                  <q-item-label>{{ t('liabilities.mortgage.modelParameters') }}</q-item-label>
+                  <q-item-label caption>{{ modelParametersSummary }}</q-item-label>
+                </q-item-section>
+              </template>
+
+              <q-form
+                ref="modelForm"
+                class="mortgage-form parameters-form"
+                @submit.prevent="saveModel"
+              >
+                <div class="field-grid">
+                  <div class="form-field">
+                    <label>{{ t('liabilities.mortgage.originalPrincipal') }}</label>
+                    <q-input
+                      v-model="form.originalPrincipal"
+                      outlined
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      :prefix="currencySymbol"
+                      lazy-rules
+                      :rules="[nonNegativeMoneyRule]"
+                    />
+                  </div>
+                  <div class="form-field">
+                    <label>{{ t('liabilities.mortgage.currentBalance') }}</label>
+                    <q-input
+                      v-model="form.currentBalance"
+                      outlined
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      :prefix="currencySymbol"
+                      lazy-rules
+                      :rules="[currentBalanceRule]"
+                    />
+                  </div>
+                  <div class="form-field">
+                    <label>{{ t('liabilities.mortgage.annualInterestRate') }}</label>
+                    <q-input
+                      v-model="form.annualInterestRate"
+                      outlined
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="0.01"
+                      suffix="%"
+                      lazy-rules
+                      :rules="[percentageRule]"
+                    />
+                  </div>
+                  <div class="form-field">
+                    <label>{{ t('liabilities.mortgage.monthlyPayment') }}</label>
+                    <q-input
+                      v-model="form.monthlyPayment"
+                      outlined
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      :prefix="currencySymbol"
+                      :hint="t('liabilities.mortgage.monthlyPaymentHint')"
+                      lazy-rules
+                      :rules="[optionalPositiveMoneyRule]"
+                    />
+                  </div>
+                  <div class="form-field">
+                    <label>{{ t('liabilities.mortgage.startDate') }}</label>
+                    <q-input
+                      v-model="form.startDate"
+                      outlined
+                      type="date"
+                      lazy-rules
+                      :rules="[
+                        (value) => isIsoDate(value) || t('liabilities.mortgage.invalidDate'),
+                      ]"
+                    />
+                  </div>
+                  <div class="term-fields">
+                    <div class="form-field">
+                      <label>{{ t('liabilities.mortgage.termYears') }}</label>
+                      <q-input
+                        v-model="form.termYears"
+                        outlined
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="1"
+                        lazy-rules
+                        :rules="[termPartRule]"
+                      />
+                    </div>
+                    <div class="form-field">
+                      <label>{{ t('liabilities.mortgage.termExtraMonths') }}</label>
+                      <q-input
+                        v-model="form.termExtraMonths"
+                        outlined
+                        type="number"
+                        min="0"
+                        max="11"
+                        step="1"
+                        lazy-rules
+                        :rules="[monthPartRule]"
+                      />
+                    </div>
+                  </div>
+                  <div class="form-field linked-property-field">
+                    <label>{{ t('liabilities.mortgage.linkedProperty') }}</label>
+                    <q-select
+                      v-model="form.mortgageAssetId"
+                      outlined
+                      clearable
+                      emit-value
+                      map-options
+                      :options="propertyOptions"
+                      :placeholder="t('liabilities.mortgage.noLinkedProperty')"
+                    >
+                      <template #prepend><q-icon name="home" /></template>
+                      <template #no-option>
+                        <q-item>
+                          <q-item-section class="text-grey-7">
+                            {{ t('liabilities.mortgage.noPropertiesAvailable') }}
+                          </q-item-section>
+                        </q-item>
+                      </template>
+                    </q-select>
+                    <small>{{ t('liabilities.mortgage.linkedPropertyHint') }}</small>
+                  </div>
+                  <div class="form-field linked-expense-field">
+                    <label>{{ t('liabilities.mortgage.linkedExpense') }}</label>
+                    <q-select
+                      v-model="form.mortgageExpenseId"
+                      outlined
+                      clearable
+                      emit-value
+                      map-options
+                      :options="expenseOptions"
+                      :placeholder="t('liabilities.mortgage.noLinkedExpense')"
+                    >
+                      <template #prepend><q-icon name="receipt_long" /></template>
+                      <template #no-option>
+                        <q-item>
+                          <q-item-section class="text-grey-7">
+                            {{ t('liabilities.mortgage.noExpensesAvailable') }}
+                          </q-item-section>
+                        </q-item>
+                      </template>
+                    </q-select>
+                    <small>{{ t('liabilities.mortgage.linkedExpenseHint') }}</small>
+                  </div>
+                </div>
+
+                <div class="form-actions">
+                  <q-btn flat no-caps :label="t('common.cancel')" @click="cancelEditing" />
+                  <q-btn
+                    unelevated
+                    no-caps
+                    color="primary"
+                    type="submit"
+                    :label="t('common.save')"
+                    :loading="saving"
+                  />
+                </div>
+              </q-form>
+            </q-expansion-item>
           </section>
         </template>
       </template>
@@ -469,6 +629,13 @@ const originalSchedule = computed(() => {
 const originalScheduleInterest = computed(() =>
   roundMoneyOrZero(originalSchedule.value.reduce((total, payment) => total + payment.interest, 0)),
 )
+const modelParametersSummary = computed(() =>
+  [
+    `${formatRate(mortgageModel.value?.annualInterestRate || 0)} ${t('liabilities.mortgage.fixed')}`,
+    `${formatCurrency(mortgageModel.value?.monthlyPayment || 0)}${t('liabilities.mortgage.perMonth')}`,
+    `${formatDuration(projection.value?.remainingPayments)} ${t('liabilities.mortgage.remaining')}`,
+  ].join(' · '),
+)
 const amortizationRows = computed(() => [
   {
     paymentNumber: 0,
@@ -548,11 +715,6 @@ async function prepare(force = false) {
   } finally {
     if (currentPreparation === preparationId) preparing.value = false
   }
-}
-
-function startEditing() {
-  resetForm()
-  editing.value = true
 }
 
 function cancelEditing() {
@@ -826,15 +988,14 @@ h1 {
 }
 
 .setup-card,
-.mortgage-summary,
-.next-payment-card,
+.mortgage-overview,
 .chart-card {
   @include dashboard-card;
   margin-top: 1.25rem;
 }
 
 .setup-card,
-.mortgage-summary {
+.mortgage-overview {
   margin-top: 0.75rem;
 }
 
@@ -917,11 +1078,18 @@ h1 {
   margin-top: 1.5rem;
 }
 
+.mortgage-overview {
+  display: grid;
+  grid-template-columns: minmax(18rem, 0.9fr) minmax(26rem, 1.1fr);
+  align-items: stretch;
+  padding: clamp(1.25rem, 4vw, 2rem);
+}
+
 .mortgage-summary {
   display: flex;
   align-items: center;
   gap: 1.1rem;
-  padding: clamp(1.25rem, 4vw, 2rem);
+  padding-right: clamp(1.25rem, 3vw, 2rem);
 }
 
 .summary-icon {
@@ -953,9 +1121,14 @@ h1 {
   font-weight: 650;
 }
 
-.next-payment-card,
 .chart-card {
   padding: clamp(1.1rem, 3vw, 1.75rem);
+}
+
+.next-payment {
+  min-width: 0;
+  padding-left: clamp(1.25rem, 3vw, 2rem);
+  border-left: 1px solid var(--color-line);
 }
 
 .section-heading {
@@ -1023,6 +1196,27 @@ h1 {
   margin: 1.25rem 0 0;
   color: var(--color-success-dark);
   font-weight: 700;
+}
+
+.model-parameters {
+  @include financial-model-parameters-card;
+  margin-top: 1.25rem;
+}
+
+.parameters-icon {
+  display: grid;
+  place-items: center;
+  width: 2.8rem;
+  height: 2.8rem;
+  border-radius: 0.8rem;
+  color: var(--color-primary);
+  background: linear-gradient(145deg, #edf5ff, #e3edf8);
+  font-size: 1.55rem;
+}
+
+.parameters-form {
+  margin: 0;
+  padding: 0 1rem 1rem;
 }
 
 .chart-card :deep(.mortgage-balance-chart) {
@@ -1113,6 +1307,22 @@ h1 {
 .amortization-table :deep(tbody tr:first-child td) {
   background: var(--color-surface-soft);
   font-weight: 700;
+}
+
+@media (max-width: 900px) {
+  .mortgage-overview {
+    grid-template-columns: 1fr;
+  }
+
+  .mortgage-summary {
+    padding: 0 0 1.25rem;
+  }
+
+  .next-payment {
+    padding: 1.25rem 0 0;
+    border-top: 1px solid var(--color-line);
+    border-left: 0;
+  }
 }
 
 @media (max-width: 599px) {

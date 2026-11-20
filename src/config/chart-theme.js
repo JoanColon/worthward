@@ -10,6 +10,31 @@ export const CHART_COLORS = Object.freeze({
   primary: '#0870d8',
   success: '#16815f',
   successDark: '#0c6b4d',
+  danger: '#c44750',
   purple: '#8754ed',
+  teal: '#39a8a3',
   warning: '#e58b43',
+})
+
+export const CHART_SERIES_COLORS = Object.freeze({
+  assets: Object.freeze(['#16815f', '#0870d8', '#39a8a3', '#8754ed', '#4f7cac', '#73bfb8']),
+  liabilities: Object.freeze(['#c44750', '#e58b43', '#d95568', '#b66d57', '#a85567', '#ef6c57']),
+  categories: Object.freeze([
+    '#2563eb',
+    '#f97316',
+    '#16a34a',
+    '#dc2626',
+    '#7c3aed',
+    '#0891b2',
+    '#ca8a04',
+    '#db2777',
+    '#4f46e5',
+    '#65a30d',
+    '#0f766e',
+    '#be123c',
+    '#9333ea',
+    '#0369a1',
+    '#c2410c',
+    '#475569',
+  ]),
 })

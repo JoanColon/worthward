@@ -53,115 +53,41 @@
           </template>
         </ExpensesSectionNav>
 
-        <template v-if="tab === 'track'">
-          <section class="monthly-overview">
-            <nav class="track-mode-nav" :aria-label="t('expenseTracker.modes.label')">
-              <button
-                type="button"
-                :class="{ active: trackMode === 'record' }"
-                :aria-pressed="trackMode === 'record'"
-                @click="setTrackMode('record')"
-              >
-                {{ t('expenseTracker.modes.record') }}
-              </button>
-              <button
-                type="button"
-                :class="{ active: trackMode === 'reconcile' }"
-                :aria-pressed="trackMode === 'reconcile'"
-                @click="setTrackMode('reconcile')"
-              >
-                {{ t('expenseTracker.modes.reconcile') }}
-              </button>
-            </nav>
-            <span class="monthly-spacer" aria-hidden="true" />
-            <ExpenseMonthMetric
-              v-model="period"
-              class="month-metric"
-              :label="t('expenseTracker.review.month')"
-            />
-            <div class="monthly-metric">
-              <span>{{ t('expenseTracker.summary.spent') }}</span>
-              <strong>{{ formatCurrency(monthlySpent) }}</strong>
-            </div>
-            <div class="monthly-metric">
-              <span>{{ t('expenseTracker.summary.planned') }}</span>
-              <strong>{{ formatCurrency(reviewModelTotal) }}</strong>
-            </div>
-            <div class="monthly-metric" :class="{ over: monthlyRemaining < 0 }">
-              <span>{{ t('expenseTracker.summary.remaining') }}</span>
-              <strong>{{ formatCurrency(monthlyRemaining) }}</strong>
-            </div>
-          </section>
-
-          <ExpenseTrackingPanel
-            v-if="trackMode === 'record'"
-            :categories="enabledCategories"
-            @add="openAdd"
-            @manage="manageDialog = true"
+        <section class="monthly-overview">
+          <ExpenseMonthMetric
+            v-model="period"
+            class="month-metric"
+            :label="t('expenseTracker.review.month')"
           />
+          <div class="monthly-metric">
+            <span>{{ t('expenseTracker.summary.spent') }}</span>
+            <strong>{{ formatCurrency(monthlySpent) }}</strong>
+          </div>
+          <div class="monthly-metric">
+            <span>{{ t('expenseTracker.summary.planned') }}</span>
+            <strong>{{ formatCurrency(reviewModelTotal) }}</strong>
+          </div>
+          <div class="monthly-metric" :class="{ over: monthlyRemaining < 0 }">
+            <span>{{ t('expenseTracker.summary.remaining') }}</span>
+            <strong>{{ formatCurrency(monthlyRemaining) }}</strong>
+          </div>
+        </section>
 
-          <ExpenseReviewPanel
-            v-else
-            :groups="reviewGroups"
-            :can-use-all-tracked="Boolean(categoriesWithTrackedItems.length)"
-            :saving="decisionSaving"
-            @view-group="openReviewGroup"
-            @use-all-tracked="requestApplyAllTracked"
-          />
-        </template>
+        <ExpenseTrackingPanel
+          v-if="tab === 'record'"
+          :categories="enabledCategories"
+          @add="openAdd"
+          @manage="manageDialog = true"
+        />
 
-        <template v-else>
-          <section class="monthly-overview review-overview">
-            <ExpenseMonthMetric
-              v-if="analyticsGranularity === 'monthly'"
-              v-model="period"
-              class="month-metric"
-              :label="t('expenseTracker.review.month')"
-            />
-            <label v-else class="review-year-metric">
-              <span>{{ t('expenseTracker.analytics.year') }}</span>
-              <span class="review-year-value">
-                <input
-                  :value="selectedYear"
-                  type="number"
-                  min="2000"
-                  max="2100"
-                  :aria-label="t('expenseTracker.analytics.year')"
-                  @change="selectAnalyticsYear"
-                />
-                <q-icon name="calendar_month" />
-              </span>
-            </label>
-            <div class="monthly-metric review-total">
-              <span>{{ t('expenseTracker.analytics.totalSpent') }}</span>
-              <strong>{{ formatCurrency(analyticsTotal) }}</strong>
-            </div>
-            <span class="monthly-spacer" aria-hidden="true" />
-            <nav class="track-mode-nav" :aria-label="t('expenseTracker.analytics.period')">
-              <button
-                type="button"
-                :class="{ active: analyticsGranularity === 'annual' }"
-                :aria-pressed="analyticsGranularity === 'annual'"
-                @click="analyticsGranularity = 'annual'"
-              >
-                {{ t('expenseTracker.analytics.annual') }}
-              </button>
-              <button
-                type="button"
-                :class="{ active: analyticsGranularity === 'monthly' }"
-                :aria-pressed="analyticsGranularity === 'monthly'"
-                @click="analyticsGranularity = 'monthly'"
-              >
-                {{ t('expenseTracker.analytics.monthly') }}
-              </button>
-            </nav>
-          </section>
-
-          <ExpenseAnalyticsPanel
-            :granularity="analyticsGranularity"
-            :categories="analyticsCategories"
-          />
-        </template>
+        <ExpenseReviewPanel
+          v-else
+          :groups="reviewGroups"
+          :can-use-all-tracked="Boolean(categoriesWithTrackedItems.length)"
+          :saving="decisionSaving"
+          @view-group="openReviewGroup"
+          @use-all-tracked="requestApplyAllTracked"
+        />
       </template>
     </main>
 
@@ -426,71 +352,32 @@
       </q-card>
     </q-dialog>
 
-    <q-dialog v-model="applyAllDialog" persistent>
-      <q-card class="confirm-card">
-        <q-btn
-          flat
-          round
-          dense
-          icon="close"
-          class="dialog-close"
-          :aria-label="t('common.cancel')"
-          :disable="decisionSaving"
-          v-close-popup
-        />
-        <q-card-section>
-          <h2>{{ t('expenseTracker.review.applyAllConfirm.title') }}</h2>
-          <p>
-            {{
-              t('expenseTracker.review.applyAllConfirm.description', {
-                period: periodLabel,
-              })
-            }}
-          </p>
-        </q-card-section>
-        <q-card-actions align="right">
-          <q-btn flat no-caps :label="t('common.cancel')" :disable="decisionSaving" v-close-popup />
-          <q-btn
-            unelevated
-            no-caps
-            color="primary"
-            icon="done_all"
-            :label="t('expenseTracker.review.applyAllConfirm.action')"
-            :loading="decisionSaving"
-            @click="applyAllTracked"
-          />
-        </q-card-actions>
-      </q-card>
-    </q-dialog>
+    <AppConfirmDialog
+      v-model="applyAllDialog"
+      :title="t('expenseTracker.review.applyAllConfirm.title')"
+      :message="
+        t('expenseTracker.review.applyAllConfirm.description', {
+          period: periodLabel,
+        })
+      "
+      :cancel-label="t('common.cancel')"
+      :confirm-label="t('expenseTracker.review.applyAllConfirm.action')"
+      confirm-icon="done_all"
+      persistent
+      :loading="decisionSaving"
+      @confirm="applyAllTracked"
+    />
 
-    <q-dialog v-model="deleteDialog">
-      <q-card class="confirm-card">
-        <q-btn
-          flat
-          round
-          dense
-          icon="close"
-          class="dialog-close"
-          :aria-label="t('common.cancel')"
-          v-close-popup
-        />
-        <q-card-section>
-          <h2>{{ t('expenseTracker.delete.title') }}</h2>
-          <p>{{ t('expenseTracker.delete.description') }}</p>
-        </q-card-section>
-        <q-card-actions align="right">
-          <q-btn flat no-caps :label="t('common.cancel')" v-close-popup />
-          <q-btn
-            unelevated
-            no-caps
-            color="negative"
-            :label="t('common.delete')"
-            :loading="trackingStore.saving"
-            @click="deleteEntry"
-          />
-        </q-card-actions>
-      </q-card>
-    </q-dialog>
+    <AppConfirmDialog
+      v-model="deleteDialog"
+      :title="t('expenseTracker.delete.title')"
+      :message="t('expenseTracker.delete.description')"
+      :cancel-label="t('common.cancel')"
+      :confirm-label="t('common.delete')"
+      confirm-color="negative"
+      :loading="trackingStore.saving"
+      @confirm="deleteEntry"
+    />
   </q-page>
 </template>
 
@@ -498,8 +385,7 @@
 import { computed, ref, watch } from 'vue'
 import { useQuasar } from 'quasar'
 import { useI18n } from 'vue-i18n'
-import { useRoute, useRouter } from 'vue-router'
-import ExpenseAnalyticsPanel from '@/components/expenses/ExpenseAnalyticsPanel.vue'
+import { useRoute } from 'vue-router'
 import ExpenseMonthMetric from '@/components/expenses/ExpenseMonthMetric.vue'
 import ExpenseTrackingCategorySetup from '@/components/expenses/ExpenseTrackingCategorySetup.vue'
 import ExpenseTrackingEntryDialog from '@/components/expenses/ExpenseTrackingEntryDialog.vue'
@@ -507,20 +393,14 @@ import ExpenseTrackingPanel from '@/components/expenses/ExpenseTrackingPanel.vue
 import ExpenseReviewPanel from '@/components/expenses/ExpenseReviewPanel.vue'
 import ExpensesSectionNav from '@/components/expenses/ExpensesSectionNav.vue'
 import OwnershipAvatar from '@/components/financial/OwnershipAvatar.vue'
-import { expenseCategories } from '@/config/expense-categories'
+import AppConfirmDialog from '@/components/ui/AppConfirmDialog.vue'
 import {
   expenseTrackingCategories,
   groupedExpenseTrackingCategories,
   reviewExpenseTrackingCategories,
 } from '@/config/expense-tracking-categories'
 import { resolveExpenseTrackingValue } from '@/domain/financial/expense-tracking'
-import {
-  FINANCIAL_YEAR_TIME_ZONE,
-  financialYearFlowCategoryValue,
-  financialYearMonthCategoryValue,
-  financialYearMonthSubcategoryValue,
-  financialYearSubcategoryValue,
-} from '../../functions/shared/positions/annual-projection.js'
+import { FINANCIAL_YEAR_TIME_ZONE } from '../../functions/shared/positions/annual-projection.js'
 import { normalizeNonNegativeMoneyOrNull } from '../../functions/shared/core/money.js'
 import { authUser } from '@/services/auth'
 import { useExpenseTrackingStore } from '@/stores/expense-tracking-store'
@@ -533,15 +413,14 @@ import { getWorkspaceMembers } from '@/utils/workspace-members'
 const $q = useQuasar()
 const { t, locale } = useI18n()
 const route = useRoute()
-const router = useRouter()
 const trackingStore = useExpenseTrackingStore()
 const expensesStore = useExpensesStore()
 const financialYearsStore = useFinancialYearsStore()
 const workspaceStore = useWorkspaceStore()
-const tab = computed(() => (route.query.view === 'review' ? 'review' : 'track'))
-const trackMode = computed(() => (route.query.mode === 'reconcile' ? 'reconcile' : 'record'))
+const tab = computed(() =>
+  route.query.view === 'review' || route.query.mode === 'reconcile' ? 'review' : 'record',
+)
 const period = ref(currentPeriod())
-const analyticsGranularity = ref('monthly')
 const pageError = ref(null)
 const preparing = ref(false)
 const manageDialog = ref(false)
@@ -642,69 +521,6 @@ const reviewModelTotal = computed(() =>
 )
 const monthlySpent = computed(() => Number(trackingStore.month?.total || 0))
 const monthlyRemaining = computed(() => reviewModelTotal.value - monthlySpent.value)
-const analyticsCategories = computed(() => {
-  const month = period.value.slice(5, 7)
-  const categories = expenseCategories
-    .map((category) => {
-      const storedSubcategoryIds =
-        analyticsGranularity.value === 'annual'
-          ? Object.values(financialYear.value?.months || {}).flatMap((financialMonth) =>
-              Object.keys(financialMonth?.expenses?.categories?.[category.id]?.subcategories || {}),
-            )
-          : Object.keys(
-              financialYear.value?.months?.[month]?.expenses?.categories?.[category.id]
-                ?.subcategories || {},
-            )
-      const subcategoryIds = new Set([
-        ...category.suggestions.map(({ id }) => id),
-        ...storedSubcategoryIds,
-      ])
-      const subcategories = [...subcategoryIds]
-        .map((subcategoryId) => {
-          const definition = category.suggestions.find(({ id }) => id === subcategoryId)
-          return {
-            id: subcategoryId,
-            name: definition ? t(definition.nameKey) : subcategoryId.replaceAll('_', ' '),
-            value:
-              analyticsGranularity.value === 'annual'
-                ? financialYearSubcategoryValue(
-                    financialYear.value,
-                    'expenses',
-                    category.id,
-                    subcategoryId,
-                  )
-                : financialYearMonthSubcategoryValue(
-                    financialYear.value,
-                    month,
-                    'expenses',
-                    category.id,
-                    subcategoryId,
-                  ),
-          }
-        })
-        .filter(({ value }) => value > 0)
-        .sort((a, b) => b.value - a.value)
-      return {
-        id: category.id,
-        name: t(category.nameKey),
-        value:
-          analyticsGranularity.value === 'annual'
-            ? financialYearFlowCategoryValue(financialYear.value, 'expenses', category.id)
-            : financialYearMonthCategoryValue(financialYear.value, month, 'expenses', category.id),
-        subcategories,
-      }
-    })
-    .filter(({ value }) => value > 0)
-    .sort((a, b) => b.value - a.value)
-  const total = categories.reduce((sum, category) => sum + category.value, 0)
-  return categories.map((category) => ({
-    ...category,
-    percentage: total > 0 ? (category.value / total) * 100 : 0,
-  }))
-})
-const analyticsTotal = computed(() =>
-  analyticsCategories.value.reduce((total, category) => total + category.value, 0),
-)
 const canMutateActiveSubcategory = computed(() => isTrackingEnabled(activeSubcategory.value?.id))
 const categoriesWithTrackedItems = computed(() =>
   enabledCategories.value.filter(({ id }) => trackingStore.itemsFor(id).length),
@@ -741,24 +557,6 @@ watch(
 watch(activeWorkspaceId, () => {
   period.value = currentPeriod()
 })
-
-function setTrackMode(mode) {
-  if (mode === trackMode.value) return
-  router.replace({
-    name: 'expense-tracker',
-    params: { workspaceId: activeWorkspaceId.value },
-    query: { view: 'track', mode },
-  })
-}
-
-function selectAnalyticsYear(event) {
-  const year = Number(event.target.value)
-  if (!Number.isInteger(year) || year < 2000 || year > 2100) {
-    event.target.value = selectedYear.value
-    return
-  }
-  period.value = `${year}-${period.value.slice(5, 7)}`
-}
 
 async function loadPage(force = false) {
   const requestId = ++loadRequestId
@@ -1030,7 +828,7 @@ function currentPeriod() {
 
 <style scoped lang="scss">
 @use '@/css/mixins' as *;
-@use '@/css/expense-tracking' as tracking;
+@use '@/css/themes/expense-categories' as tracking;
 
 @include tracking.category-colors;
 
@@ -1082,13 +880,6 @@ h1 {
   color: var(--color-copy);
 }
 
-.track-mode-nav {
-  width: min(12.5rem, 100%);
-  min-width: 0;
-  margin: 0 auto;
-  @include compact-segmented-control;
-}
-
 .monthly-overview {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
@@ -1102,39 +893,28 @@ h1 {
   box-shadow: var(--shadow-card);
 }
 
-.monthly-spacer {
-  display: none;
-}
-
-.monthly-overview:not(.review-overview) .track-mode-nav {
-  grid-column: 4 / 7;
-  grid-row: 1;
-  justify-self: end;
-  margin: 0;
-}
-
-.monthly-overview:not(.review-overview) .month-metric {
+.monthly-overview .month-metric {
   grid-column: 1 / 4;
   grid-row: 1;
   padding: 0;
   border-left: 0;
 }
 
-.monthly-overview:not(.review-overview) .month-metric :deep(.metric-label) {
+.monthly-overview .month-metric :deep(.metric-label) {
   display: none;
 }
 
-.monthly-overview:not(.review-overview) .month-metric :deep(.metric-value) {
+.monthly-overview .month-metric :deep(.metric-value) {
   justify-content: flex-start;
   gap: 0.7rem;
 }
 
-.monthly-overview:not(.review-overview) .month-metric :deep(.metric-value strong) {
+.monthly-overview .month-metric :deep(.metric-value strong) {
   font-size: 1.65rem;
   letter-spacing: -0.025em;
 }
 
-.monthly-overview:not(.review-overview) .month-metric :deep(.metric-value .q-icon) {
+.monthly-overview .month-metric :deep(.metric-value .q-icon) {
   color: var(--color-primary);
   font-size: 1.25rem;
 }
@@ -1147,16 +927,16 @@ h1 {
   border-left: 1px solid var(--color-line);
 }
 
-.monthly-overview:not(.review-overview) .monthly-metric:nth-of-type(1) {
+.monthly-overview .monthly-metric:nth-of-type(1) {
   grid-column: 1 / 3;
   border-left: 0;
 }
 
-.monthly-overview:not(.review-overview) .monthly-metric:nth-of-type(2) {
+.monthly-overview .monthly-metric:nth-of-type(2) {
   grid-column: 3 / 5;
 }
 
-.monthly-overview:not(.review-overview) .monthly-metric:nth-of-type(3) {
+.monthly-overview .monthly-metric:nth-of-type(3) {
   grid-column: 5 / 7;
 }
 
@@ -1172,59 +952,7 @@ h1 {
   line-height: 1.1;
 }
 
-.review-year-metric {
-  display: grid;
-  min-width: 9rem;
-  padding-left: 1rem;
-  border-left: 1px solid var(--color-line);
-  color: var(--color-copy);
-  font-size: 0.72rem;
-}
-
-.review-year-value {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.65rem;
-  margin-top: 0.1rem;
-}
-
-.review-year-metric input {
-  width: 5rem;
-  padding: 0;
-  border: 0;
-  outline: 0;
-  background: transparent;
-  color: var(--color-ink);
-  font: inherit;
-  font-size: 1.25rem;
-  font-weight: 700;
-  line-height: 1.1;
-}
-
-.review-year-metric:has(input:focus-visible) {
-  border-radius: 0.25rem;
-  box-shadow: 0 0 0 3px var(--color-primary-focus);
-}
-
-.review-overview {
-  grid-template-columns: minmax(13rem, 1fr) minmax(8.5rem, auto);
-}
-
-.review-overview .track-mode-nav {
-  width: min(11.5rem, 100%);
-}
-
-.review-overview .monthly-metric {
-  grid-row: auto;
-}
-
-.review-overview .monthly-spacer {
-  display: block;
-}
-
-.monthly-metric:last-child strong,
-.review-total strong {
+.monthly-metric:last-child strong {
   color: var(--color-success);
 }
 
@@ -1238,10 +966,6 @@ h1 {
   flex-direction: column;
   --tracking-color: var(--color-primary);
   --tracking-soft: var(--color-blue-soft);
-}
-
-.confirm-card {
-  @include financial-simple-dialog;
 }
 
 .sheet-handle {
@@ -1727,28 +1451,26 @@ h1 {
 }
 
 @media (min-width: 900px) {
-  .monthly-overview:not(.review-overview) {
-    grid-template-columns:
-      minmax(15rem, 1.35fr) repeat(3, minmax(7rem, 0.65fr))
-      minmax(16rem, auto);
+  .monthly-overview {
+    grid-template-columns: minmax(15rem, 1.35fr) repeat(3, minmax(7rem, 0.65fr));
     gap: 0;
     padding: 0.85rem 1rem;
   }
 
-  .monthly-overview:not(.review-overview) .month-metric {
+  .monthly-overview .month-metric {
     grid-column: 1;
     grid-row: 1;
   }
 
-  .monthly-overview:not(.review-overview) .month-metric :deep(.metric-value) {
+  .monthly-overview .month-metric :deep(.metric-value) {
     gap: 0.75rem;
   }
 
-  .monthly-overview:not(.review-overview) .month-metric :deep(.metric-value strong) {
+  .monthly-overview .month-metric :deep(.metric-value strong) {
     font-size: 1.25rem;
   }
 
-  .monthly-overview:not(.review-overview) .month-metric :deep(.metric-value .q-icon) {
+  .monthly-overview .month-metric :deep(.metric-value .q-icon) {
     order: -1;
     display: grid;
     place-items: center;
@@ -1759,97 +1481,26 @@ h1 {
     font-size: 1.15rem;
   }
 
-  .monthly-overview:not(.review-overview) .monthly-metric {
+  .monthly-overview .monthly-metric {
     grid-row: 1;
     padding: 0.15rem 1.15rem;
   }
 
-  .monthly-overview:not(.review-overview) .monthly-metric:nth-of-type(1) {
+  .monthly-overview .monthly-metric:nth-of-type(1) {
     grid-column: 2;
     border-left: 1px solid var(--color-line);
   }
 
-  .monthly-overview:not(.review-overview) .monthly-metric:nth-of-type(2) {
+  .monthly-overview .monthly-metric:nth-of-type(2) {
     grid-column: 3;
   }
 
-  .monthly-overview:not(.review-overview) .monthly-metric:nth-of-type(3) {
+  .monthly-overview .monthly-metric:nth-of-type(3) {
     grid-column: 4;
   }
 
-  .monthly-overview:not(.review-overview) .monthly-metric strong {
+  .monthly-overview .monthly-metric strong {
     font-size: 1.25rem;
-  }
-
-  .monthly-overview:not(.review-overview) .track-mode-nav {
-    grid-column: 5;
-    grid-row: 1;
-    justify-self: end;
-  }
-
-  .review-overview {
-    grid-template-columns: minmax(15rem, 1.35fr) minmax(8rem, 0.65fr) minmax(1rem, 1fr) minmax(
-        16rem,
-        auto
-      );
-    gap: 0;
-    padding: 0.85rem 1rem;
-  }
-
-  .review-overview .month-metric,
-  .review-overview .review-year-metric {
-    grid-column: 1;
-    grid-row: 1;
-    padding: 0;
-    border-left: 0;
-  }
-
-  .review-overview .month-metric :deep(.metric-label),
-  .review-overview .review-year-metric > span:first-child {
-    display: none;
-  }
-
-  .review-overview .month-metric :deep(.metric-value),
-  .review-overview .review-year-value {
-    justify-content: flex-start;
-    gap: 0.75rem;
-    margin: 0;
-  }
-
-  .review-overview .month-metric :deep(.metric-value .q-icon),
-  .review-overview .review-year-value .q-icon {
-    order: -1;
-    display: grid;
-    place-items: center;
-    width: 2.5rem;
-    height: 2.5rem;
-    border-radius: 50%;
-    background: var(--color-blue-soft);
-    color: var(--color-primary);
-    font-size: 1.15rem;
-  }
-
-  .review-overview .review-total {
-    grid-column: 2;
-    grid-row: 1;
-    padding: 0.15rem 1.15rem;
-    border-left: 1px solid var(--color-line);
-  }
-
-  .review-overview .review-total strong {
-    font-size: 1.25rem;
-  }
-
-  .review-overview .monthly-spacer {
-    grid-column: 3;
-    grid-row: 1;
-  }
-
-  .review-overview .track-mode-nav {
-    grid-column: 4;
-    grid-row: 1;
-    justify-self: end;
-    margin: 0;
   }
 }
 
@@ -1859,54 +1510,13 @@ h1 {
     gap: 0.75rem;
   }
 
-  .monthly-overview:not(.review-overview) {
+  .monthly-overview {
     grid-template-columns: repeat(6, minmax(0, 1fr));
-  }
-
-  .track-mode-nav {
-    grid-column: 1 / -1;
-    width: min(12.5rem, 100%);
-  }
-
-  .monthly-spacer {
-    display: none;
   }
 
   .monthly-metric {
     grid-column: auto;
     min-width: 0;
-  }
-
-  .review-overview {
-    grid-template-columns: repeat(6, minmax(0, 1fr));
-  }
-
-  .review-overview .month-metric,
-  .review-overview .review-year-metric {
-    grid-column: 1 / 4;
-    grid-row: 1;
-  }
-
-  .review-overview .track-mode-nav {
-    grid-column: 4 / 7;
-    grid-row: 1;
-    justify-self: end;
-    width: min(11.5rem, 100%);
-    margin: 0;
-  }
-
-  .review-overview .review-total {
-    grid-column: 1 / -1;
-    grid-row: 2;
-    padding-left: 0;
-    border-left: 0;
-    text-align: left;
-  }
-
-  .review-year-metric {
-    min-width: 0;
-    padding-left: 0;
-    border-left: 0;
   }
 
   .review-category-row {
@@ -1942,14 +1552,6 @@ h1 {
     padding-left: max(0.75rem, env(safe-area-inset-left));
   }
 
-  .track-mode-nav {
-    grid-column: 1 / -1;
-    width: min(9.25rem, 100%);
-    min-width: 0;
-    margin-right: auto;
-    margin-left: auto;
-  }
-
   .monthly-overview {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 1rem 0;
@@ -1957,49 +1559,8 @@ h1 {
     padding: 1rem 0.75rem 0.75rem;
   }
 
-  .monthly-overview:not(.review-overview) {
+  .monthly-overview {
     grid-template-columns: repeat(6, minmax(0, 1fr));
-  }
-
-  .review-overview {
-    grid-template-columns: repeat(6, minmax(0, 1fr));
-    gap: 0.65rem 0;
-    padding-top: 0.8rem;
-  }
-
-  .review-overview .track-mode-nav {
-    width: min(6.75rem, 100%);
-  }
-
-  .review-overview .month-metric :deep(.metric-label),
-  .review-overview .review-year-metric > span:first-child {
-    display: none;
-  }
-
-  .review-overview .month-metric :deep(.metric-value),
-  .review-overview .review-year-value {
-    justify-content: flex-start;
-    gap: 0.5rem;
-    margin: 0;
-  }
-
-  .review-overview .month-metric :deep(.metric-value .q-icon),
-  .review-overview .review-year-value .q-icon {
-    color: var(--color-primary);
-  }
-
-  .review-overview .review-total {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    min-height: 2.5rem;
-    margin-top: 0.1rem;
-    padding: 0.65rem 0.25rem 0;
-    border-top: 1px solid var(--color-line);
-  }
-
-  .review-overview .review-total strong {
-    margin: 0;
   }
 
   .monthly-metric {
@@ -2009,19 +1570,9 @@ h1 {
     text-align: center;
   }
 
-  .month-metric,
-  .review-year-metric {
+  .month-metric {
     padding-left: 0;
     border-left: 0;
-  }
-
-  .review-year-metric {
-    padding: 0 0.45rem;
-    text-align: left;
-  }
-
-  .review-year-metric input {
-    font-size: 1rem;
   }
 
   .monthly-metric strong {
@@ -2034,14 +1585,9 @@ h1 {
     font-size: 0.7rem;
   }
 
-  .monthly-overview:not(.review-overview) .month-metric :deep(.metric-value strong),
-  .review-overview .month-metric :deep(.metric-value strong) {
+  .monthly-overview .month-metric :deep(.metric-value strong) {
     font-size: 1.4rem;
     letter-spacing: -0.025em;
-  }
-
-  .monthly-overview:not(.review-overview) .track-mode-nav {
-    margin: 0;
   }
 
   .tracker-header {

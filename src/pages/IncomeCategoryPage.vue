@@ -30,24 +30,12 @@
             ><strong>{{ formatCurrency(displayedCategoryTotal) }}</strong
             ><small>{{ itemSummary }}</small>
           </div>
-          <div class="period-switch" role="group" :aria-label="t('dashboard.costOfLife.period')">
-            <button
-              type="button"
-              :class="{ selected: period === 'annual' }"
-              :aria-pressed="period === 'annual'"
-              @click="period = 'annual'"
-            >
-              {{ t('dashboard.costOfLife.annual') }}
-            </button>
-            <button
-              type="button"
-              :class="{ selected: period === 'monthly' }"
-              :aria-pressed="period === 'monthly'"
-              @click="period = 'monthly'"
-            >
-              {{ t('dashboard.costOfLife.monthly') }}
-            </button>
-          </div>
+          <AppPeriodSwitch
+            v-model="period"
+            class="period-switch"
+            :aria-label="t('dashboard.costOfLife.period')"
+            :options="periodOptions"
+          />
         </section>
         <section v-if="allCategoryIncome.length" class="income-list">
           <article
@@ -94,19 +82,15 @@
             <q-icon name="add" /><span>{{ t(category.addLabelKey) }}</span>
           </button>
         </section>
-        <section v-else class="empty-card">
-          <span class="empty-icon"><q-icon :name="category.icon" /></span>
-          <h2>{{ t('income.empty.contextualTitle', { items: t(category.itemNamePluralKey) }) }}</h2>
-          <p>{{ t('income.empty.description') }}</p>
-          <q-btn
-            unelevated
-            no-caps
-            color="primary"
-            icon="add"
-            :label="t(category.addLabelKey)"
-            @click="add"
-          />
-        </section>
+        <AppEmptyState
+          v-else
+          :icon="category.icon"
+          :title="t('income.empty.contextualTitle', { items: t(category.itemNamePluralKey) })"
+          :description="t('income.empty.description')"
+          :action-label="t(category.addLabelKey)"
+          tone="positive"
+          @action="add"
+        />
       </template>
     </main>
     <q-dialog v-model="incomeDialog" persistent
@@ -122,33 +106,19 @@
         @cancel="closeIncomeDialog"
         @delete="requestDelete(editingIncome)"
     /></q-dialog>
-    <q-dialog v-model="confirmDelete"
-      ><q-card class="confirm-card"
-        ><q-btn
-          flat
-          round
-          dense
-          icon="close"
-          class="dialog-close"
-          :aria-label="t('common.cancel')"
-          v-close-popup /><q-card-section
-          ><h2>{{ t('income.delete.title') }}</h2>
-          <p>
-            {{ t('income.delete.description', { name: incomeDisplayName(deletingIncome) }) }}
-          </p></q-card-section
-        ><q-card-actions align="between"
-          ><q-btn
-            flat
-            no-caps
-            color="negative"
-            :label="t('common.delete')"
-            :loading="formSaving"
-            @click="deleteIncome" /><q-btn
-            flat
-            no-caps
-            :label="t('common.cancel')"
-            v-close-popup /></q-card-actions></q-card
-    ></q-dialog>
+    <AppConfirmDialog
+      v-model="confirmDelete"
+      :title="t('income.delete.title')"
+      :message="t('income.delete.description', { name: incomeDisplayName(deletingIncome) })"
+      :cancel-label="t('common.cancel')"
+      :confirm-label="t('common.delete')"
+      confirm-color="negative"
+      confirm-first
+      confirm-flat
+      actions-align="between"
+      :loading="formSaving"
+      @confirm="deleteIncome"
+    />
   </q-page>
 </template>
 
@@ -160,6 +130,9 @@ import { useRoute, useRouter } from 'vue-router'
 import IncomeForm from '@/components/income/IncomeForm.vue'
 import OwnershipAvatar from '@/components/financial/OwnershipAvatar.vue'
 import AppPageHeader from '@/components/layout/AppPageHeader.vue'
+import AppConfirmDialog from '@/components/ui/AppConfirmDialog.vue'
+import AppEmptyState from '@/components/ui/AppEmptyState.vue'
+import AppPeriodSwitch from '@/components/ui/AppPeriodSwitch.vue'
 import { getIncomeCategory } from '@/config/income-categories'
 import {
   currentFinancialYear,
@@ -196,6 +169,10 @@ const deletingIncome = ref(null)
 const confirmDelete = ref(false)
 const formSaving = ref(false)
 const period = ref('annual')
+const periodOptions = computed(() => [
+  { value: 'annual', label: t('dashboard.costOfLife.annual') },
+  { value: 'monthly', label: t('dashboard.costOfLife.monthly') },
+])
 let preparationId = 0
 const currentYear = currentFinancialYear()
 const workspaceId = computed(() => String(route.params.workspaceId))
@@ -422,8 +399,7 @@ async function persist(action) {
   @include financial-category-summary;
 }
 .summary-icon,
-.income-icon,
-.empty-icon {
+.income-icon {
   display: grid;
   place-items: center;
   border-radius: 50%;
@@ -506,32 +482,6 @@ async function persist(action) {
   color: var(--color-primary);
   font-weight: 700;
   cursor: pointer;
-}
-.empty-card {
-  display: grid;
-  place-items: center;
-  margin-top: 1.25rem;
-  padding: 3rem 1.5rem;
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-card);
-  background: white;
-  text-align: center;
-  box-shadow: var(--shadow-card);
-}
-.empty-icon {
-  width: 4rem;
-  height: 4rem;
-  font-size: 1.8rem;
-}
-.empty-card h2 {
-  margin: 1rem 0 0.3rem;
-}
-.empty-card p {
-  margin: 0 0 1.25rem;
-  color: var(--color-copy);
-}
-.confirm-card {
-  @include financial-simple-dialog;
 }
 @media (max-width: 720px) {
   .income-row {

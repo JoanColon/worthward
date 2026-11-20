@@ -27,92 +27,107 @@
       />
 
       <template v-else>
-        <ExpensesSectionNav :workspace-id="workspaceId" active="plan">
-          <template #header="{ openInfo }">
-            <AppPageHeader
-              :title="t('expenses.title')"
-              :back-label="t('navigation.backToWorkspaceHome')"
-              :back-to="workspaceHomeRoute"
-            >
-              <template #title-action>
-                <q-btn
-                  flat
-                  round
-                  dense
-                  icon="info_outline"
-                  color="primary"
-                  class="expenses-title-info"
-                  :aria-label="t('expenses.views.info.action')"
-                  @click="openInfo"
-                />
-              </template>
-            </AppPageHeader>
+        <AppPageHeader
+          :title="t('expenses.title')"
+          :back-label="t('navigation.backToWorkspaceHome')"
+          :back-to="workspaceHomeRoute"
+        >
+          <template #actions>
+            <nav class="context-actions header-actions" :aria-label="t('expenses.overview.tools')">
+              <router-link :to="trackerRoute">
+                <q-icon name="receipt_long" />
+                <span
+                  ><strong>{{ t('expenses.overview.tracker') }}</strong
+                  ><small>{{ t('expenses.overview.trackerDescription') }}</small></span
+                >
+                <q-icon name="chevron_right" />
+              </router-link>
+            </nav>
           </template>
-        </ExpensesSectionNav>
+        </AppPageHeader>
 
-        <section class="total-card">
-          <div class="total-copy">
-            <span>{{ totalLabel }}</span>
-            <strong>{{ formatCurrency(displayedTotal) }}</strong>
-            <small>{{ displayedPeriodLabel }} · {{ scopeLabel }}</small>
-          </div>
-          <div class="period-switch" role="group" :aria-label="t('dashboard.costOfLife.period')">
-            <button
-              type="button"
-              :class="{ selected: period === 'annual' }"
-              :aria-pressed="period === 'annual'"
-              @click="period = 'annual'"
-            >
-              {{ t('dashboard.costOfLife.annual') }}
-            </button>
-            <button
-              type="button"
-              :class="{ selected: period === 'monthly' }"
-              :aria-pressed="period === 'monthly'"
-              @click="period = 'monthly'"
-            >
-              {{ t('dashboard.costOfLife.monthly') }}
-            </button>
-          </div>
+        <section class="overview-card">
+          <article class="overview-kpi">
+            <span class="total-icon"><q-icon name="account_balance_wallet" /></span>
+            <div class="total-copy">
+              <span class="kpi-label">{{ t('expenses.overview.annualCost') }}</span>
+              <strong>{{ formatCurrency(totals.annualCostOfLife) }}</strong>
+              <div class="kpi-meta">
+                <span class="monthly-average">
+                  <b>{{ formatCurrency(totals.monthlyCostOfLife) }}</b>
+                  {{ t('expenses.overview.averagePerMonth') }}
+                </span>
+                <span class="scope-label">{{ scopeLabel }}</span>
+              </div>
+            </div>
+          </article>
+
+          <ExpenseBreakdownChart
+            :title="t('expenses.overview.breakdownTitle')"
+            :total-label="t('dashboard.year')"
+            :empty-label="t('expenses.overview.breakdownEmpty')"
+            :entries="breakdownEntries"
+            embedded
+          />
         </section>
 
         <section class="category-list" :aria-label="t('expenses.enabledCategories')">
+          <div class="category-table-heading" aria-hidden="true">
+            <span>{{ t('expenses.overview.category') }}</span>
+            <span>{{ t('expenses.overview.annualAmount') }}</span>
+            <span>{{ t('expenses.overview.monthlyAmount') }}</span>
+          </div>
           <div class="category-rows">
-            <div v-for="category in enabledCategories" :key="category.id" class="category-row">
-              <button type="button" class="category-main" @click="openCategory(category.id)">
+            <div
+              v-for="category in enabledCategories"
+              :key="category.id"
+              class="category-row"
+              role="link"
+              tabindex="0"
+              @click="openCategory(category.id)"
+              @keydown.enter.self="openCategory(category.id)"
+              @keydown.space.self.prevent="openCategory(category.id)"
+            >
+              <div class="category-main">
                 <span class="category-icon"><q-icon :name="category.icon" /></span>
                 <span class="category-copy">
                   <strong>{{ t(category.nameKey) }}</strong>
                   <small>{{ categoryStatus(category.id) }}</small>
                 </span>
-              </button>
+              </div>
 
               <SimpleValueEditor
-                :value="categoryDisplayValue(category.id)"
-                :formatted-value="formatCurrency(categoryDisplayValue(category.id))"
-                :formatted-period="categoryPeriodLabel"
+                :value="categoryAnnualValue(category.id)"
+                :formatted-value="formatCurrency(categoryAnnualValue(category.id))"
+                :formatted-period="t('dashboard.year')"
                 :saving="isCategorySaving(category.id)"
                 :disabled="!canQuickEdit(category.id)"
                 :aria-label="
                   t('expenses.quickEdit.editLabel', {
                     category: t(category.nameKey),
-                    value: formatCurrency(categoryDisplayValue(category.id)),
+                    value: formatCurrency(categoryAnnualValue(category.id)),
                   })
                 "
                 :title="t('expenses.quickEdit.simpleTitle', { category: t(category.nameKey) })"
                 :input-label="t('expenses.quickEdit.inputLabel')"
-                :input-suffix="`/ ${categoryPeriodLabel}`"
+                :input-suffix="`/ ${t('dashboard.year')}`"
                 :invalid-message="t('expenses.quickEdit.invalid')"
+                @click="handleValueClick($event, category.id)"
                 @save="saveSimpleExpense(category, $event)"
               />
 
-              <button type="button" class="category-link" @click="openCategory(category.id)">
-                <q-icon name="chevron_right" />
-              </button>
+              <span class="category-monthly">
+                <strong>{{ formatCurrency(categoryAnnualValue(category.id) / 12) }}</strong>
+                <small>/ {{ t('dashboard.month') }}</small>
+              </span>
 
               <q-btn flat round dense icon="more_vert" color="grey-7" @click.stop>
                 <q-menu>
                   <q-list dense>
+                    <q-item clickable v-close-popup @click="openCategory(category.id)">
+                      <q-item-section avatar><q-icon name="visibility" /></q-item-section>
+                      <q-item-section>{{ t('expenses.overview.viewDetails') }}</q-item-section>
+                    </q-item>
                     <q-item
                       clickable
                       v-close-popup
@@ -165,69 +180,30 @@
       </q-card>
     </q-dialog>
 
-    <q-dialog v-model="confirmDisable">
-      <q-card class="confirm-card">
-        <q-btn
-          flat
-          round
-          dense
-          icon="close"
-          class="dialog-close"
-          :aria-label="t('common.cancel')"
-          v-close-popup
-        />
-        <q-card-section>
-          <h2>{{ t('expenses.setup.disableTitle') }}</h2>
-          <p>{{ t('expenses.setup.disableDescription') }}</p>
-        </q-card-section>
-        <q-card-actions align="right">
-          <q-btn flat no-caps :label="t('common.cancel')" v-close-popup />
-          <q-btn
-            unelevated
-            no-caps
-            color="primary"
-            :label="t('expenses.setup.disableAction')"
-            :loading="saving"
-            @click="savePendingCategories"
-          />
-        </q-card-actions>
-      </q-card>
-    </q-dialog>
+    <AppConfirmDialog
+      v-model="confirmDisable"
+      :title="t('expenses.setup.disableTitle')"
+      :message="t('expenses.setup.disableDescription')"
+      :cancel-label="t('common.cancel')"
+      :confirm-label="t('expenses.setup.disableAction')"
+      :loading="saving"
+      @confirm="savePendingCategories"
+    />
 
-    <q-dialog v-model="deleteDialog">
-      <q-card class="confirm-card">
-        <q-btn
-          flat
-          round
-          dense
-          icon="close"
-          class="dialog-close"
-          :aria-label="t('common.cancel')"
-          v-close-popup
-        />
-        <q-card-section>
-          <h2>{{ t('expenses.deleteCategory.title') }}</h2>
-          <p>
-            {{
-              t('expenses.deleteCategory.description', {
-                name: deletingCategory ? t(deletingCategory.nameKey) : '',
-              })
-            }}
-          </p>
-        </q-card-section>
-        <q-card-actions align="right">
-          <q-btn flat no-caps :label="t('common.cancel')" v-close-popup />
-          <q-btn
-            unelevated
-            no-caps
-            color="negative"
-            :label="t('common.delete')"
-            :loading="saving"
-            @click="deleteCategory"
-          />
-        </q-card-actions>
-      </q-card>
-    </q-dialog>
+    <AppConfirmDialog
+      v-model="deleteDialog"
+      :title="t('expenses.deleteCategory.title')"
+      :message="
+        t('expenses.deleteCategory.description', {
+          name: deletingCategory ? t(deletingCategory.nameKey) : '',
+        })
+      "
+      :cancel-label="t('common.cancel')"
+      :confirm-label="t('common.delete')"
+      confirm-color="negative"
+      :loading="saving"
+      @confirm="deleteCategory"
+    />
   </q-page>
 </template>
 
@@ -236,11 +212,13 @@ import { computed, ref, watch } from 'vue'
 import { useQuasar } from 'quasar'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
+import ExpenseBreakdownChart from '@/components/expenses/ExpenseBreakdownChart.vue'
 import ExpenseCategorySetup from '@/components/expenses/ExpenseCategorySetup.vue'
-import ExpensesSectionNav from '@/components/expenses/ExpensesSectionNav.vue'
 import SimpleValueEditor from '@/components/financial/SimpleValueEditor.vue'
 import AppPageHeader from '@/components/layout/AppPageHeader.vue'
+import AppConfirmDialog from '@/components/ui/AppConfirmDialog.vue'
 import { expenseCategories } from '@/config/expense-categories'
+import { CHART_COLORS, CHART_SERIES_COLORS } from '@/config/chart-theme'
 import {
   currentFinancialYear,
   financialYearFlowCategoryValue,
@@ -275,13 +253,17 @@ const confirmDisable = ref(false)
 const pendingSelection = ref(null)
 const deleteDialog = ref(false)
 const deletingCategory = ref(null)
-const period = ref('annual')
 const currentYear = currentFinancialYear()
 
 const workspaceId = computed(() => String(route.params.workspaceId))
 const workspaceHomeRoute = computed(() => ({
   name: 'workspace-dashboard',
   params: { workspaceId: workspaceId.value },
+}))
+const trackerRoute = computed(() => ({
+  name: 'expense-tracker',
+  params: { workspaceId: workspaceId.value },
+  query: { view: 'record' },
 }))
 const workspace = computed(
   () => workspaceStore.workspaces.find((item) => item.id === workspaceId.value) || null,
@@ -313,6 +295,35 @@ const totals = computed(() => ({
   monthlyCostOfLife:
     financialYearFlowValue(financialYear.value, 'expenses', selectedMemberId.value) / 12,
 }))
+const breakdownEntries = computed(() => {
+  const entries = enabledCategories.value
+    .map((category) => ({
+      id: category.id,
+      name: t(category.nameKey),
+      value: categoryAnnualValue(category.id),
+      color:
+        CHART_SERIES_COLORS.categories[
+          expenseCategories.findIndex(({ id }) => id === category.id) %
+            CHART_SERIES_COLORS.categories.length
+        ],
+    }))
+    .filter(({ value }) => value > 0)
+  const categorizedTotal = entries.reduce((sum, entry) => sum + entry.value, 0)
+  const unallocated = Math.max(0, totals.value.annualCostOfLife - categorizedTotal)
+  if (unallocated > 0.01) {
+    entries.push({
+      id: 'unallocated',
+      name: t('expenses.overview.unallocated'),
+      value: unallocated,
+      color: CHART_COLORS.mutedLight,
+    })
+  }
+  const total = entries.reduce((sum, entry) => sum + entry.value, 0)
+  return entries.map((entry) => ({
+    ...entry,
+    percentage: total > 0 ? (entry.value / total) * 100 : 0,
+  }))
+})
 const pageLoading = computed(
   () =>
     loadingItems.value ||
@@ -320,26 +331,20 @@ const pageLoading = computed(
     expensesStore.categoryLoading ||
     financialYearsStore.loading,
 )
-const displayedTotal = computed(() =>
-  period.value === 'annual' ? totals.value.annualCostOfLife : totals.value.monthlyCostOfLife,
-)
-const totalLabel = computed(() =>
-  period.value === 'annual' ? t('expenses.annualExpenses') : t('expenses.averageMonthlyExpenses'),
-)
-const displayedPeriodLabel = computed(() =>
-  period.value === 'annual'
-    ? t('dashboard.costOfLife.perYear')
-    : t('dashboard.costOfLife.perMonth'),
-)
-const categoryPeriodLabel = computed(() =>
-  period.value === 'annual' ? t('dashboard.year') : t('dashboard.month'),
-)
 const scopeLabel = computed(() => {
   if (selectedMemberId.value === 'all') return t('dashboard.allMembers')
   return members.value.find((member) => member.id === selectedMemberId.value)?.name || ''
 })
 
 watch(workspaceId, () => loadPage(), { immediate: true })
+watch(
+  () => route.query.configure,
+  async (configure) => {
+    if (configure !== 'categories' || pageLoading.value) return
+    await openCategoryEditor()
+    await router.replace({ name: 'expenses', params: { workspaceId: workspaceId.value } })
+  },
+)
 
 async function loadPage(force = false) {
   loadingItems.value = true
@@ -355,12 +360,11 @@ async function loadPage(force = false) {
     )
   } finally {
     loadingItems.value = false
+    if (route.query.configure === 'categories') {
+      await openCategoryEditor()
+      await router.replace({ name: 'expenses', params: { workspaceId: workspaceId.value } })
+    }
   }
-}
-
-function categoryDisplayValue(categoryId) {
-  const annualValue = categoryAnnualValue(categoryId)
-  return period.value === 'annual' ? annualValue : annualValue / 12
 }
 
 function categoryAnnualValue(categoryId) {
@@ -406,7 +410,7 @@ function isCategorySaving(categoryId) {
 async function saveSimpleExpense(category, displayedValue) {
   if (isCategorySaving(category.id) || !canQuickEdit(category.id)) return
 
-  const annualValue = period.value === 'annual' ? displayedValue : displayedValue * 12
+  const annualValue = displayedValue
   const existing = simpleExpense(category.id)
   const defaultSubcategory = category.suggestions[0]
   const payload = {
@@ -449,6 +453,10 @@ function openCategory(categoryId) {
     name: 'expense-category',
     params: { workspaceId: workspaceId.value, category: categoryId },
   })
+}
+
+function handleValueClick(event, categoryId) {
+  if (canQuickEdit(categoryId)) event.stopPropagation()
 }
 
 async function openCategoryEditor() {
@@ -596,53 +604,205 @@ async function runSaving(operation) {
   margin: 0.35rem;
 }
 
-.total-card {
-  @include financial-total-card(flex);
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 2rem;
-  margin-bottom: 1.25rem;
+.overview-card {
+  @include dashboard-card;
+  display: grid;
+  grid-template-columns: minmax(18rem, 0.72fr) minmax(30rem, 1.28fr);
+  overflow: hidden;
+  margin-top: var(--space-4);
+}
+
+.overview-kpi {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+  min-width: 0;
+  padding: clamp(1.5rem, 3vw, 2.5rem);
+  border-right: 1px solid var(--color-line);
+  background: var(--color-surface);
+}
+
+.total-icon {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 3.75rem;
+  height: 3.75rem;
+  border-radius: 50%;
+  background: var(--color-red-soft);
+  color: var(--color-financial-expenses);
+  font-size: 1.7rem;
 }
 
 .total-copy {
   display: grid;
+  min-width: 0;
 }
 
-.total-card span,
-.total-card small {
-  @include financial-total-secondary;
+.kpi-label {
+  color: var(--color-copy);
+  font-size: 0.95rem;
+  font-weight: var(--font-weight-medium);
+  letter-spacing: -0.01em;
 }
 
-.total-card strong {
-  @include financial-total-value;
+.total-copy strong {
+  margin: 0.35rem 0 0.7rem;
+  color: var(--color-ink);
+  font-size: clamp(3rem, 5vw, 4.35rem);
+  line-height: 0.95;
+  letter-spacing: -0.06em;
 }
 
-.total-card small {
-  @include financial-total-meta;
+.kpi-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.55rem;
 }
 
-.period-switch {
-  @include financial-period-switch;
+.monthly-average {
+  color: var(--color-copy);
+  font-size: 0.92rem;
+}
+
+.monthly-average b {
+  color: var(--color-ink);
+  font-size: 1.05rem;
+  font-weight: var(--font-weight-bold);
+}
+
+.scope-label {
+  padding: 0.25rem 0.55rem;
+  border-radius: 999px;
+  background: var(--color-surface-muted);
+  color: var(--color-copy);
+  font-size: 0.72rem;
+  font-weight: var(--font-weight-semibold);
+}
+
+.overview-card :deep(.breakdown-card) {
+  min-height: 14rem;
+}
+
+.context-actions {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.context-actions a {
+  display: grid;
+  grid-template-columns: auto minmax(8rem, 1fr) auto;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 13.5rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-button);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  text-decoration: none;
+  box-shadow: var(--shadow-control);
+}
+
+.context-actions a > .q-icon:first-child {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: var(--color-red-soft);
+  color: var(--color-financial-expenses);
+  font-size: 1.1rem;
+}
+
+.context-actions span,
+.context-actions strong,
+.context-actions small {
+  display: block;
+}
+
+.context-actions strong {
+  font-size: 0.8rem;
+}
+
+.context-actions small {
+  margin-top: 0.1rem;
+  color: var(--color-muted);
+  font-size: 0.68rem;
+}
+
+.context-actions a:focus-visible {
+  @include focus-ring;
 }
 
 .category-list {
   @include dashboard-card;
   overflow: hidden;
+  margin-top: var(--space-4);
   margin-bottom: 0.75rem;
+}
+
+.category-table-heading {
+  display: grid;
+  grid-template-columns: minmax(13rem, 1fr) 10rem 9rem 5rem;
+  gap: 0.4rem;
+  padding: 0.7rem 0.75rem;
+  border-bottom: 1px solid var(--color-line);
+  color: var(--color-copy);
+  font-size: 0.84rem;
+  font-weight: var(--font-weight-semibold);
+}
+
+.category-table-heading span:not(:first-child) {
+  text-align: right;
 }
 
 .category-row {
   display: grid;
-  grid-template-columns: minmax(13rem, 1fr) auto auto auto;
+  grid-template-columns: minmax(13rem, 1fr) 10rem 9rem 5rem;
   align-items: center;
   gap: 0.4rem;
   min-height: 5rem;
   padding: 0.55rem 0.75rem;
   border-bottom: 1px solid var(--color-line);
+  cursor: pointer;
+  transition: background-color 150ms ease;
+}
+
+.category-row:hover {
+  background: var(--color-surface-soft);
+}
+
+.category-row:focus-visible {
+  @include focus-ring;
+  position: relative;
+  z-index: 1;
 }
 
 .category-row:last-child {
   border-bottom: 0;
+}
+
+.category-monthly {
+  display: grid;
+  justify-items: end;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.category-monthly strong,
+.category-row :deep(.simple-value .value-copy strong) {
+  color: var(--color-ink);
+  font-size: 1rem;
+  font-weight: var(--font-weight-bold);
+}
+
+.category-monthly small,
+.category-row :deep(.simple-value .value-copy small) {
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  font-weight: 400;
 }
 
 .category-actions {
@@ -652,13 +812,6 @@ async function runSaving(operation) {
   gap: 0.75rem;
   padding: 0.8rem 0.75rem;
   border-top: 1px solid var(--color-line);
-}
-
-.category-main,
-.category-link {
-  border: 0;
-  background: transparent;
-  cursor: pointer;
 }
 
 .category-main {
@@ -690,39 +843,61 @@ async function runSaving(operation) {
   color: var(--color-muted);
 }
 
-.confirm-card {
-  @include financial-simple-dialog(34rem);
-}
-
 .category-dialog {
   @include financial-dialog-card(76rem);
   max-width: none;
 }
+
 .category-dialog :deep(.setup-panel) {
   max-width: none;
 }
 
 @media (max-width: 749px) {
+  .overview-card {
+    grid-template-columns: 1fr;
+    margin-top: var(--space-3);
+  }
+
+  .overview-kpi {
+    padding: var(--space-4);
+    border-right: 0;
+    border-bottom: 1px solid var(--color-line);
+  }
+
+  .total-icon {
+    width: 2.7rem;
+    height: 2.7rem;
+    font-size: 1.25rem;
+  }
+
+  .total-copy strong {
+    margin-bottom: 0.55rem;
+    font-size: 2.65rem;
+  }
+
+  .kpi-label {
+    font-size: 0.84rem;
+  }
+
+  .monthly-average {
+    font-size: 0.8rem;
+  }
+
+  .monthly-average b {
+    font-size: 0.9rem;
+  }
+
+  .category-table-heading {
+    display: none;
+  }
+
   .category-row {
     grid-template-columns: minmax(0, 1fr) auto auto;
     @include mobile-financial-row;
   }
 
-  .category-link {
+  .category-monthly {
     display: none;
-  }
-
-  .total-card {
-    align-items: center;
-    gap: 0.75rem;
-  }
-
-  .period-switch {
-    width: 8.25rem;
-  }
-
-  .period-switch button {
-    flex: 1;
   }
 
   .category-actions {
@@ -743,6 +918,32 @@ async function runSaving(operation) {
 
   .category-actions :deep(.q-btn) {
     width: auto;
+  }
+
+  .header-actions {
+    display: grid;
+    width: 100%;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .header-actions a {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    min-width: 0;
+    padding: 0.55rem;
+  }
+
+  .header-actions a > .q-icon:first-child {
+    width: 1.8rem;
+    height: 1.8rem;
+    font-size: 1rem;
+  }
+
+  .header-actions strong {
+    font-size: 0.72rem;
+  }
+
+  .header-actions small {
+    font-size: 0.6rem;
   }
 }
 </style>

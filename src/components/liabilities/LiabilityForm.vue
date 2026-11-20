@@ -1,128 +1,115 @@
 <template>
-  <q-card class="liability-form-card">
-    <q-form ref="form" class="dialog-layout" @submit.prevent="submit">
-      <q-card-section class="form-header">
-        <h2>{{ liability ? t('liabilities.form.editTitle') : t(category.addLabelKey) }}</h2>
+  <AppFormDialog
+    ref="form"
+    :title="liability ? t('liabilities.form.editTitle') : t(category.addLabelKey)"
+    :cancel-label="t('common.cancel')"
+    width="38rem"
+    :disabled="saving || submitting"
+    @submit="submit"
+    @cancel="$emit('cancel')"
+  >
+    <div class="liability-form">
+      <div class="dialog-field">
+        <label>{{ t('liabilities.form.subcategory') }}</label>
+        <q-select
+          v-model="subcategoryId"
+          outlined
+          :dense="$q.screen.lt.sm"
+          hide-bottom-space
+          emit-value
+          map-options
+          :options="subcategoryOptions"
+          :disable="Boolean(liability)"
+        >
+          <template #prepend><q-icon :name="category.icon" /></template>
+        </q-select>
+      </div>
+      <div class="dialog-field">
+        <label>{{ t('liabilities.form.name') }}</label>
+        <q-input
+          v-model.trim="name"
+          outlined
+          :dense="$q.screen.lt.sm"
+          hide-bottom-space
+          autofocus
+          maxlength="80"
+          lazy-rules
+          :rules="[(value) => Boolean(value) || t('liabilities.form.nameRequired')]"
+        />
+      </div>
+      <div class="dialog-field">
+        <label>{{ t('liabilities.form.notes') }}</label>
+        <q-input
+          v-model="notes"
+          outlined
+          :dense="$q.screen.lt.sm"
+          hide-bottom-space
+          autogrow
+          type="textarea"
+          :placeholder="t('liabilities.form.notesPlaceholder')"
+        />
+      </div>
+      <div class="dialog-field">
+        <label>{{ t('liabilities.form.balance') }}</label>
+        <q-input
+          v-model="balance"
+          outlined
+          :dense="$q.screen.lt.sm"
+          hide-bottom-space
+          type="number"
+          min="0"
+          step="0.01"
+          :prefix="currencySymbol"
+          :readonly="modelManaged"
+          lazy-rules
+          :rules="[
+            (value) =>
+              normalizeNonNegativeMoneyOrNull(value) !== null ||
+              t('liabilities.form.balanceInvalid'),
+          ]"
+        />
+      </div>
+
+      <OwnershipEditor v-model="ownership" :members="members" @validity="ownershipValid = $event" />
+    </div>
+    <template #actions>
+      <q-btn
+        v-if="liability"
+        flat
+        no-caps
+        color="negative"
+        icon="delete_outline"
+        :label="t('common.delete')"
+        :disable="saving || submitting"
+        @click="$emit('delete')"
+      />
+      <div class="primary-actions">
         <q-btn
-          flat
-          round
-          dense
-          icon="close"
-          class="dialog-close"
-          :aria-label="t('common.cancel')"
+          outline
+          no-caps
+          :label="t('common.cancel')"
+          :disable="saving || submitting"
           @click="$emit('cancel')"
         />
-      </q-card-section>
-
-      <q-card-section class="form-body">
-        <div class="liability-form">
-          <div class="dialog-field">
-            <label>{{ t('liabilities.form.subcategory') }}</label>
-            <q-select
-              v-model="subcategoryId"
-              outlined
-              :dense="$q.screen.lt.sm"
-              hide-bottom-space
-              emit-value
-              map-options
-              :options="subcategoryOptions"
-              :disable="Boolean(liability)"
-            >
-              <template #prepend><q-icon :name="category.icon" /></template>
-            </q-select>
-          </div>
-          <div class="dialog-field">
-            <label>{{ t('liabilities.form.name') }}</label>
-            <q-input
-              v-model.trim="name"
-              outlined
-              :dense="$q.screen.lt.sm"
-              hide-bottom-space
-              autofocus
-              maxlength="80"
-              lazy-rules
-              :rules="[(value) => Boolean(value) || t('liabilities.form.nameRequired')]"
-            />
-          </div>
-          <div class="dialog-field">
-            <label>{{ t('liabilities.form.notes') }}</label>
-            <q-input
-              v-model="notes"
-              outlined
-              :dense="$q.screen.lt.sm"
-              hide-bottom-space
-              autogrow
-              type="textarea"
-              :placeholder="t('liabilities.form.notesPlaceholder')"
-            />
-          </div>
-          <div class="dialog-field">
-            <label>{{ t('liabilities.form.balance') }}</label>
-            <q-input
-              v-model="balance"
-              outlined
-              :dense="$q.screen.lt.sm"
-              hide-bottom-space
-              type="number"
-              min="0"
-              step="0.01"
-              :prefix="currencySymbol"
-              :readonly="modelManaged"
-              lazy-rules
-              :rules="[
-                (value) =>
-                  normalizeNonNegativeMoneyOrNull(value) !== null ||
-                  t('liabilities.form.balanceInvalid'),
-              ]"
-            />
-          </div>
-
-          <OwnershipEditor
-            v-model="ownership"
-            :members="members"
-            @validity="ownershipValid = $event"
-          />
-        </div>
-      </q-card-section>
-
-      <q-card-actions class="form-actions">
         <q-btn
-          v-if="liability"
-          flat
+          unelevated
           no-caps
-          color="negative"
-          icon="delete_outline"
-          :label="t('common.delete')"
-          :disable="saving || submitting"
-          @click="$emit('delete')"
+          color="primary"
+          type="submit"
+          :label="liability ? t('common.save') : t('common.add')"
+          :loading="saving || submitting"
+          :disable="!ownershipValid || saving || submitting"
         />
-        <div class="primary-actions">
-          <q-btn
-            outline
-            no-caps
-            :label="t('common.cancel')"
-            :disable="saving || submitting"
-            @click="$emit('cancel')"
-          />
-          <q-btn
-            unelevated
-            no-caps
-            color="primary"
-            type="submit"
-            :label="liability ? t('common.save') : t('common.add')"
-            :loading="saving || submitting"
-            :disable="!ownershipValid || saving || submitting"
-          />
-        </div>
-      </q-card-actions>
-    </q-form>
-  </q-card>
+      </div>
+    </template>
+  </AppFormDialog>
 </template>
 
 <script setup>
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import OwnershipEditor from '@/components/financial/OwnershipEditor.vue'
+import AppFormDialog from '@/components/ui/AppFormDialog.vue'
 import {
   cloneOwnershipAllocation,
   createEqualMemberOwnership,
@@ -202,22 +189,6 @@ async function submit() {
 <style scoped lang="scss">
 @use '@/css/mixins' as *;
 
-.liability-form-card {
-  @include financial-dialog-card(38rem);
-}
-
-.dialog-layout {
-  @include financial-dialog-layout;
-}
-
-.form-header {
-  @include financial-dialog-header;
-}
-
-.form-body {
-  @include financial-dialog-body;
-}
-
 .liability-form {
   display: grid;
   gap: 1rem;
@@ -226,9 +197,5 @@ async function submit() {
 .dialog-field {
   @include financial-dialog-field;
   margin-bottom: 0;
-}
-
-.form-actions {
-  @include financial-dialog-actions;
 }
 </style>

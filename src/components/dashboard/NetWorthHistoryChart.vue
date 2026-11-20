@@ -26,7 +26,7 @@ import { AriaComponent, GridComponent, LegendComponent, TooltipComponent } from 
 import { init, use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
 import { assetCategories } from '@/config/asset-categories'
-import { CHART_COLORS } from '@/config/chart-theme'
+import { CHART_COLORS, CHART_SERIES_COLORS } from '@/config/chart-theme'
 import { liabilityCategories } from '@/config/liability-categories'
 import { formatCurrency } from '@/utils/formatters'
 
@@ -50,22 +50,8 @@ const categorySeries = computed(() => [
 let chart = null
 let resizeObserver = null
 
-const ASSET_COLORS = [
-  CHART_COLORS.successDark,
-  CHART_COLORS.primary,
-  '#39a8a3',
-  CHART_COLORS.purple,
-  '#4f7cac',
-  '#73bfb8',
-]
-const LIABILITY_COLORS = [
-  '#c44750',
-  CHART_COLORS.warning,
-  '#d95568',
-  '#b66d57',
-  '#a85567',
-  '#ef6c57',
-]
+const ASSET_COLORS = CHART_SERIES_COLORS.assets
+const LIABILITY_COLORS = CHART_SERIES_COLORS.liabilities
 
 onMounted(() => {
   chart = init(chartElement.value)

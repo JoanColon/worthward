@@ -36,7 +36,7 @@ import { PieChart } from 'echarts/charts'
 import { AriaComponent, TooltipComponent } from 'echarts/components'
 import { init, use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
-import { CHART_COLORS } from '@/config/chart-theme'
+import { CHART_COLORS, CHART_SERIES_COLORS } from '@/config/chart-theme'
 import { formatCurrencyValue } from '@/domain/financial/investment-portfolio'
 
 use([PieChart, TooltipComponent, AriaComponent, CanvasRenderer])
@@ -58,24 +58,7 @@ const formattedTotal = computed(() => formatCurrencyValue(total.value, props.bas
 let chart = null
 let resizeObserver = null
 
-const COLORS = [
-  '#2563eb',
-  '#f97316',
-  '#16a34a',
-  '#dc2626',
-  '#7c3aed',
-  '#0891b2',
-  '#ca8a04',
-  '#db2777',
-  '#4f46e5',
-  '#65a30d',
-  '#0f766e',
-  '#be123c',
-  '#9333ea',
-  '#0369a1',
-  '#c2410c',
-  '#475569',
-]
+const COLORS = CHART_SERIES_COLORS.categories
 
 onMounted(() => {
   chart = init(chartElement.value)

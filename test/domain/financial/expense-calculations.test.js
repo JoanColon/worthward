@@ -12,7 +12,13 @@ import {
 
 describe('expense calculations', () => {
   it('exposes only the supported expense frequencies', () => {
-    expect(EXPENSE_FREQUENCIES).toEqual(['monthly', 'every_two_months', 'quarterly', 'yearly'])
+    expect(EXPENSE_FREQUENCIES).toEqual([
+      'monthly',
+      'every_two_months',
+      'quarterly',
+      'yearly',
+      'irregular',
+    ])
   })
 
   it.each([
@@ -20,6 +26,7 @@ describe('expense calculations', () => {
     ['every_two_months', 100, 600],
     ['quarterly', 300, 1200],
     ['yearly', 600, 600],
+    ['irregular', 600, 600],
   ])('normalizes %s estimates to an annual value', (frequency, amount, expected) => {
     expect(calculateAnnualExpenseAmount({ amount, frequency })).toBe(expected)
   })
@@ -43,6 +50,58 @@ describe('expense calculations', () => {
       november: 0,
       december: 0,
     })
+  })
+
+  it('places a yearly expense in its selected payment month', () => {
+    expect(
+      buildMonthlyExpenseSchedule({ amount: 600, frequency: 'yearly', startMonth: 'september' }),
+    ).toEqual({
+      january: 0,
+      february: 0,
+      march: 0,
+      april: 0,
+      may: 0,
+      june: 0,
+      july: 0,
+      august: 0,
+      september: 600,
+      october: 0,
+      november: 0,
+      december: 0,
+    })
+  })
+
+  it('populates recurring payments from the selected starting month', () => {
+    const everyTwoMonths = buildMonthlyExpenseSchedule({
+      amount: 100,
+      frequency: 'every_two_months',
+      startMonth: 'february',
+    })
+    const quarterly = buildMonthlyExpenseSchedule({
+      amount: 300,
+      frequency: 'quarterly',
+      startMonth: 'april',
+    })
+
+    expect(Object.entries(everyTwoMonths).filter(([, value]) => value > 0)).toEqual([
+      ['february', 100],
+      ['april', 100],
+      ['june', 100],
+      ['august', 100],
+      ['october', 100],
+      ['december', 100],
+    ])
+    expect(Object.entries(quarterly).filter(([, value]) => value > 0)).toEqual([
+      ['april', 300],
+      ['july', 300],
+      ['october', 300],
+    ])
+  })
+
+  it('leaves an irregular schedule empty for manual allocation', () => {
+    const schedule = buildMonthlyExpenseSchedule({ amount: 900, frequency: 'irregular' })
+
+    expect(Object.values(schedule)).toEqual(Array(12).fill(0))
   })
 
   it('uses the twelve editable month values for the annual total', () => {
@@ -86,6 +145,7 @@ describe('expense calculations', () => {
     { amount: -1, frequency: 'monthly' },
     { amount: Number.NaN, frequency: 'monthly' },
     { amount: 100, frequency: 'daily' },
+    { amount: 100, frequency: 'yearly', startMonth: 'not-a-month' },
   ])('rejects invalid estimates %#', (estimate) => {
     expect(normalizeExpenseEstimateModel(estimate)).toBeNull()
     expect(calculateAnnualExpenseAmount(estimate)).toBeNull()

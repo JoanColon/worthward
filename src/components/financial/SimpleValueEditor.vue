@@ -1,7 +1,7 @@
 <template>
   <span
     class="simple-value"
-    :class="{ disabled: disabled || saving, 'with-period': formattedPeriod }"
+    :class="{ 'is-disabled': disabled || saving, 'with-period': formattedPeriod }"
     role="button"
     :aria-label="ariaLabel || t('assets.quickEdit.editLabel', { value: formattedValue })"
     :aria-disabled="disabled || saving"
@@ -153,11 +153,11 @@ function save(value) {
   @include focus-ring;
 }
 
-.simple-value.disabled {
+.simple-value.is-disabled {
   cursor: default;
 }
 
-.simple-value.disabled:hover {
+.simple-value.is-disabled:hover {
   background: transparent;
   color: var(--color-ink);
 }

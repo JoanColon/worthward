@@ -268,49 +268,6 @@
   margin-top: 0.35rem;
 }
 
-@mixin financial-period-switch {
-  display: flex;
-  flex: 0 0 auto;
-  padding: 0.22rem;
-  overflow: hidden;
-  border: 1px solid var(--color-inverse-line);
-  border-radius: 999px;
-  background: var(--color-inverse-soft);
-
-  button {
-    min-width: 5.4rem;
-    padding: 0.45rem 0.8rem;
-    border: 0;
-    border-radius: 999px;
-    background: transparent;
-    color: var(--color-inverse-muted);
-    font-size: 0.8rem;
-    font-weight: 650;
-    cursor: pointer;
-  }
-
-  button.selected {
-    background: var(--color-surface);
-    color: var(--color-ink);
-    box-shadow: var(--shadow-control);
-  }
-
-  button:focus-visible {
-    @include focus-ring;
-  }
-
-  @media (max-width: 760px) {
-    padding: 0.15rem;
-
-    button {
-      min-width: 3.9rem;
-      min-height: 1.75rem;
-      padding: 0.2rem 0.5rem;
-      font-size: 0.67rem;
-    }
-  }
-}
-
 @mixin financial-category-summary {
   @include dashboard-card;
   display: flex;
@@ -350,19 +307,9 @@
   }
 
   .period-switch {
-    @include financial-period-switch;
     margin-left: auto;
     border-color: var(--color-ink);
     background: var(--color-ink);
-  }
-
-  .period-switch button {
-    color: var(--color-inverse-muted);
-  }
-
-  .period-switch button.selected {
-    background: var(--color-surface);
-    color: var(--color-ink);
   }
 
   @media (max-width: 760px) {
@@ -931,10 +878,6 @@
     max-width: none;
   }
 
-  .confirm-card {
-    @include financial-simple-dialog(28rem);
-  }
-
   .ownership-dialog-card {
     @include financial-simple-dialog(34rem);
   }
@@ -1009,8 +952,7 @@
   }
 
   .summary-card,
-  .position-list,
-  .empty-card {
+  .position-list {
     @include dashboard-card;
     margin-top: 1.25rem;
   }
@@ -1020,8 +962,7 @@
   }
 
   .summary-icon,
-  .position-icon,
-  .empty-icon {
+  .position-icon {
     display: grid;
     place-items: center;
     flex: 0 0 auto;
@@ -1102,26 +1043,5 @@
     border-radius: 50%;
     background: var(--color-primary);
     color: var(--color-inverse);
-  }
-
-  .empty-card {
-    display: grid;
-    justify-items: center;
-    padding: 3rem 1.5rem;
-    text-align: center;
-  }
-
-  .empty-icon {
-    width: 4rem;
-    height: 4rem;
-    font-size: 1.8rem;
-  }
-
-  .empty-card p {
-    color: var(--color-copy);
-  }
-
-  .confirm-card {
-    @include financial-simple-dialog(28rem);
   }
 }

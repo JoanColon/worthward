@@ -102,19 +102,15 @@
           </button>
         </section>
 
-        <section v-else class="empty-card">
-          <span class="empty-icon"><q-icon :name="category.icon" /></span>
-          <h2>{{ t('assets.empty.contextualTitle', { items: t(category.itemNamePluralKey) }) }}</h2>
-          <p>{{ t('assets.empty.description') }}</p>
-          <q-btn
-            unelevated
-            no-caps
-            color="primary"
-            icon="add"
-            :label="t(category.addLabelKey)"
-            @click="add"
-          />
-        </section>
+        <AppEmptyState
+          v-else
+          :icon="category.icon"
+          :title="t('assets.empty.contextualTitle', { items: t(category.itemNamePluralKey) })"
+          :description="t('assets.empty.description')"
+          :action-label="t(category.addLabelKey)"
+          tone="positive"
+          @action="add"
+        />
       </template>
     </main>
 
@@ -133,36 +129,19 @@
       />
     </q-dialog>
 
-    <q-dialog v-model="confirmDelete">
-      <q-card class="confirm-card">
-        <q-btn
-          flat
-          round
-          dense
-          icon="close"
-          class="dialog-close"
-          :aria-label="t('common.cancel')"
-          v-close-popup
-        />
-        <q-card-section>
-          <h2>{{ t('assets.delete.title') }}</h2>
-          <p>
-            {{ t('assets.delete.description', { name: assetDisplayName(deletingAsset) }) }}
-          </p>
-        </q-card-section>
-        <q-card-actions align="between">
-          <q-btn
-            flat
-            no-caps
-            color="negative"
-            :label="t('common.delete')"
-            :loading="formSaving"
-            @click="deleteAsset"
-          />
-          <q-btn flat no-caps :label="t('common.cancel')" v-close-popup />
-        </q-card-actions>
-      </q-card>
-    </q-dialog>
+    <AppConfirmDialog
+      v-model="confirmDelete"
+      :title="t('assets.delete.title')"
+      :message="t('assets.delete.description', { name: assetDisplayName(deletingAsset) })"
+      :cancel-label="t('common.cancel')"
+      :confirm-label="t('common.delete')"
+      confirm-color="negative"
+      confirm-first
+      confirm-flat
+      actions-align="between"
+      :loading="formSaving"
+      @confirm="deleteAsset"
+    />
   </q-page>
 </template>
 
@@ -174,6 +153,8 @@ import { useRoute, useRouter } from 'vue-router'
 import AssetForm from '@/components/assets/AssetForm.vue'
 import OwnershipAvatar from '@/components/financial/OwnershipAvatar.vue'
 import AppPageHeader from '@/components/layout/AppPageHeader.vue'
+import AppConfirmDialog from '@/components/ui/AppConfirmDialog.vue'
+import AppEmptyState from '@/components/ui/AppEmptyState.vue'
 import { getAssetCategory } from '@/config/asset-categories'
 import {
   currentFinancialMonth,
@@ -449,8 +430,7 @@ async function persist(action) {
 }
 
 .summary-icon,
-.position-icon,
-.empty-icon {
+.position-icon {
   background: var(--color-green-soft);
   color: var(--color-success-dark);
 }
@@ -479,19 +459,6 @@ async function persist(action) {
 .add-row .q-icon {
   padding: 0.4rem;
   font-size: 1.1rem;
-}
-
-.empty-icon {
-  margin-bottom: 0.75rem;
-}
-
-.empty-card h2 {
-  margin: 0;
-  color: var(--color-ink);
-}
-
-.empty-card p {
-  margin: 0.45rem 0 1.25rem;
 }
 
 @media (max-width: 760px) {

@@ -72,37 +72,19 @@
       </section>
     </main>
 
-    <q-dialog v-model="deleteDialog" persistent @hide="clearDeleteRequest">
-      <q-card class="confirm-card">
-        <q-btn
-          flat
-          round
-          dense
-          icon="close"
-          class="dialog-close"
-          :aria-label="t('common.cancel')"
-          :disable="deleting"
-          v-close-popup
-        />
-        <q-card-section>
-          <h2>{{ t('workspace.delete.title') }}</h2>
-          <p>
-            {{ t('workspace.delete.description', { name: workspaceToDelete?.name || '' }) }}
-          </p>
-        </q-card-section>
-        <q-card-actions align="right">
-          <q-btn flat no-caps :label="t('common.cancel')" :disable="deleting" v-close-popup />
-          <q-btn
-            unelevated
-            no-caps
-            color="negative"
-            :label="t('common.delete')"
-            :loading="deleting"
-            @click="deleteWorkspace"
-          />
-        </q-card-actions>
-      </q-card>
-    </q-dialog>
+    <AppConfirmDialog
+      v-model="deleteDialog"
+      :title="t('workspace.delete.title')"
+      :message="t('workspace.delete.description', { name: workspaceToDelete?.name || '' })"
+      :cancel-label="t('common.cancel')"
+      :confirm-label="t('common.delete')"
+      confirm-color="negative"
+      persistent
+      width="32rem"
+      :loading="deleting"
+      @confirm="deleteWorkspace"
+      @hide="clearDeleteRequest"
+    />
 
     <q-dialog v-model="inviteDialog" persistent @hide="clearInviteRequest">
       <q-card class="confirm-card">
@@ -178,6 +160,7 @@ import { useQuasar } from 'quasar'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import AppPageHeader from '@/components/layout/AppPageHeader.vue'
+import AppConfirmDialog from '@/components/ui/AppConfirmDialog.vue'
 import WorkspaceForm from '@/components/workspace/WorkspaceForm.vue'
 import { BRAND } from '@/config/brand'
 import { authUser } from '@/services/auth'

@@ -7,53 +7,23 @@
     icon-tone="blue"
   >
     <template #action>
-      <div
+      <AppPeriodSwitch
+        v-model="period"
         class="period-switch desktop-period-switch"
-        role="group"
         :aria-label="t('dashboard.costOfLife.period')"
-      >
-        <button
-          type="button"
-          :class="{ selected: period === 'annual' }"
-          :aria-pressed="period === 'annual'"
-          @click="period = 'annual'"
-        >
-          {{ t('dashboard.costOfLife.annual') }}
-        </button>
-        <button
-          type="button"
-          :class="{ selected: period === 'monthly' }"
-          :aria-pressed="period === 'monthly'"
-          @click="period = 'monthly'"
-        >
-          {{ t('dashboard.costOfLife.monthly') }}
-        </button>
-      </div>
+        :options="periodOptions"
+        variant="compact"
+      />
     </template>
 
     <template #default>
-      <div
+      <AppPeriodSwitch
+        v-model="period"
         class="period-switch body-period-switch"
-        role="group"
         :aria-label="t('dashboard.costOfLife.period')"
-      >
-        <button
-          type="button"
-          :class="{ selected: period === 'annual' }"
-          :aria-pressed="period === 'annual'"
-          @click="period = 'annual'"
-        >
-          {{ t('dashboard.costOfLife.annual') }}
-        </button>
-        <button
-          type="button"
-          :class="{ selected: period === 'monthly' }"
-          :aria-pressed="period === 'monthly'"
-          @click="period = 'monthly'"
-        >
-          {{ t('dashboard.costOfLife.monthly') }}
-        </button>
-      </div>
+        :options="periodOptions"
+        variant="compact"
+      />
 
       <div class="cost-equation">
         <button type="button" class="equation-card income" @click="emit('open-income')">
@@ -93,6 +63,7 @@ import { computed, ref } from 'vue'
 import { useQuasar } from 'quasar'
 import { useI18n } from 'vue-i18n'
 import DashboardCard from './DashboardCard.vue'
+import AppPeriodSwitch from '@/components/ui/AppPeriodSwitch.vue'
 import { formatCurrency } from '@/utils/formatters'
 
 const props = defineProps({ data: { type: Object, required: true } })
@@ -100,6 +71,10 @@ const emit = defineEmits(['open-expenses', 'open-income'])
 const { t } = useI18n()
 const $q = useQuasar()
 const period = ref($q.screen.lt.md ? 'monthly' : 'annual')
+const periodOptions = computed(() => [
+  { value: 'annual', label: t('dashboard.costOfLife.annual') },
+  { value: 'monthly', label: t('dashboard.costOfLife.monthly') },
+])
 
 const values = computed(() => {
   if (period.value === 'monthly') {
@@ -134,7 +109,6 @@ const periodLabel = computed(() =>
     position: static;
     width: 100%;
     margin: -0.25rem 0 1rem;
-    @include compact-segmented-control;
   }
 
   .desktop-period-switch {

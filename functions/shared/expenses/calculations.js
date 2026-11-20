@@ -9,6 +9,7 @@ export const EXPENSE_FREQUENCIES = Object.freeze([
   'every_two_months',
   'quarterly',
   'yearly',
+  'irregular',
 ])
 export const EXPENSE_VARIABILITIES = Object.freeze(['fixed', 'variable'])
 export const EXPENSE_RECURRENCES = Object.freeze(['recurring', 'occasional'])
@@ -18,13 +19,19 @@ const ANNUAL_MULTIPLIERS = Object.freeze({
   every_two_months: 6,
   quarterly: 4,
   yearly: 1,
+  irregular: 1,
 })
 
 /** Validates and canonicalizes an amount-frequency expense estimate. */
 export function normalizeExpenseEstimateModel(estimate) {
   const amount = normalizeNonNegativeMoneyOrNull(estimate?.amount)
   if (amount === null || !EXPENSE_FREQUENCIES.includes(estimate?.frequency)) return null
-  return { amount, frequency: estimate.frequency }
+  const normalized = { amount, frequency: estimate.frequency }
+  if (['every_two_months', 'quarterly', 'yearly'].includes(estimate.frequency)) {
+    if (estimate.startMonth != null && !CALENDAR_MONTH_IDS.includes(estimate.startMonth)) return null
+    if (estimate.startMonth) normalized.startMonth = estimate.startMonth
+  }
+  return normalized
 }
 
 /** Calculates the annual amount represented by an expense estimate. */
@@ -44,13 +51,17 @@ export function calculateAverageMonthlyExpenseAmount(estimate) {
 export function buildMonthlyExpenseSchedule(estimate) {
   const normalized = normalizeExpenseEstimateModel(estimate)
   if (!normalized) return null
-  const interval = { monthly: 1, every_two_months: 2, quarterly: 3, yearly: 12 }[
-    normalized.frequency
-  ]
+  if (normalized.frequency === 'irregular') {
+    return Object.fromEntries(CALENDAR_MONTH_IDS.map((month) => [month, 0]))
+  }
+  const interval = { monthly: 1, every_two_months: 2, quarterly: 3, yearly: 12 }[normalized.frequency]
+  const startIndex = CALENDAR_MONTH_IDS.indexOf(normalized.startMonth || 'january')
   return Object.fromEntries(
     CALENDAR_MONTH_IDS.map((month, index) => [
       month,
-      index % interval === 0 ? normalized.amount : 0,
+      index >= startIndex && (index - startIndex) % interval === 0
+        ? normalized.amount
+        : 0,
     ]),
   )
 }

@@ -1,381 +1,371 @@
 <template>
-  <q-card class="income-form-card">
-    <q-form class="dialog-layout" @submit.prevent="submit">
-      <q-card-section class="form-header">
-        <h2>{{ income ? t('income.form.editTitle') : t(category.addLabelKey) }}</h2>
-        <q-btn
-          flat
-          round
-          dense
-          icon="close"
-          class="dialog-close"
-          :aria-label="t('common.cancel')"
-          @click="$emit('cancel')"
+  <AppFormDialog
+    :title="income ? t('income.form.editTitle') : t(category.addLabelKey)"
+    :cancel-label="t('common.cancel')"
+    width="42rem"
+    :disabled="saving"
+    @submit="submit"
+    @cancel="$emit('cancel')"
+  >
+    <div class="income-form">
+      <div class="dialog-field">
+        <label>{{ t('income.form.subcategory') }}</label>
+        <q-select
+          v-model="subcategoryId"
+          outlined
+          :dense="$q.screen.lt.sm"
+          hide-bottom-space
+          emit-value
+          map-options
+          :options="subcategoryOptions"
+          :disable="Boolean(income)"
+        >
+          <template #prepend><q-icon :name="category.icon" /></template>
+        </q-select>
+      </div>
+      <div class="dialog-field">
+        <label>{{ t('income.form.itemName') }}</label>
+        <q-input
+          v-model.trim="itemName"
+          outlined
+          :dense="$q.screen.lt.sm"
+          hide-bottom-space
+          autofocus
+          maxlength="80"
         />
-      </q-card-section>
+      </div>
+      <div v-if="isDividendIncome" class="dialog-field">
+        <label>{{ t('income.form.linkPortfolio') }}</label>
+        <q-select
+          v-model="linkedPortfolioId"
+          outlined
+          clearable
+          :dense="$q.screen.lt.sm"
+          emit-value
+          map-options
+          :options="portfolioOptions"
+          :hint="
+            portfolioOptions.length
+              ? t('income.form.linkPortfolioHint')
+              : t('income.form.noPortfolios')
+          "
+          @update:model-value="applyLinkedPortfolio"
+        >
+          <template #prepend><q-icon name="account_balance_wallet" /></template>
+        </q-select>
+      </div>
+      <div v-if="isDividendIncome" class="dialog-field dividend-reinvestment-field">
+        <div class="reinvestment-label">
+          <span>{{ t('income.form.dividendReinvestment') }}</span>
+          <q-btn
+            flat
+            round
+            dense
+            type="button"
+            icon="info_outline"
+            class="reinvestment-info-button"
+            :aria-label="t('income.form.dividendReinvestmentHint')"
+            @click="reinvestmentInfoOpen = true"
+          />
+        </div>
+        <div class="reinvestment-selector">
+          <q-slider
+            v-model="dividendReinvestmentPercentage"
+            :min="0"
+            :max="100"
+            :step="5"
+            color="primary"
+            label
+            :label-value="`${dividendReinvestmentPercentage}%`"
+            :aria-label="t('income.form.dividendReinvestment')"
+          />
+          <strong>{{ dividendReinvestmentPercentage }}%</strong>
+        </div>
+      </div>
+      <div class="dialog-field">
+        <label>{{ t('income.form.notes') }}</label>
+        <q-input
+          v-model="notes"
+          outlined
+          :dense="$q.screen.lt.sm"
+          hide-bottom-space
+          autogrow
+          type="textarea"
+          :placeholder="t('income.form.notesPlaceholder')"
+        />
+      </div>
+      <div class="dialog-field calculation-method">
+        <label>{{ t('income.form.calculationMethod') }}</label>
+        <q-option-group
+          v-if="category.id === 'employment'"
+          v-model="calculationMode"
+          inline
+          :dense="$q.screen.lt.sm"
+          type="radio"
+          color="primary"
+          :options="calculationModeOptions"
+          :disable="Boolean(linkedPortfolioId)"
+          @update:model-value="changeCalculationMode"
+        />
+        <q-select
+          v-else
+          v-model="calculationMode"
+          outlined
+          :dense="$q.screen.lt.sm"
+          hide-bottom-space
+          emit-value
+          map-options
+          :options="calculationModeOptions"
+          :disable="Boolean(linkedPortfolioId)"
+          @update:model-value="changeCalculationMode"
+        />
+      </div>
 
-      <q-card-section class="form-body">
-        <div class="income-form">
+      <template v-if="calculationMode === 'annual_salary'">
+        <div class="amount-frequency">
           <div class="dialog-field">
-            <label>{{ t('income.form.subcategory') }}</label>
-            <q-select
-              v-model="subcategoryId"
-              outlined
-              :dense="$q.screen.lt.sm"
-              hide-bottom-space
-              emit-value
-              map-options
-              :options="subcategoryOptions"
-              :disable="Boolean(income)"
-            >
-              <template #prepend><q-icon :name="category.icon" /></template>
-            </q-select>
-          </div>
-          <div class="dialog-field">
-            <label>{{ t('income.form.itemName') }}</label>
+            <label>{{ t('income.form.annualIncome') }}</label>
             <q-input
-              v-model.trim="itemName"
+              v-model="annualAmount"
               outlined
               :dense="$q.screen.lt.sm"
               hide-bottom-space
-              autofocus
-              maxlength="80"
+              type="number"
+              min="0"
+              step="0.01"
+              :prefix="currencySymbol"
+              :disable="Boolean(linkedPortfolioId)"
+              :rules="[moneyRule]"
             />
-          </div>
-          <div v-if="isDividendIncome" class="dialog-field">
-            <label>{{ t('income.form.linkPortfolio') }}</label>
-            <q-select
-              v-model="linkedPortfolioId"
-              outlined
-              clearable
-              :dense="$q.screen.lt.sm"
-              emit-value
-              map-options
-              :options="portfolioOptions"
-              :hint="
-                portfolioOptions.length
-                  ? t('income.form.linkPortfolioHint')
-                  : t('income.form.noPortfolios')
-              "
-              @update:model-value="applyLinkedPortfolio"
-            >
-              <template #prepend><q-icon name="account_balance_wallet" /></template>
-            </q-select>
-          </div>
-          <div v-if="isDividendIncome" class="dialog-field dividend-reinvestment-field">
-            <div class="reinvestment-label">
-              <span>{{ t('income.form.dividendReinvestment') }}</span>
-              <q-btn
-                flat
-                round
-                dense
-                type="button"
-                icon="info_outline"
-                class="reinvestment-info-button"
-                :aria-label="t('income.form.dividendReinvestmentHint')"
-                @click="reinvestmentInfoOpen = true"
-              />
-            </div>
-            <div class="reinvestment-selector">
-              <q-slider
-                v-model="dividendReinvestmentPercentage"
-                :min="0"
-                :max="100"
-                :step="5"
-                color="primary"
-                label
-                :label-value="`${dividendReinvestmentPercentage}%`"
-                :aria-label="t('income.form.dividendReinvestment')"
-              />
-              <strong>{{ dividendReinvestmentPercentage }}%</strong>
-            </div>
           </div>
           <div class="dialog-field">
-            <label>{{ t('income.form.notes') }}</label>
+            <label>{{ t('income.form.paymentsPerYear') }}</label>
             <q-input
-              v-model="notes"
+              v-model="paymentsPerYear"
               outlined
               :dense="$q.screen.lt.sm"
               hide-bottom-space
-              autogrow
-              type="textarea"
-              :placeholder="t('income.form.notesPlaceholder')"
+              type="number"
+              min="1"
+              step="1"
+              :rules="[positiveIntegerRule]"
             />
           </div>
-          <div class="dialog-field calculation-method">
-            <label>{{ t('income.form.calculationMethod') }}</label>
-            <q-option-group
-              v-if="category.id === 'employment'"
-              v-model="calculationMode"
-              inline
-              :dense="$q.screen.lt.sm"
-              type="radio"
-              color="primary"
-              :options="calculationModeOptions"
-              :disable="Boolean(linkedPortfolioId)"
-              @update:model-value="changeCalculationMode"
-            />
-            <q-select
-              v-else
-              v-model="calculationMode"
-              outlined
-              :dense="$q.screen.lt.sm"
-              hide-bottom-space
-              emit-value
-              map-options
-              :options="calculationModeOptions"
-              :disable="Boolean(linkedPortfolioId)"
-              @update:model-value="changeCalculationMode"
-            />
-          </div>
+        </div>
+      </template>
 
-          <template v-if="calculationMode === 'annual_salary'">
-            <div class="amount-frequency">
-              <div class="dialog-field">
-                <label>{{ t('income.form.annualIncome') }}</label>
-                <q-input
-                  v-model="annualAmount"
-                  outlined
-                  :dense="$q.screen.lt.sm"
-                  hide-bottom-space
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  :prefix="currencySymbol"
-                  :disable="Boolean(linkedPortfolioId)"
-                  :rules="[moneyRule]"
-                />
-              </div>
-              <div class="dialog-field">
-                <label>{{ t('income.form.paymentsPerYear') }}</label>
-                <q-input
-                  v-model="paymentsPerYear"
-                  outlined
-                  :dense="$q.screen.lt.sm"
-                  hide-bottom-space
-                  type="number"
-                  min="1"
-                  step="1"
-                  :rules="[positiveIntegerRule]"
-                />
-              </div>
-            </div>
-          </template>
-
-          <template v-else-if="calculationMode === 'monthly_schedule'">
-            <div class="dialog-field">
-              <label>{{ t('income.form.monthlyNetSalary') }}</label>
-              <q-input
-                v-model="monthlyAmount"
-                outlined
-                :dense="$q.screen.lt.sm"
-                hide-bottom-space
-                type="number"
-                min="0"
-                step="0.01"
-                :prefix="currencySymbol"
-                :rules="[moneyRule]"
-              />
-            </div>
-            <q-expansion-item
-              icon="calendar_month"
-              :label="t('income.form.yearBreakdown')"
-              class="year-breakdown"
-            >
-              <q-markup-table flat bordered dense class="monthly-schedule">
-                <thead>
-                  <tr>
-                    <th class="month-column text-left">{{ t('income.form.month') }}</th>
-                    <th class="salary-column text-center">
-                      <span class="header-line">{{ t('income.form.monthlyNet') }}</span>
-                      <span class="header-line">{{ t('income.form.salary') }}</span>
-                    </th>
-                    <th class="extra-column text-center">
-                      <span class="header-line">{{ t('income.form.extra') }}</span>
-                      <span class="header-line">{{ t('income.form.payment') }}</span>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="month in CALENDAR_MONTH_IDS" :key="month">
-                    <td>{{ t(`income.months.${month}`) }}</td>
-                    <td class="text-right">{{ formatCurrency(normalizedMonthlyAmount) }}</td>
-                    <td class="extra-payment-cell">
-                      <q-btn
-                        flat
+      <template v-else-if="calculationMode === 'monthly_schedule'">
+        <div class="dialog-field">
+          <label>{{ t('income.form.monthlyNetSalary') }}</label>
+          <q-input
+            v-model="monthlyAmount"
+            outlined
+            :dense="$q.screen.lt.sm"
+            hide-bottom-space
+            type="number"
+            min="0"
+            step="0.01"
+            :prefix="currencySymbol"
+            :rules="[moneyRule]"
+          />
+        </div>
+        <q-expansion-item
+          icon="calendar_month"
+          :label="t('income.form.yearBreakdown')"
+          class="year-breakdown"
+        >
+          <q-markup-table flat bordered dense class="monthly-schedule">
+            <thead>
+              <tr>
+                <th class="month-column text-left">{{ t('income.form.month') }}</th>
+                <th class="salary-column text-center">
+                  <span class="header-line">{{ t('income.form.monthlyNet') }}</span>
+                  <span class="header-line">{{ t('income.form.salary') }}</span>
+                </th>
+                <th class="extra-column text-center">
+                  <span class="header-line">{{ t('income.form.extra') }}</span>
+                  <span class="header-line">{{ t('income.form.payment') }}</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="month in CALENDAR_MONTH_IDS" :key="month">
+                <td>{{ t(`income.months.${month}`) }}</td>
+                <td class="text-right">{{ formatCurrency(normalizedMonthlyAmount) }}</td>
+                <td class="extra-payment-cell">
+                  <q-btn
+                    flat
+                    dense
+                    no-caps
+                    class="extra-payment-value"
+                    :class="{ empty: normalizedExtra(month) === 0 }"
+                    :label="
+                      normalizedExtra(month) > 0 ? formatCurrency(normalizedExtra(month)) : '—'
+                    "
+                    :aria-label="
+                      t('income.form.extraForMonth', {
+                        month: t(`income.months.${month}`),
+                      })
+                    "
+                  >
+                    <q-popup-edit
+                      v-model="extrasByMonth[month]"
+                      buttons
+                      :label-set="t('common.save')"
+                      :label-cancel="t('common.cancel')"
+                      #default="scope"
+                    >
+                      <q-input
+                        v-model="scope.value"
+                        autofocus
                         dense
-                        no-caps
-                        class="extra-payment-value"
-                        :class="{ empty: normalizedExtra(month) === 0 }"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        :prefix="currencySymbol"
                         :label="
-                          normalizedExtra(month) > 0 ? formatCurrency(normalizedExtra(month)) : '—'
-                        "
-                        :aria-label="
                           t('income.form.extraForMonth', {
                             month: t(`income.months.${month}`),
                           })
                         "
-                      >
-                        <q-popup-edit
-                          v-model="extrasByMonth[month]"
-                          buttons
-                          :label-set="t('common.save')"
-                          :label-cancel="t('common.cancel')"
-                          #default="scope"
-                        >
-                          <q-input
-                            v-model="scope.value"
-                            autofocus
-                            dense
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            :prefix="currencySymbol"
-                            :label="
-                              t('income.form.extraForMonth', {
-                                month: t(`income.months.${month}`),
-                              })
-                            "
-                            :rules="[moneyRule]"
-                            @keyup.enter="scope.set"
-                          />
-                        </q-popup-edit>
-                      </q-btn>
-                    </td>
-                  </tr>
-                </tbody>
-              </q-markup-table>
-            </q-expansion-item>
-          </template>
+                        :rules="[moneyRule]"
+                        @keyup.enter="scope.set"
+                      />
+                    </q-popup-edit>
+                  </q-btn>
+                </td>
+              </tr>
+            </tbody>
+          </q-markup-table>
+        </q-expansion-item>
+      </template>
 
-          <template v-else-if="calculationMode === 'recurring'">
-            <div class="amount-frequency">
-              <div class="dialog-field">
-                <label>{{ t('income.form.amount') }}</label>
-                <q-input
-                  v-model="recurringAmount"
-                  outlined
-                  :dense="$q.screen.lt.sm"
-                  hide-bottom-space
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  :prefix="currencySymbol"
-                  :disable="Boolean(linkedPortfolioId)"
-                  :rules="[moneyRule]"
-                />
-              </div>
-              <div class="dialog-field">
-                <label>{{ t('income.form.frequency') }}</label>
-                <q-select
-                  v-model="frequency"
-                  outlined
-                  :dense="$q.screen.lt.sm"
-                  hide-bottom-space
-                  emit-value
-                  map-options
-                  :options="frequencyOptions"
-                  :disable="Boolean(linkedPortfolioId)"
-                />
-              </div>
-            </div>
-          </template>
-
-          <div v-else class="amount-frequency">
-            <div class="dialog-field">
-              <label>{{ t('income.form.oneTimeAmount') }}</label>
-              <q-input
-                v-model="oneTimeAmount"
-                outlined
-                :dense="$q.screen.lt.sm"
-                hide-bottom-space
-                type="number"
-                min="0"
-                step="0.01"
-                :prefix="currencySymbol"
-                :rules="[moneyRule]"
-              />
-            </div>
-            <div class="dialog-field">
-              <label>{{ t('income.form.recognitionMonth') }}</label>
-              <q-select
-                v-model="oneTimeMonth"
-                outlined
-                :dense="$q.screen.lt.sm"
-                hide-bottom-space
-                emit-value
-                map-options
-                :options="monthOptions"
-              />
-            </div>
+      <template v-else-if="calculationMode === 'recurring'">
+        <div class="amount-frequency">
+          <div class="dialog-field">
+            <label>{{ t('income.form.amount') }}</label>
+            <q-input
+              v-model="recurringAmount"
+              outlined
+              :dense="$q.screen.lt.sm"
+              hide-bottom-space
+              type="number"
+              min="0"
+              step="0.01"
+              :prefix="currencySymbol"
+              :disable="Boolean(linkedPortfolioId)"
+              :rules="[moneyRule]"
+            />
           </div>
-
-          <div v-if="members.length > 1" class="ownership-section">
-            <h3>{{ t('income.ownership.label') }}</h3>
-            <OwnershipEditor
-              v-model="ownership"
-              :members="members"
-              hide-label
-              @validity="ownershipValid = $event"
+          <div class="dialog-field">
+            <label>{{ t('income.form.frequency') }}</label>
+            <q-select
+              v-model="frequency"
+              outlined
+              :dense="$q.screen.lt.sm"
+              hide-bottom-space
+              emit-value
+              map-options
+              :options="frequencyOptions"
+              :disable="Boolean(linkedPortfolioId)"
             />
           </div>
         </div>
-      </q-card-section>
+      </template>
 
-      <q-card-actions class="form-actions">
-        <q-btn
-          v-if="income"
-          flat
-          no-caps
-          color="negative"
-          icon="delete_outline"
-          :label="t('common.delete')"
-          :disable="saving"
-          @click="$emit('delete')"
-        />
-        <div class="primary-actions">
-          <q-btn
-            outline
-            no-caps
-            :label="t('common.cancel')"
-            :disable="saving"
-            @click="$emit('cancel')"
-          />
-          <q-btn
-            unelevated
-            no-caps
-            color="primary"
-            type="submit"
-            :label="t('common.save')"
-            :loading="saving"
-            :disable="!formValid"
+      <div v-else class="amount-frequency">
+        <div class="dialog-field">
+          <label>{{ t('income.form.oneTimeAmount') }}</label>
+          <q-input
+            v-model="oneTimeAmount"
+            outlined
+            :dense="$q.screen.lt.sm"
+            hide-bottom-space
+            type="number"
+            min="0"
+            step="0.01"
+            :prefix="currencySymbol"
+            :rules="[moneyRule]"
           />
         </div>
-      </q-card-actions>
-    </q-form>
+        <div class="dialog-field">
+          <label>{{ t('income.form.recognitionMonth') }}</label>
+          <q-select
+            v-model="oneTimeMonth"
+            outlined
+            :dense="$q.screen.lt.sm"
+            hide-bottom-space
+            emit-value
+            map-options
+            :options="monthOptions"
+          />
+        </div>
+      </div>
 
-    <q-dialog v-model="reinvestmentInfoOpen" :position="$q.screen.lt.sm ? 'bottom' : undefined">
-      <q-card class="reinvestment-info-card responsive-info-card">
-        <span class="info-sheet-handle" aria-hidden="true" />
-        <q-card-section>
-          <div class="reinvestment-info-heading">
-            <h2>{{ t('income.form.dividendReinvestmentInfoTitle') }}</h2>
-            <q-btn flat round dense icon="close" :aria-label="t('common.close')" v-close-popup />
-          </div>
-          <p>{{ t('income.form.dividendReinvestmentHint') }}</p>
-        </q-card-section>
-        <q-card-actions align="right">
-          <q-btn unelevated no-caps color="primary" :label="t('common.close')" v-close-popup />
-        </q-card-actions>
-      </q-card>
-    </q-dialog>
-  </q-card>
+      <div v-if="members.length > 1" class="ownership-section">
+        <h3>{{ t('income.ownership.label') }}</h3>
+        <OwnershipEditor
+          v-model="ownership"
+          :members="members"
+          hide-label
+          @validity="ownershipValid = $event"
+        />
+      </div>
+    </div>
+    <template #actions>
+      <q-btn
+        v-if="income"
+        flat
+        no-caps
+        color="negative"
+        icon="delete_outline"
+        :label="t('common.delete')"
+        :disable="saving"
+        @click="$emit('delete')"
+      />
+      <div class="primary-actions">
+        <q-btn
+          outline
+          no-caps
+          :label="t('common.cancel')"
+          :disable="saving"
+          @click="$emit('cancel')"
+        />
+        <q-btn
+          unelevated
+          no-caps
+          color="primary"
+          type="submit"
+          :label="t('common.save')"
+          :loading="saving"
+          :disable="!formValid"
+        />
+      </div>
+    </template>
+  </AppFormDialog>
+
+  <q-dialog v-model="reinvestmentInfoOpen" :position="$q.screen.lt.sm ? 'bottom' : undefined">
+    <q-card class="reinvestment-info-card responsive-info-card">
+      <span class="info-sheet-handle" aria-hidden="true" />
+      <q-card-section>
+        <div class="reinvestment-info-heading">
+          <h2>{{ t('income.form.dividendReinvestmentInfoTitle') }}</h2>
+          <q-btn flat round dense icon="close" :aria-label="t('common.close')" v-close-popup />
+        </div>
+        <p>{{ t('income.form.dividendReinvestmentHint') }}</p>
+      </q-card-section>
+      <q-card-actions align="right">
+        <q-btn unelevated no-caps color="primary" :label="t('common.close')" v-close-popup />
+      </q-card-actions>
+    </q-card>
+  </q-dialog>
 </template>
 
 <script setup>
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import OwnershipEditor from '@/components/financial/OwnershipEditor.vue'
+import AppFormDialog from '@/components/ui/AppFormDialog.vue'
 import { CALENDAR_MONTH_IDS } from '../../../functions/shared/core/calendar-months.js'
 import {
   calculateIncomeBreakdown,
@@ -582,22 +572,6 @@ function submit() {
 <style scoped lang="scss">
 @use '@/css/mixins' as *;
 
-.income-form-card {
-  @include financial-dialog-card(42rem);
-}
-
-.dialog-layout {
-  @include financial-dialog-layout;
-}
-
-.form-header {
-  @include financial-dialog-header;
-}
-
-.form-body {
-  @include financial-dialog-body;
-}
-
 .income-form {
   display: grid;
   gap: 0.85rem;
@@ -738,9 +712,6 @@ function submit() {
   margin: 0 0 0.75rem;
   font-size: 1rem;
   line-height: 1.2;
-}
-.form-actions {
-  @include financial-dialog-actions;
 }
 
 @media (max-width: 599px) {

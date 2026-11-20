@@ -1,0 +1,50 @@
+html,
+body,
+#q-app {
+  min-width: 320px;
+  min-height: 100%;
+}
+
+.q-layout,
+.q-page-container,
+.q-page,
+main,
+section,
+article {
+  min-width: 0;
+}
+
+img,
+svg,
+canvas {
+  max-width: 100%;
+}
+
+body {
+  margin: 0;
+  overflow-x: hidden;
+  background: var(--color-page);
+  color: var(--color-ink);
+  font-family: var(--font-family-app);
+  -webkit-tap-highlight-color: transparent;
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button {
+  text-transform: none;
+}
+
+:where(button:not(.q-btn)) {
+  border-radius: var(--radius-button);
+}
+
+::selection {
+  background: var(--color-primary-focus);
+}

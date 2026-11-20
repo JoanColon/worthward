@@ -420,7 +420,8 @@ Las reglas son parte del contrato, pero la validación de dominio también debe 
 | Membresía, settings o borrado      | `functions/features/workspaces/`                                                                                                |
 | Permisos                           | `firestore.rules` y tests de la operación afectada                                                                              |
 | Texto visible                      | `src/i18n/en-US/index.js`                                                                                                       |
-| Diseño global                      | `src/css/_tokens.scss`, `src/css/_mixins.scss`, `src/css/app.scss`                                                              |
+| Diseño global                      | `src/css/foundation/_tokens.scss`, `src/css/_mixins.scss`, `src/css/app.scss`                                                   |
+| Convenciones del sistema de UI     | `docs/ui-design-system.md`                                                                                                      |
 
 Las categorías e IDs de hitos son persistidos. Renombrarlos no es un cambio cosmético: requiere compatibilidad o migración de datos.
 

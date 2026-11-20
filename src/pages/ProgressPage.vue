@@ -87,18 +87,13 @@
 
           <article class="perspective-panel">
             <div class="evolution-toolbar">
-              <div class="period-switch" role="group" :aria-label="t('progress.filters.period')">
-                <button
-                  v-for="option in periodOptions"
-                  :key="option.value"
-                  type="button"
-                  :class="{ selected: selectedPeriod === option.value }"
-                  :aria-pressed="selectedPeriod === option.value"
-                  @click="selectPeriod(option.value)"
-                >
-                  {{ option.label }}
-                </button>
-              </div>
+              <AppPeriodSwitch
+                v-model="selectedPeriod"
+                class="period-switch"
+                :aria-label="t('progress.filters.period')"
+                :options="periodOptions"
+                variant="light"
+              />
             </div>
 
             <header class="perspective-header">
@@ -209,9 +204,10 @@ import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import AppPageHeader from '@/components/layout/AppPageHeader.vue'
+import AppPeriodSwitch from '@/components/ui/AppPeriodSwitch.vue'
 import EvolutionChart from '@/components/progress/EvolutionChart.vue'
 import { assetCategories } from '@/config/asset-categories'
-import { CHART_COLORS } from '@/config/chart-theme'
+import { CHART_COLORS, CHART_SERIES_COLORS } from '@/config/chart-theme'
 import { liabilityCategories } from '@/config/liability-categories'
 import {
   buildMonthlyFlowSeries,
@@ -392,7 +388,12 @@ const bridgeItems = computed(() => {
 
 const flowSeries = computed(() => [
   { key: 'income', name: t('progress.detail.income'), color: CHART_COLORS.success, type: 'line' },
-  { key: 'costOfLife', name: t('progress.detail.expenses'), color: '#c44750', type: 'line' },
+  {
+    key: 'costOfLife',
+    name: t('progress.detail.expenses'),
+    color: CHART_COLORS.danger,
+    type: 'line',
+  },
   {
     key: 'savingsCapacity',
     name: t('progress.detail.savings'),
@@ -409,8 +410,8 @@ const freedomSeries = computed(() => [
 ])
 
 const compositionSeries = computed(() => {
-  const colors = ['#16815f', '#0870d8', '#39a8a3', '#8754ed', '#4f7cac', '#73bfb8']
-  const debtColors = ['#c44750', '#e58b43', '#d95568', '#b66d57', '#a85567', '#ef6c57']
+  const colors = CHART_SERIES_COLORS.assets
+  const debtColors = CHART_SERIES_COLORS.liabilities
   return [
     ...assetCategories
       .filter(({ id }) =>
@@ -577,10 +578,6 @@ function selectPerspective(view) {
   router.replace({ query: { ...route.query, view: view === 'wealth-creation' ? undefined : view } })
 }
 
-function selectPeriod(value) {
-  selectedPeriod.value = value
-}
-
 function categoryLabel(section, categoryId) {
   const categories = section === 'assets' ? assetCategories : liabilityCategories
   const category = categories.find(({ id }) => id === categoryId)
@@ -702,27 +699,6 @@ function signedCurrency(value) {
 .progress-tabs button:focus-visible {
   outline: 3px solid var(--color-primary-focus);
   outline-offset: -3px;
-}
-
-.period-switch {
-  display: inline-flex;
-  padding: 0.25rem;
-  border: 1px solid var(--color-line-strong);
-  border-radius: 999px;
-  background: var(--color-surface);
-  box-shadow: var(--shadow-control);
-}
-.period-switch button {
-  @include segmented-button;
-  min-width: 3.2rem;
-  padding: 0.4rem 0.75rem;
-  color: var(--color-copy);
-  transition: 160ms ease;
-}
-.period-switch button.selected {
-  background: var(--color-ink);
-  color: var(--color-inverse);
-  box-shadow: 0 6px 14px rgb(11 22 51 / 16%);
 }
 
 .evolution-toolbar {
@@ -1188,12 +1164,9 @@ function signedCurrency(value) {
     margin-bottom: 0.85rem;
   }
   .period-switch {
+    --app-period-option-min-width: 0;
     grid-row: 1;
     width: 100%;
-  }
-  .period-switch button {
-    flex: 1;
-    min-width: 0;
   }
   .perspective-header {
     grid-template-columns: 1fr;

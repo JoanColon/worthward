@@ -44,24 +44,12 @@
               <span>{{
                 annualSavings >= 0 ? t('plan.savingsCapacity') : t('plan.shortfall')
               }}</span>
-              <div class="period-switch" role="group" :aria-label="t('plan.periodSelector')">
-                <button
-                  type="button"
-                  :class="{ selected: period === 'annual' }"
-                  :aria-pressed="period === 'annual'"
-                  @click="period = 'annual'"
-                >
-                  {{ t('dashboard.costOfLife.annual') }}
-                </button>
-                <button
-                  type="button"
-                  :class="{ selected: period === 'monthly' }"
-                  :aria-pressed="period === 'monthly'"
-                  @click="period = 'monthly'"
-                >
-                  {{ t('dashboard.costOfLife.monthly') }}
-                </button>
-              </div>
+              <AppPeriodSwitch
+                v-model="period"
+                class="period-switch"
+                :aria-label="t('plan.periodSelector')"
+                :options="periodOptions"
+              />
             </div>
             <strong
               >{{ formatCurrency(displayedSavings) }}<small>{{ displayedPeriod }}</small></strong
@@ -177,6 +165,7 @@ import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 import AppPageHeader from '@/components/layout/AppPageHeader.vue'
+import AppPeriodSwitch from '@/components/ui/AppPeriodSwitch.vue'
 import { getLiabilityCategory } from '@/config/liability-categories'
 import {
   calculateScopedCashAnnualReturn,
@@ -226,6 +215,10 @@ const scopeStore = useFinancialScopeStore()
 const workspaceStore = useWorkspaceStore()
 const currentYear = currentFinancialYear()
 const period = ref('monthly')
+const periodOptions = computed(() => [
+  { value: 'annual', label: t('dashboard.costOfLife.annual') },
+  { value: 'monthly', label: t('dashboard.costOfLife.monthly') },
+])
 const infoOpen = ref(false)
 const pageError = ref(null)
 
@@ -558,7 +551,6 @@ function liabilityCategoryName(categoryId) {
   color: white;
 }
 .period-switch {
-  @include financial-period-switch;
   position: absolute;
   top: 0.85rem;
   right: 1rem;
@@ -873,15 +865,12 @@ function liabilityCategoryName(categoryId) {
   }
 
   .period-switch {
+    --app-period-option-min-width: 4.7rem;
+    --app-period-option-padding: 0.3rem 0.6rem;
+    --app-period-option-font-size: 0.72rem;
     top: 0.7rem;
     right: 0.8rem;
     padding: 0.15rem;
-  }
-
-  .period-switch button {
-    min-width: 4.7rem;
-    padding: 0.3rem 0.6rem;
-    font-size: 0.72rem;
   }
 
   .capacity-breakdown {
@@ -983,14 +972,12 @@ function liabilityCategoryName(categoryId) {
     gap: 0.75rem;
   }
   .period-switch {
+    --app-period-option-min-width-mobile: 0;
+    --app-period-option-padding-mobile: 0.32rem 0.58rem;
+    --app-period-option-font-size-mobile: 0.7rem;
     position: static;
     flex-shrink: 0;
     padding: 0.16rem;
-  }
-  .period-switch button {
-    min-width: 0;
-    padding: 0.32rem 0.58rem;
-    font-size: 0.7rem;
   }
   .capacity-main {
     gap: 0.3rem;

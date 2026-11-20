@@ -95,21 +95,15 @@
           </button>
         </section>
 
-        <section v-else class="empty-card">
-          <span class="empty-icon"><q-icon :name="category.icon" /></span>
-          <h2>
-            {{ t('liabilities.empty.contextualTitle', { items: t(category.itemNamePluralKey) }) }}
-          </h2>
-          <p>{{ t('liabilities.empty.description') }}</p>
-          <q-btn
-            unelevated
-            no-caps
-            color="primary"
-            icon="add"
-            :label="t(category.addLabelKey)"
-            @click="add"
-          />
-        </section>
+        <AppEmptyState
+          v-else
+          :icon="category.icon"
+          :title="t('liabilities.empty.contextualTitle', { items: t(category.itemNamePluralKey) })"
+          :description="t('liabilities.empty.description')"
+          :action-label="t(category.addLabelKey)"
+          tone="negative"
+          @action="add"
+        />
       </template>
     </main>
 
@@ -126,37 +120,19 @@
       />
     </q-dialog>
 
-    <q-dialog v-model="confirmDelete" persistent>
-      <q-card class="confirm-card">
-        <q-btn
-          flat
-          round
-          dense
-          icon="close"
-          class="dialog-close"
-          :aria-label="t('common.cancel')"
-          :disable="formSaving"
-          v-close-popup
-        />
-        <q-card-section
-          ><h2>{{ t('liabilities.delete.title') }}</h2>
-          <p>
-            {{ t('liabilities.delete.description', { name: deletingLiability?.itemName }) }}
-          </p></q-card-section
-        >
-        <q-card-actions align="between">
-          <q-btn
-            unelevated
-            no-caps
-            color="negative"
-            :label="t('common.delete')"
-            :loading="formSaving"
-            @click="deleteLiability"
-          />
-          <q-btn flat no-caps :label="t('common.cancel')" v-close-popup />
-        </q-card-actions>
-      </q-card>
-    </q-dialog>
+    <AppConfirmDialog
+      v-model="confirmDelete"
+      :title="t('liabilities.delete.title')"
+      :message="t('liabilities.delete.description', { name: deletingLiability?.itemName })"
+      :cancel-label="t('common.cancel')"
+      :confirm-label="t('common.delete')"
+      confirm-color="negative"
+      confirm-first
+      actions-align="between"
+      persistent
+      :loading="formSaving"
+      @confirm="deleteLiability"
+    />
   </q-page>
 </template>
 
@@ -168,6 +144,8 @@ import { useRoute, useRouter } from 'vue-router'
 import LiabilityForm from '@/components/liabilities/LiabilityForm.vue'
 import OwnershipAvatar from '@/components/financial/OwnershipAvatar.vue'
 import AppPageHeader from '@/components/layout/AppPageHeader.vue'
+import AppConfirmDialog from '@/components/ui/AppConfirmDialog.vue'
+import AppEmptyState from '@/components/ui/AppEmptyState.vue'
 import { getLiabilityCategory } from '@/config/liability-categories'
 import {
   currentFinancialMonth,
@@ -381,8 +359,7 @@ async function persist(action) {
 @include position-category-detail;
 
 .summary-icon,
-.position-icon,
-.empty-icon {
+.position-icon {
   background: var(--color-red-soft);
   color: var(--color-danger);
 }
@@ -407,14 +384,6 @@ async function persist(action) {
   place-items: center;
   width: 2rem;
   height: 2rem;
-}
-
-.empty-card h2 {
-  margin: 1rem 0 0;
-}
-
-.empty-card p {
-  margin: 0.55rem 0 1.25rem;
 }
 
 @media (max-width: 699px) {

@@ -106,7 +106,7 @@ const frequencyLabel = computed(() => t(`expenses.frequencies.${normalized.value
 const shownValue = computed(() => props.displayValue || formattedValue.value)
 const shownPeriod = computed(() => props.displayPeriod || frequencyLabel.value)
 const frequencyOptions = computed(() =>
-  EXPENSE_FREQUENCIES.map((value) => ({
+  EXPENSE_FREQUENCIES.filter((value) => value !== 'irregular').map((value) => ({
     value,
     label: t(`expenses.frequencies.${value}`),
   })),

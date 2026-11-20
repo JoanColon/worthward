@@ -75,7 +75,7 @@ function groupModelTotal(group) {
 
 <style scoped lang="scss">
 @use '@/css/mixins' as *;
-@use '@/css/expense-tracking' as tracking;
+@use '@/css/themes/expense-categories' as tracking;
 
 @include tracking.category-colors;
 

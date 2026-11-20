@@ -443,7 +443,7 @@ describe('atomic financial model mutations', () => {
       itemId: existing.id,
       item: {
         ...existing,
-        estimate: { amount: 94, frequency: 'yearly' },
+        estimate: { amount: 94, frequency: 'yearly', startMonth: 'july' },
         monthlyAmounts: { ...monthlyAmounts(0), july: 94 },
         liabilityId: null,
       },
@@ -451,7 +451,7 @@ describe('atomic financial model mutations', () => {
 
     expect(result.expense).toMatchObject({
       id: existing.id,
-      estimate: { amount: 94, frequency: 'yearly' },
+      estimate: { amount: 94, frequency: 'yearly', startMonth: 'july' },
       liabilityId: null,
     })
     expect(

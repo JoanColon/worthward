@@ -367,25 +367,17 @@
       </template>
     </main>
 
-    <q-dialog v-model="confirmDisconnect">
-      <q-card class="confirm-card">
-        <q-card-section>
-          <h2>{{ t('assets.portfolio.disconnectTitle') }}</h2>
-          <p>{{ t('assets.portfolio.disconnectDescription') }}</p>
-        </q-card-section>
-        <q-card-actions align="right">
-          <q-btn flat no-caps :label="t('common.cancel')" v-close-popup />
-          <q-btn
-            unelevated
-            no-caps
-            color="negative"
-            :label="t('assets.portfolio.disconnect')"
-            :loading="saving"
-            @click="disconnect"
-          />
-        </q-card-actions>
-      </q-card>
-    </q-dialog>
+    <AppConfirmDialog
+      v-model="confirmDisconnect"
+      :title="t('assets.portfolio.disconnectTitle')"
+      :message="t('assets.portfolio.disconnectDescription')"
+      :cancel-label="t('common.cancel')"
+      :confirm-label="t('assets.portfolio.disconnect')"
+      confirm-color="negative"
+      :show-close="false"
+      :loading="saving"
+      @confirm="disconnect"
+    />
 
     <q-dialog
       :model-value="Boolean(selectedAllocation)"
@@ -430,6 +422,7 @@ import { computed, ref, watch } from 'vue'
 import { useQuasar } from 'quasar'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
+import AppConfirmDialog from '@/components/ui/AppConfirmDialog.vue'
 import PortfolioAllocationChart from '@/components/assets/PortfolioAllocationChart.vue'
 import {
   investmentPortfolioCache,
@@ -883,8 +876,7 @@ h1 {
   height: 3.5rem;
   font-size: 1.65rem;
 }
-.setup-copy h2,
-.confirm-card h2 {
+.setup-copy h2 {
   margin: 0;
   color: var(--color-ink);
 }
@@ -892,8 +884,7 @@ h1 {
   margin-top: 1rem;
   font-size: 1.65rem;
 }
-.setup-copy p,
-.confirm-card p {
+.setup-copy p {
   color: var(--color-copy);
 }
 .template-button {
@@ -1202,9 +1193,6 @@ h1 {
   color: var(--color-danger);
   font-size: 0.72rem;
   text-align: right;
-}
-.confirm-card {
-  @include financial-simple-dialog(28rem);
 }
 .allocation-detail-dialog {
   width: min(38rem, calc(100vw - 2rem));

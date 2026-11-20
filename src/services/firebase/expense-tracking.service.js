@@ -37,6 +37,21 @@ export async function getExpenseTrackingMonth(workspaceId, period) {
     : emptyExpenseTrackingMonth(period)
 }
 
+export async function getExpenseTrackingYear(workspaceId, year) {
+  const normalizedYear = Number(year)
+  if (!Number.isInteger(normalizedYear) || normalizedYear < 2000 || normalizedYear > 2100) {
+    throw new Error('A valid year is required')
+  }
+  const periods = Array.from(
+    { length: 12 },
+    (_, index) => `${normalizedYear}-${String(index + 1).padStart(2, '0')}`,
+  )
+  const months = await Promise.all(
+    periods.map((period) => getExpenseTrackingMonth(workspaceId, period)),
+  )
+  return Object.fromEntries(periods.map((period, index) => [period.slice(5), months[index]]))
+}
+
 export async function getExpenseTrackingPreferences(workspaceId) {
   const config = await getModelConfig(workspaceId, 'expenseTracking')
   const saved = config?.enabledSubcategories
