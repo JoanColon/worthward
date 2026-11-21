@@ -13,6 +13,10 @@ export default {
     save: 'Save',
   },
   financial: {
+    categoryBreakdown: {
+      showMore: 'Show {count} more items',
+      showFewer: 'Show fewer items',
+    },
     ownership: {
       individual: 'Individual',
       label: 'Ownership',
@@ -1078,6 +1082,19 @@ export default {
     editDetails: 'Edit',
     model: 'Model',
     moreActions: 'More actions for {name}',
+    overview: {
+      breakdownTitle: 'Assets by category',
+      breakdownEmpty: 'Add asset values to see your category breakdown.',
+      category: 'Category',
+      currentValue: 'Current value',
+      viewDetails: 'View details',
+    },
+    categoryDetail: {
+      item: 'Asset',
+      currentValue: 'Current value',
+      breakdownTitle: 'Value by asset',
+      breakdownEmpty: 'Add assets to see this breakdown.',
+    },
     portfolio: {
       eyebrow: 'Investment model',
       loading: 'Loading your portfolio…',
@@ -1372,6 +1389,19 @@ export default {
     editDetails: 'Edit',
     model: 'Model',
     moreActions: 'More actions for {name}',
+    overview: {
+      breakdownTitle: 'Liabilities by category',
+      breakdownEmpty: 'Add liability balances to see your category breakdown.',
+      category: 'Category',
+      currentBalance: 'Current balance',
+      viewDetails: 'View details',
+    },
+    categoryDetail: {
+      item: 'Liability',
+      currentBalance: 'Current balance',
+      breakdownTitle: 'Balance by liability',
+      breakdownEmpty: 'Add liabilities to see this breakdown.',
+    },
     quickEdit: {
       title: 'Total balance',
     },
@@ -1548,6 +1578,22 @@ export default {
     itemCount: '{count} sources',
     itemSummary: '{count} {items}',
     editDetails: 'Edit',
+    overview: {
+      annualIncome: 'Annual income',
+      averagePerMonth: 'average per month',
+      breakdownTitle: 'Income by category',
+      breakdownEmpty: 'Add income estimates to see your category breakdown.',
+      category: 'Category',
+      annualAmount: 'Annual amount',
+      monthlyAverage: 'Monthly average',
+      viewDetails: 'View details',
+    },
+    categoryDetail: {
+      item: 'Income source',
+      annualAmount: 'Annual amount',
+      breakdownTitle: 'Income by source',
+      breakdownEmpty: 'Add income sources to see this breakdown.',
+    },
     quickEdit: {
       title: '{category} total',
       inputLabel: 'Income amount',
@@ -2002,12 +2048,6 @@ export default {
       planned: 'Planned',
       remaining: 'Remaining',
     },
-    manage: {
-      action: 'Manage categories',
-      editAction: 'Edit expense tracker categories',
-      title: 'Tracking categories',
-      description: 'Choose subcategories to track.',
-    },
     entry: {
       item: 'Item',
       amount: 'Amount',
@@ -2053,7 +2093,7 @@ export default {
     },
     empty: {
       title: 'Choose what you want to track',
-      description: 'Enable a category to start tracking.',
+      description: 'Enable tracking from a subcategory in Expenses to see it here.',
     },
     delete: {
       title: 'Delete tracked expense?',

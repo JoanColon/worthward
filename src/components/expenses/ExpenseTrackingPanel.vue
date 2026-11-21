@@ -22,25 +22,7 @@
       <q-icon name="tune" />
       <h2>{{ t('expenseTracker.empty.title') }}</h2>
       <p>{{ t('expenseTracker.empty.description') }}</p>
-      <q-btn
-        unelevated
-        no-caps
-        color="primary"
-        :label="t('expenseTracker.manage.action')"
-        @click="$emit('manage')"
-      />
     </section>
-
-    <q-btn
-      v-if="categories.length"
-      flat
-      no-caps
-      icon="tune"
-      color="primary"
-      :label="t('expenseTracker.manage.editAction')"
-      class="edit-tracker-categories"
-      @click="$emit('manage')"
-    />
   </section>
 </template>
 
@@ -48,7 +30,7 @@
 import { useI18n } from 'vue-i18n'
 
 defineProps({ categories: { type: Array, required: true } })
-defineEmits(['add', 'manage'])
+defineEmits(['add'])
 const { t } = useI18n()
 </script>
 
@@ -124,11 +106,6 @@ const { t } = useI18n()
 .tracking-action {
   color: var(--tracking-color, var(--color-primary));
   font-size: 1.45rem;
-}
-
-.edit-tracker-categories {
-  margin-top: 0.35rem;
-  margin-left: -0.75rem;
 }
 
 .empty-card {

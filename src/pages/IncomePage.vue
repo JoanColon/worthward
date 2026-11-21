@@ -28,87 +28,86 @@
           :back-label="t('navigation.backToWorkspaceHome')"
           :back-to="workspaceHomeRoute"
         />
-        <section class="total-card">
-          <div class="total-card-heading">
-            <span>{{ t('income.availableIncome') }}</span>
-            <AppPeriodSwitch
-              v-model="period"
-              class="period-switch"
-              :aria-label="t('dashboard.costOfLife.period')"
-              :options="periodOptions"
-            />
-          </div>
-          <div class="available-income-main">
-            <strong>{{ formatCurrency(displayedAvailableIncome) }}</strong>
-            <small>{{ displayedPeriodLabel }} · {{ scopeLabel }}</small>
-          </div>
-          <div class="income-breakdown">
-            <div>
-              <span>{{ t('income.totalIncome') }}</span>
-              <strong>{{ formatCurrency(displayedTotal) }}</strong>
-            </div>
-            <div>
-              <span>{{ t('income.reinvestedIncome') }}</span>
-              <strong>{{ formatCurrency(displayedReinvestedIncome) }}</strong>
-            </div>
-          </div>
-        </section>
+        <FinancialOverviewCard
+          tone="income"
+          icon="payments"
+          :label="t('income.overview.annualIncome')"
+          :formatted-total="formatCurrency(total)"
+          :secondary-value="formatCurrency(total / 12)"
+          :secondary-label="t('income.overview.averagePerMonth')"
+          :scope-label="scopeLabel"
+          :chart-title="t('income.overview.breakdownTitle')"
+          :total-label="t('dashboard.year')"
+          :empty-label="t('income.overview.breakdownEmpty')"
+          :entries="breakdownEntries"
+        />
         <section class="category-list" :aria-label="t('income.enabledCategories')">
-          <div v-for="category in enabledCategories" :key="category.id" class="category-row">
-            <button type="button" class="category-main" @click="openCategory(category.id)">
-              <span class="category-icon"><q-icon :name="category.icon" /></span
-              ><span class="category-copy"
-                ><strong>{{ t(category.nameKey) }}</strong
-                ><small>{{ categoryStatus(category.id) }}</small></span
-              >
-            </button>
-            <SimpleValueEditor
-              :value="categoryEditorValue(category.id)"
-              :formatted-value="categoryValue(category.id)"
-              :formatted-period="categoryPeriodLabel"
-              :saving="isCategorySaving(category.id)"
-              :disabled="!canQuickEdit(category.id)"
-              :aria-label="
-                t('income.quickEdit.editLabel', {
-                  category: t(category.nameKey),
-                  value: categoryValue(category.id),
-                })
-              "
-              :title="t('income.quickEdit.title', { category: t(category.nameKey) })"
-              :input-label="t('income.quickEdit.inputLabel')"
-              :input-suffix="`/ ${categoryPeriodLabel}`"
-              :invalid-message="t('income.quickEdit.invalid')"
-              @save="saveSimpleIncome(category, $event)"
-            />
-            <button
-              type="button"
-              class="category-link"
-              :aria-label="t('income.openCategory', { category: t(category.nameKey) })"
+          <div class="category-table-heading" aria-hidden="true">
+            <span>{{ t('income.overview.category') }}</span>
+            <span>{{ t('income.overview.annualAmount') }}</span>
+            <span>{{ t('income.overview.monthlyAverage') }}</span>
+          </div>
+          <div class="category-rows">
+            <div
+              v-for="category in enabledCategories"
+              :key="category.id"
+              class="category-row"
+              role="link"
+              tabindex="0"
               @click="openCategory(category.id)"
+              @keydown.enter.self="openCategory(category.id)"
+              @keydown.space.self.prevent="openCategory(category.id)"
             >
-              <q-icon name="chevron_right" />
-            </button>
-            <q-btn
-              flat
-              round
-              dense
-              icon="more_vert"
-              color="grey-7"
-              class="category-menu"
-              @click.stop
-              ><q-menu
-                ><q-list dense
-                  ><q-item
-                    clickable
-                    v-close-popup
-                    class="text-negative"
-                    @click="requestCategoryDelete(category)"
-                    ><q-item-section avatar><q-icon name="delete_outline" /></q-item-section
-                    ><q-item-section>{{ t('common.delete') }}</q-item-section></q-item
-                  ></q-list
-                ></q-menu
-              ></q-btn
-            >
+              <div class="category-main">
+                <span class="category-icon"><q-icon :name="category.icon" /></span>
+                <span class="category-copy">
+                  <strong>{{ t(category.nameKey) }}</strong>
+                  <small>{{ categoryStatus(category.id) }}</small>
+                </span>
+              </div>
+              <SimpleValueEditor
+                :value="categoryAnnualValue(category.id)"
+                :formatted-value="formatCurrency(categoryAnnualValue(category.id))"
+                :formatted-period="t('dashboard.year')"
+                :saving="isCategorySaving(category.id)"
+                :disabled="!canQuickEdit(category.id)"
+                :aria-label="
+                  t('income.quickEdit.editLabel', {
+                    category: t(category.nameKey),
+                    value: formatCurrency(categoryAnnualValue(category.id)),
+                  })
+                "
+                :title="t('income.quickEdit.title', { category: t(category.nameKey) })"
+                :input-label="t('income.quickEdit.inputLabel')"
+                :input-suffix="`/ ${t('dashboard.year')}`"
+                :invalid-message="t('income.quickEdit.invalid')"
+                @click="handleValueClick($event, category.id)"
+                @save="saveSimpleIncome(category, $event)"
+              />
+              <span class="category-monthly">
+                <strong>{{ formatCurrency(categoryAnnualValue(category.id) / 12) }}</strong>
+                <small>/ {{ t('dashboard.month') }}</small>
+              </span>
+              <q-btn flat round dense icon="more_vert" color="grey-7" @click.stop>
+                <q-menu>
+                  <q-list dense>
+                    <q-item clickable v-close-popup @click="openCategory(category.id)">
+                      <q-item-section avatar><q-icon name="visibility" /></q-item-section>
+                      <q-item-section>{{ t('income.overview.viewDetails') }}</q-item-section>
+                    </q-item>
+                    <q-item
+                      clickable
+                      v-close-popup
+                      class="text-negative"
+                      @click="requestCategoryDelete(category)"
+                    >
+                      <q-item-section avatar><q-icon name="delete_outline" /></q-item-section>
+                      <q-item-section>{{ t('common.delete') }}</q-item-section>
+                    </q-item>
+                  </q-list>
+                </q-menu>
+              </q-btn>
+            </div>
           </div>
 
           <footer class="category-actions">
@@ -172,14 +171,14 @@ import { useQuasar } from 'quasar'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import SimpleValueEditor from '@/components/financial/SimpleValueEditor.vue'
+import FinancialOverviewCard from '@/components/financial/FinancialOverviewCard.vue'
 import IncomeCategorySetup from '@/components/income/IncomeCategorySetup.vue'
 import AppPageHeader from '@/components/layout/AppPageHeader.vue'
 import AppConfirmDialog from '@/components/ui/AppConfirmDialog.vue'
-import AppPeriodSwitch from '@/components/ui/AppPeriodSwitch.vue'
 import { incomeCategories } from '@/config/income-categories'
+import { CHART_SERIES_COLORS } from '@/config/chart-theme'
 import {
   currentFinancialYear,
-  financialYearAvailableIncomeValue,
   financialYearFlowCategoryValue,
   financialYearFlowValue,
 } from '../../functions/shared/positions/annual-projection.js'
@@ -211,11 +210,6 @@ const confirmDisable = ref(false)
 const confirmCategoryDelete = ref(false)
 const deletingCategory = ref(null)
 const pendingSelection = ref(null)
-const period = ref('annual')
-const periodOptions = computed(() => [
-  { value: 'annual', label: t('dashboard.costOfLife.annual') },
-  { value: 'monthly', label: t('dashboard.costOfLife.monthly') },
-])
 const currentYear = currentFinancialYear()
 const workspaceId = computed(() => String(route.params.workspaceId))
 const workspaceHomeRoute = computed(() => ({
@@ -250,24 +244,25 @@ const pageLoading = computed(
 const total = computed(() =>
   financialYearFlowValue(financialYear.value, 'income', selectedMemberId.value),
 )
-const availableIncome = computed(() =>
-  financialYearAvailableIncomeValue(financialYear.value, selectedMemberId.value),
-)
-const displayedTotal = computed(() => (period.value === 'annual' ? total.value : total.value / 12))
-const displayedAvailableIncome = computed(() =>
-  period.value === 'annual' ? availableIncome.value : availableIncome.value / 12,
-)
-const displayedReinvestedIncome = computed(() =>
-  Math.max(0, displayedTotal.value - displayedAvailableIncome.value),
-)
-const displayedPeriodLabel = computed(() =>
-  period.value === 'annual'
-    ? t('dashboard.costOfLife.perYear')
-    : t('dashboard.costOfLife.perMonth'),
-)
-const categoryPeriodLabel = computed(() =>
-  period.value === 'annual' ? t('dashboard.year') : t('dashboard.month'),
-)
+const breakdownEntries = computed(() => {
+  const entries = enabledCategories.value
+    .map((category) => ({
+      id: category.id,
+      name: t(category.nameKey),
+      value: categoryAnnualValue(category.id),
+      color:
+        CHART_SERIES_COLORS.categories[
+          incomeCategories.findIndex(({ id }) => id === category.id) %
+            CHART_SERIES_COLORS.categories.length
+        ],
+    }))
+    .filter(({ value }) => value > 0)
+  const chartTotal = entries.reduce((sum, entry) => sum + entry.value, 0)
+  return entries.map((entry) => ({
+    ...entry,
+    percentage: chartTotal > 0 ? (entry.value / chartTotal) * 100 : 0,
+  }))
+})
 const scopeLabel = computed(() =>
   selectedMemberId.value === 'all'
     ? t('dashboard.allMembers')
@@ -340,14 +335,6 @@ function categoryStatus(id) {
   )
   return t('income.itemCount', { count })
 }
-function categoryValue(id) {
-  const annualValue = categoryAnnualValue(id)
-  return formatCurrency(period.value === 'annual' ? annualValue : annualValue / 12)
-}
-function categoryEditorValue(id) {
-  const annualValue = categoryAnnualValue(id)
-  return period.value === 'annual' ? annualValue : annualValue / 12
-}
 function categoryItems(id) {
   return incomeStore.itemsForCategory(id)
 }
@@ -366,7 +353,7 @@ function isCategorySaving(id) {
 async function saveSimpleIncome(category, displayedValue) {
   if (isCategorySaving(category.id) || !canQuickEdit(category.id)) return
 
-  const annualValue = period.value === 'annual' ? displayedValue : displayedValue * 12
+  const annualValue = displayedValue
   const existing = simpleIncome(category.id)
   const payload = {
     ...(existing || {}),
@@ -398,6 +385,9 @@ async function saveSimpleIncome(category, displayedValue) {
     savingCategoryIds.value = next
   }
 }
+function handleValueClick(event, categoryId) {
+  if (canQuickEdit(categoryId)) event.stopPropagation()
+}
 function simpleCalculation(mode, annualValue) {
   if (mode === 'annual_salary') return { mode, annualAmount: annualValue, paymentsPerYear: 12 }
   if (mode === 'monthly_schedule') {
@@ -428,12 +418,16 @@ async function persist(action) {
 
 <style scoped lang="scss">
 @use '@/css/mixins' as *;
+@use '@/css/foundation/breakpoints' as bp;
+
 .income-page {
   @include financial-page;
 }
+
 .income-shell {
   @include financial-shell(wide);
 }
+
 .state {
   display: grid;
   place-items: center;
@@ -446,124 +440,35 @@ async function persist(action) {
 .state p {
   margin: 0;
 }
-.total-card {
-  @include financial-total-card;
-  min-height: 0;
-  padding: 1.15rem 1.5rem;
-}
-.total-card-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-}
-.total-card span,
-.total-card small {
-  @include financial-total-secondary;
-}
-.available-income-main {
-  display: grid;
-  width: fit-content;
-  margin-top: 0.25rem;
-}
-.available-income-main > strong {
-  @include financial-total-value;
-}
-.total-card small {
-  @include financial-total-meta;
-}
-.income-breakdown {
-  display: flex;
-  gap: 2.5rem;
-  width: fit-content;
-  min-width: min(100%, 26rem);
-  margin-top: 0.75rem;
-  padding-top: 0.6rem;
-  border-top: 1px solid rgb(255 255 255 / 18%);
-}
-.income-breakdown > div {
-  display: grid;
-  grid-template-columns: auto auto;
-  gap: 1rem;
-  align-items: baseline;
-}
-.income-breakdown strong {
-  color: var(--color-inverse);
-  font-size: 1rem;
-}
-.category-list {
-  margin-top: 1.25rem;
-  overflow: hidden;
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-card);
-  background: var(--color-surface);
-  box-shadow: var(--shadow-card);
-}
-.category-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto auto;
-  align-items: center;
-  gap: 0.75rem;
-  min-height: 5.5rem;
-  padding: 0.75rem 1rem;
-  border-bottom: 1px solid var(--color-line);
-}
-.category-row:last-of-type {
-  border-bottom: 0;
-}
-.category-actions {
-  display: flex;
-  justify-content: flex-end;
-  padding: 0.8rem 1rem;
-  border-top: 1px solid var(--color-line);
-}
-.category-main,
-.category-link {
-  border: 0;
-  background: transparent;
-  cursor: pointer;
-}
-.category-main {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  color: var(--color-ink);
-  text-align: left;
-}
+
+@include financial-overview-list(minmax(13rem, 1fr) 10rem 9rem 5rem);
+
 .category-icon {
-  display: grid;
-  place-items: center;
-  flex: 0 0 3rem;
-  width: 3rem;
-  height: 3rem;
-  border-radius: 50%;
   background: var(--color-green-soft);
   color: var(--color-success-dark);
-  font-size: 1.35rem;
 }
-.category-copy strong,
-.category-copy small {
-  display: block;
-}
-.category-copy small {
-  margin-top: 0.2rem;
-  color: var(--color-copy);
-}
-.category-value {
-  min-width: 7rem;
+
+.category-monthly {
+  display: grid;
+  justify-items: end;
   text-align: right;
+  white-space: nowrap;
 }
-.category-value strong,
-.category-value small {
-  display: block;
+
+.category-monthly strong,
+.category-row :deep(.simple-value .value-copy strong) {
+  color: var(--color-ink);
+  font-size: 1rem;
+  font-weight: var(--font-weight-bold);
 }
-.category-value small {
-  color: var(--color-copy);
+
+.category-monthly small,
+.category-row :deep(.simple-value .value-copy small) {
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  font-weight: 400;
 }
-.category-link {
-  color: var(--color-copy);
-  font-size: 1.25rem;
-}
+
 .category-dialog {
   @include financial-dialog-card(76rem);
   max-width: none;
@@ -571,44 +476,10 @@ async function persist(action) {
 .category-dialog :deep(.setup-panel) {
   max-width: none;
 }
-@media (max-width: 760px) {
-  .category-row {
-    grid-template-columns: minmax(0, 1fr) auto auto auto;
-    @include mobile-financial-row;
-  }
-  .category-link {
+
+@media (max-width: bp.$overview-stack-max) {
+  .category-monthly {
     display: none;
-  }
-  .total-card {
-    gap: 0;
-    padding: 0.8rem 1rem;
-  }
-  .period-switch {
-    width: 8.25rem;
-  }
-  .income-breakdown {
-    justify-content: space-between;
-    gap: 1rem;
-    width: 100%;
-    min-width: 0;
-  }
-  .income-breakdown > div {
-    grid-template-columns: 1fr;
-    gap: 0.1rem;
-  }
-  .category-actions :deep(.q-btn) {
-    width: 100%;
-  }
-
-  .category-main {
-    gap: 0.6rem;
-  }
-
-  .category-icon {
-    flex-basis: 2.35rem;
-    width: 2.35rem;
-    height: 2.35rem;
-    font-size: 1.1rem;
   }
 }
 </style>

@@ -25,16 +25,24 @@
           :back-to="liabilitiesRoute"
         />
 
-        <section class="summary-card">
-          <span class="summary-icon"><q-icon :name="category.icon" /></span>
-          <div class="summary-copy">
-            <span>{{ t('liabilities.total') }}</span
-            ><strong>{{ formatCurrency(categoryTotal) }}</strong
-            ><small>{{ itemSummary }}</small>
-          </div>
-        </section>
+        <FinancialCategoryOverviewCard
+          tone="liabilities"
+          :icon="category.icon"
+          :label="t('liabilities.total')"
+          :formatted-total="formatCurrency(categoryTotal)"
+          :secondary-label="itemSummary"
+          :chart-title="t('liabilities.categoryDetail.breakdownTitle')"
+          :empty-label="t('liabilities.categoryDetail.breakdownEmpty')"
+          :entries="breakdownEntries"
+          :total="categoryTotal"
+        />
 
         <section v-if="allCategoryLiabilities.length" class="position-list">
+          <div class="detail-table-heading" aria-hidden="true">
+            <span>{{ t('liabilities.categoryDetail.item') }}</span>
+            <span>{{ t('liabilities.categoryDetail.currentBalance') }}</span>
+            <span></span>
+          </div>
           <article
             v-for="liability in scopedLiabilities"
             :key="liability.id"
@@ -52,7 +60,6 @@
                 ><small>{{ liability.itemName }}</small></span
               >
             </div>
-            <OwnershipAvatar :ownership="liability.ownership" :members="members" />
             <strong class="position-value">{{ formatCurrency(liability.scopedValue) }}</strong>
             <q-btn
               flat
@@ -142,7 +149,7 @@ import { useQuasar } from 'quasar'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import LiabilityForm from '@/components/liabilities/LiabilityForm.vue'
-import OwnershipAvatar from '@/components/financial/OwnershipAvatar.vue'
+import FinancialCategoryOverviewCard from '@/components/financial/FinancialCategoryOverviewCard.vue'
 import AppPageHeader from '@/components/layout/AppPageHeader.vue'
 import AppConfirmDialog from '@/components/ui/AppConfirmDialog.vue'
 import AppEmptyState from '@/components/ui/AppEmptyState.vue'
@@ -243,6 +250,13 @@ const categoryTotal = computed(() =>
     categoryId.value,
     selectedMemberId.value,
   ),
+)
+const breakdownEntries = computed(() =>
+  scopedLiabilities.value.map((liability) => ({
+    id: liability.id,
+    name: liability.itemName || liabilitySubcategoryLabel(liability),
+    value: Number(liability.scopedValue || 0),
+  })),
 )
 const itemSummary = computed(() => {
   const count = allCategoryLiabilities.value.length
@@ -347,6 +361,7 @@ async function persist(action) {
 
 <style scoped lang="scss">
 @use '@/css/mixins' as *;
+@use '@/css/foundation/breakpoints' as bp;
 
 .category-page {
   @include financial-page;
@@ -357,8 +372,8 @@ async function persist(action) {
 }
 
 @include position-category-detail;
+@include financial-detail-table-heading(minmax(14rem, 1fr) auto auto);
 
-.summary-icon,
 .position-icon {
   background: var(--color-red-soft);
   color: var(--color-danger);
@@ -386,9 +401,9 @@ async function persist(action) {
   height: 2rem;
 }
 
-@media (max-width: 699px) {
+@media (max-width: bp.$sm-max) {
   .position-row {
-    grid-template-columns: minmax(0, 1fr) auto auto auto;
+    grid-template-columns: minmax(0, 1fr) auto auto;
     @include mobile-financial-row;
   }
 
@@ -398,14 +413,14 @@ async function persist(action) {
   }
 
   .position-value {
-    grid-column: 3;
+    grid-column: 2;
     grid-row: 1;
     min-width: 0;
     font-size: 0.95rem;
   }
 
   .position-row > .q-btn {
-    grid-column: 4;
+    grid-column: 3;
     grid-row: 1;
   }
 }

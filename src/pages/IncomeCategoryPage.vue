@@ -23,21 +23,25 @@
           :back-label="t('income.backToIncome')"
           :back-to="incomeRoute"
         />
-        <section class="summary-card">
-          <span class="summary-icon"><q-icon :name="category.icon" /></span>
-          <div class="summary-copy">
-            <span>{{ summaryLabel }}</span
-            ><strong>{{ formatCurrency(displayedCategoryTotal) }}</strong
-            ><small>{{ itemSummary }}</small>
-          </div>
-          <AppPeriodSwitch
-            v-model="period"
-            class="period-switch"
-            :aria-label="t('dashboard.costOfLife.period')"
-            :options="periodOptions"
-          />
-        </section>
+        <FinancialCategoryOverviewCard
+          tone="income"
+          :icon="category.icon"
+          :label="t('income.annualTotal')"
+          :formatted-total="formatCurrency(categoryTotal)"
+          :secondary-value="formatCurrency(categoryTotal / 12)"
+          :secondary-label="t('income.overview.averagePerMonth')"
+          :chart-title="t('income.categoryDetail.breakdownTitle')"
+          :empty-label="t('income.categoryDetail.breakdownEmpty')"
+          :entries="breakdownEntries"
+          :total="categoryTotal"
+        />
         <section v-if="allCategoryIncome.length" class="income-list">
+          <div class="detail-table-heading" aria-hidden="true">
+            <span>{{ t('income.categoryDetail.item') }}</span>
+            <span>{{ t('income.categoryDetail.annualAmount') }}</span>
+            <span>{{ t('income.overview.monthlyAverage') }}</span>
+            <span></span>
+          </div>
           <article
             v-for="item in scopedIncome"
             :key="item.id"
@@ -55,11 +59,14 @@
                 ><small>{{ item.itemName }}</small></span
               >
             </div>
-            <OwnershipAvatar :ownership="item.ownership" :members="members" />
-            <strong class="income-value"
-              >{{ formatCurrency(displayedItemValue(item.scopedValue))
-              }}<small>/ {{ periodLabel }}</small></strong
-            >
+            <span class="income-annual">
+              <strong>{{ formatCurrency(item.scopedValue) }}</strong>
+              <small>/ {{ t('dashboard.year') }}</small>
+            </span>
+            <span class="income-monthly">
+              <strong>{{ formatCurrency(item.scopedValue / 12) }}</strong>
+              <small>/ {{ t('dashboard.month') }}</small>
+            </span>
             <q-btn flat round dense icon="more_vert" color="grey-7" @click.stop
               ><q-menu
                 ><q-list dense
@@ -128,11 +135,10 @@ import { useQuasar } from 'quasar'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import IncomeForm from '@/components/income/IncomeForm.vue'
-import OwnershipAvatar from '@/components/financial/OwnershipAvatar.vue'
+import FinancialCategoryOverviewCard from '@/components/financial/FinancialCategoryOverviewCard.vue'
 import AppPageHeader from '@/components/layout/AppPageHeader.vue'
 import AppConfirmDialog from '@/components/ui/AppConfirmDialog.vue'
 import AppEmptyState from '@/components/ui/AppEmptyState.vue'
-import AppPeriodSwitch from '@/components/ui/AppPeriodSwitch.vue'
 import { getIncomeCategory } from '@/config/income-categories'
 import {
   currentFinancialYear,
@@ -168,11 +174,6 @@ const editingIncome = ref(null)
 const deletingIncome = ref(null)
 const confirmDelete = ref(false)
 const formSaving = ref(false)
-const period = ref('annual')
-const periodOptions = computed(() => [
-  { value: 'annual', label: t('dashboard.costOfLife.annual') },
-  { value: 'monthly', label: t('dashboard.costOfLife.monthly') },
-])
 let preparationId = 0
 const currentYear = currentFinancialYear()
 const workspaceId = computed(() => String(route.params.workspaceId))
@@ -245,18 +246,13 @@ const categoryTotal = computed(() =>
     selectedMemberId.value,
   ),
 )
-const displayedCategoryTotal = computed(() => displayedValue(categoryTotal.value))
-const summaryLabel = computed(() =>
-  period.value === 'annual' ? t('income.annualTotal') : t('income.monthlyTotal'),
+const breakdownEntries = computed(() =>
+  scopedIncome.value.map((item) => ({
+    id: item.id,
+    name: incomeDisplayName(item),
+    value: Number(item.scopedValue || 0),
+  })),
 )
-const periodLabel = computed(() =>
-  period.value === 'annual' ? t('dashboard.year') : t('dashboard.month'),
-)
-const itemSummary = computed(() => {
-  const count = allCategoryIncome.value.length
-  const key = count === 1 ? category.value.itemNameKey : category.value.itemNamePluralKey
-  return t('income.itemSummary', { count, items: t(key) })
-})
 const pageLoading = computed(
   () =>
     preparing.value ||
@@ -277,12 +273,6 @@ function defaultCalculation(mode, value) {
     }
   if (mode === 'one_time') return { mode, amount: value }
   return { mode: 'recurring', amount: value, frequency: 'yearly' }
-}
-function displayedValue(annualValue) {
-  return period.value === 'annual' ? Number(annualValue || 0) : Number(annualValue || 0) / 12
-}
-function displayedItemValue(annualValue) {
-  return displayedValue(annualValue)
 }
 async function preparePage(force = false) {
   const current = ++preparationId
@@ -376,6 +366,9 @@ async function persist(action) {
 
 <style scoped lang="scss">
 @use '@/css/mixins' as *;
+@use '@/css/foundation/breakpoints' as bp;
+
+$income-table-compact-max: 720px;
 
 .category-page {
   @include financial-page;
@@ -383,6 +376,7 @@ async function persist(action) {
 .category-shell {
   @include financial-shell(wide);
 }
+@include financial-detail-table-heading(minmax(14rem, 1fr) 9rem 9rem auto);
 .state {
   display: grid;
   place-items: center;
@@ -395,19 +389,12 @@ async function persist(action) {
 .state p {
   margin: 0;
 }
-.summary-card {
-  @include financial-category-summary;
-}
-.summary-icon,
 .income-icon {
   display: grid;
   place-items: center;
   border-radius: 50%;
   background: var(--color-green-soft);
   color: var(--color-success-dark);
-}
-.summary-icon {
-  @include financial-summary-icon;
 }
 .income-list {
   margin-top: 1.25rem;
@@ -419,7 +406,7 @@ async function persist(action) {
 }
 .income-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto auto;
+  grid-template-columns: minmax(14rem, 1fr) 9rem 9rem auto;
   align-items: center;
   gap: 1rem;
   min-height: 5rem;
@@ -462,14 +449,26 @@ async function persist(action) {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.income-value {
+.income-annual,
+.income-monthly {
+  display: grid;
+  justify-items: end;
   text-align: right;
   white-space: nowrap;
 }
-.income-value small {
-  display: block;
-  color: var(--color-copy);
-  font-weight: 500;
+
+.income-annual strong,
+.income-monthly strong {
+  color: var(--color-ink);
+  font-size: 1rem;
+  font-weight: var(--font-weight-bold);
+}
+
+.income-annual small,
+.income-monthly small {
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  font-weight: 400;
 }
 .add-row {
   display: flex;
@@ -483,9 +482,9 @@ async function persist(action) {
   font-weight: 700;
   cursor: pointer;
 }
-@media (max-width: 720px) {
+@media (max-width: $income-table-compact-max) {
   .income-row {
-    grid-template-columns: minmax(0, 1fr) auto auto auto;
+    grid-template-columns: minmax(0, 1fr) auto auto;
     @include mobile-financial-row;
   }
   .income-copy small {
@@ -494,8 +493,17 @@ async function persist(action) {
   .income-main {
     gap: 0.6rem;
   }
-  .income-value {
+  .income-annual {
+    grid-column: 2;
+    grid-row: 1;
     font-size: 0.95rem;
+  }
+  .income-monthly {
+    display: none;
+  }
+  .income-row > .q-btn {
+    grid-column: 3;
+    grid-row: 1;
   }
   .add-row {
     padding: 0.75rem;

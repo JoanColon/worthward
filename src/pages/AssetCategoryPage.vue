@@ -32,16 +32,24 @@
           :back-to="assetsRoute"
         />
 
-        <section class="summary-card">
-          <span class="summary-icon"><q-icon :name="category.icon" /></span>
-          <div class="summary-copy">
-            <span>{{ t('assets.total') }}</span>
-            <strong>{{ formatCurrency(categoryTotal) }}</strong>
-            <small>{{ itemSummary }}</small>
-          </div>
-        </section>
+        <FinancialCategoryOverviewCard
+          tone="assets"
+          :icon="category.icon"
+          :label="t('assets.total')"
+          :formatted-total="formatCurrency(categoryTotal)"
+          :secondary-label="itemSummary"
+          :chart-title="t('assets.categoryDetail.breakdownTitle')"
+          :empty-label="t('assets.categoryDetail.breakdownEmpty')"
+          :entries="breakdownEntries"
+          :total="categoryTotal"
+        />
 
         <section v-if="allCategoryAssets.length" class="position-list">
+          <div class="detail-table-heading" aria-hidden="true">
+            <span>{{ t('assets.categoryDetail.item') }}</span>
+            <span>{{ t('assets.categoryDetail.currentValue') }}</span>
+            <span></span>
+          </div>
           <article
             v-for="asset in scopedAssets"
             :key="asset.id"
@@ -60,7 +68,6 @@
               </span>
             </div>
 
-            <OwnershipAvatar :ownership="asset.ownership" :members="members" />
             <strong class="position-value">{{ formatCurrency(asset.scopedValue) }}</strong>
 
             <q-btn
@@ -151,7 +158,7 @@ import { useQuasar } from 'quasar'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import AssetForm from '@/components/assets/AssetForm.vue'
-import OwnershipAvatar from '@/components/financial/OwnershipAvatar.vue'
+import FinancialCategoryOverviewCard from '@/components/financial/FinancialCategoryOverviewCard.vue'
 import AppPageHeader from '@/components/layout/AppPageHeader.vue'
 import AppConfirmDialog from '@/components/ui/AppConfirmDialog.vue'
 import AppEmptyState from '@/components/ui/AppEmptyState.vue'
@@ -263,6 +270,13 @@ const categoryTotal = computed(() =>
     categoryId.value,
     selectedMemberId.value,
   ),
+)
+const breakdownEntries = computed(() =>
+  scopedAssets.value.map((asset) => ({
+    id: asset.id,
+    name: assetDisplayName(asset),
+    value: Number(asset.scopedValue || 0),
+  })),
 )
 const itemSummary = computed(() => {
   const count = allCategoryAssets.value.length
@@ -409,6 +423,7 @@ async function persist(action) {
 
 <style scoped lang="scss">
 @use '@/css/mixins' as *;
+@use '@/css/foundation/breakpoints' as bp;
 
 .category-page {
   @include financial-page;
@@ -419,6 +434,7 @@ async function persist(action) {
 }
 
 @include position-category-detail;
+@include financial-detail-table-heading(minmax(14rem, 1fr) auto auto);
 
 .error-state h1 {
   font-size: 2rem;
@@ -429,7 +445,6 @@ async function persist(action) {
   margin: 0.75rem 0 1.25rem;
 }
 
-.summary-icon,
 .position-icon {
   background: var(--color-green-soft);
   color: var(--color-success-dark);
@@ -461,9 +476,9 @@ async function persist(action) {
   font-size: 1.1rem;
 }
 
-@media (max-width: 760px) {
+@media (max-width: bp.$content-compact-max) {
   .position-row {
-    grid-template-columns: minmax(0, 1fr) auto auto auto;
+    grid-template-columns: minmax(0, 1fr) auto auto;
     @include mobile-financial-row;
   }
 
@@ -473,12 +488,12 @@ async function persist(action) {
   }
 
   .position-value {
-    grid-column: 3;
+    grid-column: 2;
     font-size: 0.95rem;
   }
 
   .position-row > .q-btn {
-    grid-column: 4;
+    grid-column: 3;
     grid-row: 1;
   }
 

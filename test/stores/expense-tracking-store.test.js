@@ -6,11 +6,13 @@ const {
   getExpenseTrackingMonth,
   getExpenseTrackingPreferences,
   getExpenseTrackingYear,
+  saveExpenseTrackingPreferences,
 } = vi.hoisted(() => ({
   createTrackedExpense: vi.fn(),
   getExpenseTrackingMonth: vi.fn(),
   getExpenseTrackingPreferences: vi.fn(),
   getExpenseTrackingYear: vi.fn(),
+  saveExpenseTrackingPreferences: vi.fn(),
 }))
 
 vi.mock('@/services/firebase/expense-tracking.service', () => ({
@@ -19,7 +21,7 @@ vi.mock('@/services/firebase/expense-tracking.service', () => ({
   getExpenseTrackingPreferences,
   getExpenseTrackingYear,
   removeTrackedExpense: vi.fn(),
-  saveExpenseTrackingPreferences: vi.fn(),
+  saveExpenseTrackingPreferences,
   saveTrackingReconciliation: vi.fn(),
   saveTrackingReconciliations: vi.fn(),
   updateTrackedExpense: vi.fn(),
@@ -33,6 +35,7 @@ describe('expense tracking store', () => {
     getExpenseTrackingMonth.mockReset()
     getExpenseTrackingPreferences.mockReset()
     getExpenseTrackingYear.mockReset()
+    saveExpenseTrackingPreferences.mockReset()
     createTrackedExpense.mockReset()
     getExpenseTrackingMonth.mockImplementation(async (_, period) => ({ period, categories: {} }))
     getExpenseTrackingPreferences.mockResolvedValue({
@@ -41,6 +44,7 @@ describe('expense tracking store', () => {
     getExpenseTrackingYear.mockImplementation(async (_, year) => ({
       '01': { year, month: 1, categories: {} },
     }))
+    saveExpenseTrackingPreferences.mockImplementation(async (_, subcategoryIds) => subcategoryIds)
   })
 
   it('reuses workspace preferences while loading different months', async () => {
@@ -62,6 +66,19 @@ describe('expense tracking store', () => {
     await store.load('workspace-a', '2026-10', true)
 
     expect(getExpenseTrackingPreferences).toHaveBeenCalledTimes(2)
+  })
+
+  it('adds a subcategory to the tracker when its tracking preference is enabled', async () => {
+    const store = useExpenseTrackingStore()
+    await store.loadPreferences('workspace-a')
+
+    await store.savePreferences('workspace-a', ['groceries', 'fuel_charging'])
+
+    expect(saveExpenseTrackingPreferences).toHaveBeenCalledWith('workspace-a', [
+      'groceries',
+      'fuel_charging',
+    ])
+    expect(store.enabledSubcategories).toEqual(['groceries', 'fuel_charging'])
   })
 
   it('loads and caches the selected tracking year independently from the active month', async () => {

@@ -36,83 +36,101 @@
           :back-to="workspaceHomeRoute"
         />
 
-        <section class="total-card">
-          <span>{{ t('assets.totalAssets') }}</span>
-          <strong>{{ formatCurrency(total) }}</strong>
-          <small>{{ scopeLabel }}</small>
-        </section>
+        <FinancialOverviewCard
+          tone="assets"
+          icon="account_balance_wallet"
+          :label="t('assets.totalAssets')"
+          :formatted-total="formatCurrency(total)"
+          :scope-label="scopeLabel"
+          :chart-title="t('assets.overview.breakdownTitle')"
+          :total-label="t('assets.overview.currentValue')"
+          :empty-label="t('assets.overview.breakdownEmpty')"
+          :entries="breakdownEntries"
+        />
 
         <section class="category-list" :aria-label="t('assets.enabledCategories')">
-          <div v-for="category in enabledCategories" :key="category.id" class="category-row">
-            <button type="button" class="category-main" @click="openCategory(category.id)">
-              <span class="category-icon"><q-icon :name="category.icon" /></span>
-              <span class="category-copy">
-                <strong>{{ t(category.nameKey) }}</strong>
-                <small>{{ categoryStatus(category.id) }}</small>
-              </span>
-            </button>
-
-            <SimpleValueEditor
-              :value="canonicalCategoryValue(category.id)"
-              :formatted-value="categoryValue(category.id)"
-              :saving="isCategorySaving(category.id)"
-              :disabled="isItemizedCategory(category.id)"
-              @save="saveSimpleCategoryValue(category.id, $event)"
-            />
-
-            <button
-              type="button"
-              class="category-link"
-              :aria-label="t('assets.openCategory', { category: t(category.nameKey) })"
+          <div class="category-table-heading" aria-hidden="true">
+            <span>{{ t('assets.overview.category') }}</span>
+            <span>{{ t('assets.overview.currentValue') }}</span>
+          </div>
+          <div class="category-rows">
+            <div
+              v-for="category in enabledCategories"
+              :key="category.id"
+              class="category-row"
+              role="link"
+              tabindex="0"
               @click="openCategory(category.id)"
+              @keydown.enter.self="openCategory(category.id)"
+              @keydown.space.self.prevent="openCategory(category.id)"
             >
-              <q-icon name="chevron_right" class="chevron" />
-            </button>
+              <div class="category-main">
+                <span class="category-icon"><q-icon :name="category.icon" /></span>
+                <span class="category-copy">
+                  <strong>{{ t(category.nameKey) }}</strong>
+                  <small>{{ categoryStatus(category.id) }}</small>
+                </span>
+              </div>
 
+              <SimpleValueEditor
+                :value="canonicalCategoryValue(category.id)"
+                :formatted-value="categoryValue(category.id)"
+                :saving="isCategorySaving(category.id)"
+                :disabled="isItemizedCategory(category.id)"
+                @click="handleValueClick($event, category.id)"
+                @save="saveSimpleCategoryValue(category.id, $event)"
+              />
+
+              <q-btn
+                flat
+                round
+                dense
+                icon="more_vert"
+                color="grey-7"
+                :aria-label="t('assets.moreActions', { name: t(category.nameKey) })"
+                @click.stop
+              >
+                <q-menu anchor="bottom right" self="top right">
+                  <q-list dense class="category-menu">
+                    <q-item clickable v-close-popup @click="openCategory(category.id)">
+                      <q-item-section avatar><q-icon name="visibility" /></q-item-section>
+                      <q-item-section>{{ t('assets.overview.viewDetails') }}</q-item-section>
+                    </q-item>
+                    <q-item
+                      v-if="!isItemizedCategory(category.id)"
+                      clickable
+                      v-close-popup
+                      @click="openOwnershipEditor(category.id)"
+                    >
+                      <q-item-section avatar><q-icon name="group" /></q-item-section>
+                      <q-item-section>{{ t('assets.ownership.label') }}</q-item-section>
+                    </q-item>
+                    <q-item
+                      clickable
+                      v-close-popup
+                      class="text-negative"
+                      @click="requestCategoryDelete(category)"
+                    >
+                      <q-item-section avatar><q-icon name="delete_outline" /></q-item-section>
+                      <q-item-section>{{ t('common.delete') }}</q-item-section>
+                    </q-item>
+                  </q-list>
+                </q-menu>
+              </q-btn>
+            </div>
+          </div>
+
+          <div class="category-actions">
             <q-btn
               flat
-              round
-              dense
-              icon="more_vert"
-              color="grey-7"
-              :aria-label="t('assets.moreActions', { name: t(category.nameKey) })"
-              @click.stop
-            >
-              <q-menu anchor="bottom right" self="top right">
-                <q-list dense class="category-menu">
-                  <q-item
-                    v-if="!isItemizedCategory(category.id)"
-                    clickable
-                    v-close-popup
-                    @click="openOwnershipEditor(category.id)"
-                  >
-                    <q-item-section avatar><q-icon name="group" /></q-item-section>
-                    <q-item-section>{{ t('assets.ownership.label') }}</q-item-section>
-                  </q-item>
-                  <q-item
-                    clickable
-                    v-close-popup
-                    class="text-negative"
-                    @click="requestCategoryDelete(category)"
-                  >
-                    <q-item-section avatar><q-icon name="delete_outline" /></q-item-section>
-                    <q-item-section>{{ t('common.delete') }}</q-item-section>
-                  </q-item>
-                </q-list>
-              </q-menu>
-            </q-btn>
+              no-caps
+              icon="tune"
+              color="primary"
+              :label="t('assets.editCategories')"
+              @click="editingCategories = true"
+            />
           </div>
         </section>
-
-        <q-btn
-          flat
-          no-caps
-          icon="tune"
-          color="primary"
-          :label="t('assets.editCategories')"
-          class="edit-categories"
-          @click="editingCategories = true"
-        />
       </template>
     </main>
 
@@ -207,11 +225,13 @@ import { useQuasar } from 'quasar'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import OwnershipEditor from '@/components/financial/OwnershipEditor.vue'
+import FinancialOverviewCard from '@/components/financial/FinancialOverviewCard.vue'
 import PositionCategorySetup from '@/components/financial/PositionCategorySetup.vue'
 import SimpleValueEditor from '@/components/financial/SimpleValueEditor.vue'
 import AppPageHeader from '@/components/layout/AppPageHeader.vue'
 import AppConfirmDialog from '@/components/ui/AppConfirmDialog.vue'
 import { assetCategories } from '@/config/asset-categories'
+import { CHART_SERIES_COLORS } from '@/config/chart-theme'
 import {
   currentFinancialMonth,
   currentFinancialYear,
@@ -276,6 +296,25 @@ const enabledCategories = computed(() =>
 const total = computed(() =>
   financialYearMonthValue(financialYear.value, currentMonth, 'assets', selectedMemberId.value),
 )
+const breakdownEntries = computed(() => {
+  const entries = enabledCategories.value
+    .map((category) => ({
+      id: category.id,
+      name: t(category.nameKey),
+      value: categoryNumericValue(category.id),
+      color:
+        CHART_SERIES_COLORS.assets[
+          assetCategories.findIndex(({ id }) => id === category.id) %
+            CHART_SERIES_COLORS.assets.length
+        ],
+    }))
+    .filter(({ value }) => value > 0)
+  const chartTotal = entries.reduce((sum, entry) => sum + entry.value, 0)
+  return entries.map((entry) => ({
+    ...entry,
+    percentage: chartTotal > 0 ? (entry.value / chartTotal) * 100 : 0,
+  }))
+})
 const scopeLabel = computed(() =>
   selectedMemberId.value === 'all'
     ? t('dashboard.allMembers')
@@ -386,6 +425,10 @@ function isCategorySaving(categoryId) {
   return savingCategoryIds.value.has(categoryId)
 }
 
+function handleValueClick(event, categoryId) {
+  if (!isItemizedCategory(categoryId)) event.stopPropagation()
+}
+
 async function saveSimpleCategoryValue(categoryId, value) {
   if (isCategorySaving(categoryId)) return
 
@@ -453,6 +496,7 @@ async function persist(action) {
 
 <style scoped lang="scss">
 @use '@/css/mixins' as *;
+@use '@/css/foundation/breakpoints' as bp;
 
 .assets-page {
   @include financial-page;
@@ -462,7 +506,7 @@ async function persist(action) {
   @include financial-shell(wide);
 }
 
-@include position-overview-list;
+@include financial-overview-list;
 
 .loading-state {
   min-height: 20rem;
@@ -505,7 +549,7 @@ async function persist(action) {
   margin-bottom: 1.25rem;
 }
 
-@media (max-width: 699px) {
+@media (max-width: bp.$sm-max) {
   .category-row :deep(.simple-value) {
     justify-self: end;
   }

@@ -47,33 +47,23 @@
           </template>
         </AppPageHeader>
 
-        <section class="summary-overview">
-          <article class="summary-kpi">
-            <span class="summary-icon"><q-icon :name="category.icon" /></span>
-            <div class="summary-copy">
-              <span class="summary-label">{{ t('expenses.annualCategoryCost') }}</span>
-              <strong>{{ formatCurrency(categoryTotal) }}</strong>
-              <div class="summary-meta">
-                <span class="monthly-average">
-                  <b>{{ formatCurrency(categoryTotal / 12) }}</b>
-                  {{ t('expenses.overview.averagePerMonth') }}
-                </span>
-                <span class="percentage-badge">{{ categoryPercentage }}</span>
-              </div>
-            </div>
-          </article>
-
-          <ExpenseSubcategoryBreakdown
-            :title="t('expenses.categoryDetail.breakdownTitle')"
-            :empty-label="t('expenses.categoryDetail.breakdownEmpty')"
-            :entries="subcategoryRows"
-            :total="categoryTotal"
-          />
-        </section>
+        <FinancialCategoryOverviewCard
+          tone="expenses"
+          :icon="category.icon"
+          :label="t('expenses.annualCategoryCost')"
+          :formatted-total="formatCurrency(categoryTotal)"
+          :secondary-value="formatCurrency(categoryTotal / 12)"
+          :secondary-label="t('expenses.overview.averagePerMonth')"
+          :badge-label="categoryPercentage"
+          :chart-title="t('expenses.categoryDetail.breakdownTitle')"
+          :empty-label="t('expenses.categoryDetail.breakdownEmpty')"
+          :entries="breakdownEntries"
+          :total="categoryTotal"
+        />
 
         <section class="subcategory-section">
           <div v-if="subcategoryRows.length" class="subcategory-list">
-            <div class="subcategory-table-heading" aria-hidden="true">
+            <div class="detail-table-heading" aria-hidden="true">
               <span>{{ t('expenses.categoryDetail.subcategory') }}</span>
               <span>{{ t('expenses.overview.annualAmount') }}</span>
               <span>{{ t('expenses.overview.monthlyAmount') }}</span>
@@ -239,7 +229,6 @@
                     item.entryMode === 'simple' ? t('expenses.simpleTotal') : activeSubcategory.name
                   }}</small>
                 </span>
-                <OwnershipAvatar :ownership="item.ownership" :members="members" />
                 <strong class="expense-value">
                   {{ formatCurrency(itemAnnualValue(item)) }}
                   <small>/ {{ t('dashboard.year') }}</small>
@@ -362,8 +351,7 @@ import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import ExpenseCategorySetup from '@/components/expenses/ExpenseCategorySetup.vue'
 import ExpenseForm from '@/components/expenses/ExpenseForm.vue'
-import ExpenseSubcategoryBreakdown from '@/components/expenses/ExpenseSubcategoryBreakdown.vue'
-import OwnershipAvatar from '@/components/financial/OwnershipAvatar.vue'
+import FinancialCategoryOverviewCard from '@/components/financial/FinancialCategoryOverviewCard.vue'
 import AppPageHeader from '@/components/layout/AppPageHeader.vue'
 import AppConfirmDialog from '@/components/ui/AppConfirmDialog.vue'
 import AppEmptyState from '@/components/ui/AppEmptyState.vue'
@@ -537,6 +525,9 @@ const subcategoryRows = computed(() => {
     })
     .sort((left, right) => right.annualValue - left.annualValue)
 })
+const breakdownEntries = computed(() =>
+  subcategoryRows.value.map(({ id, name, annualValue }) => ({ id, name, value: annualValue })),
+)
 const expenseDefaults = computed(() => {
   return {
     itemName: '',
@@ -853,6 +844,7 @@ async function persist(operation) {
 
 <style scoped lang="scss">
 @use '@/css/mixins' as *;
+@use '@/css/foundation/breakpoints' as bp;
 
 .expense-category-page {
   @include financial-page;
@@ -882,134 +874,8 @@ async function persist(operation) {
   font-size: 1.4rem;
 }
 
-.context-actions {
-  display: flex;
-  gap: var(--space-3);
-}
-
-.context-actions a {
-  display: grid;
-  grid-template-columns: auto minmax(8rem, 1fr) auto;
-  align-items: center;
-  gap: var(--space-2);
-  min-width: 13.5rem;
-  padding: 0.6rem 0.75rem;
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-button);
-  background: var(--color-surface);
-  color: var(--color-ink);
-  text-decoration: none;
-  box-shadow: var(--shadow-control);
-}
-
-.context-actions a > .q-icon:first-child {
-  display: grid;
-  place-items: center;
-  width: 2rem;
-  height: 2rem;
-  border-radius: 50%;
-  background: var(--color-red-soft);
-  color: var(--color-financial-expenses);
-  font-size: 1.1rem;
-}
-
-.context-actions span,
-.context-actions strong,
-.context-actions small {
-  display: block;
-}
-
-.context-actions strong {
-  font-size: 0.8rem;
-}
-
-.context-actions small {
-  margin-top: 0.1rem;
-  color: var(--color-muted);
-  font-size: 0.68rem;
-}
-
-.context-actions a:focus-visible {
-  @include focus-ring;
-}
-
-.summary-overview {
-  @include dashboard-card;
-  display: grid;
-  grid-template-columns: minmax(18rem, 0.72fr) minmax(30rem, 1.28fr);
-  overflow: hidden;
-  margin-top: var(--space-4);
-}
-
-.summary-kpi {
-  display: flex;
-  align-items: center;
-  gap: var(--space-6);
-  min-width: 0;
-  padding: clamp(1.5rem, 3vw, 2.5rem);
-  border-right: 1px solid var(--color-line);
-  background: var(--color-surface);
-}
-
-.summary-icon {
-  display: grid;
-  flex: 0 0 auto;
-  place-items: center;
-  width: 3.75rem;
-  height: 3.75rem;
-  border-radius: 50%;
-  background: var(--color-red-soft);
-  color: var(--color-financial-expenses);
-  font-size: 1.7rem;
-}
-
-.summary-copy {
-  display: grid;
-  min-width: 0;
-}
-
-.summary-label {
-  color: var(--color-copy);
-  font-size: 0.95rem;
-  font-weight: var(--font-weight-medium);
-  letter-spacing: -0.01em;
-}
-
-.summary-copy strong {
-  margin: 0.35rem 0 0.7rem;
-  color: var(--color-ink);
-  font-size: clamp(3rem, 5vw, 4.35rem);
-  line-height: 0.95;
-  letter-spacing: -0.06em;
-}
-
-.summary-meta {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.55rem;
-}
-
-.monthly-average {
-  color: var(--color-copy);
-  font-size: 0.92rem;
-}
-
-.monthly-average b {
-  color: var(--color-ink);
-  font-size: 1.05rem;
-  font-weight: var(--font-weight-bold);
-}
-
-.percentage-badge {
-  flex: 0 0 auto;
-  padding: 0.25rem 0.55rem;
-  border-radius: 999px;
-  background: var(--color-surface-muted);
-  color: var(--color-copy);
-  font-size: 0.72rem;
-  font-weight: var(--font-weight-semibold);
-}
+@include financial-context-actions(760px);
+@include financial-detail-table-heading(minmax(14rem, 1fr) 9rem 9rem 7rem 2.25rem);
 
 .subcategory-section {
   margin-top: var(--space-4);
@@ -1036,21 +902,6 @@ async function persist(operation) {
 .subcategory-list {
   @include dashboard-card;
   overflow: hidden;
-}
-
-.subcategory-table-heading {
-  display: grid;
-  grid-template-columns: minmax(14rem, 1fr) 9rem 9rem 7rem 2.25rem;
-  gap: var(--space-2);
-  padding: 0.7rem 0.9rem;
-  border-bottom: 1px solid var(--color-line);
-  color: var(--color-copy);
-  font-size: 0.84rem;
-  font-weight: var(--font-weight-semibold);
-}
-
-.subcategory-table-heading span:not(:first-child) {
-  text-align: right;
 }
 
 .subcategory-row {
@@ -1218,7 +1069,7 @@ async function persist(operation) {
 
 .expense-row {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto auto auto;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
   align-items: center;
   gap: 0.8rem;
   padding: 0.9rem 1rem;
@@ -1277,75 +1128,11 @@ async function persist(operation) {
   border-top: 1px solid var(--color-line);
 }
 
-@media (max-width: 760px) {
-  .header-actions {
-    display: grid;
-    width: 100%;
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .header-actions a {
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    min-width: 0;
-    padding: 0.55rem;
-  }
-
-  .header-actions a > .q-icon:first-child {
-    width: 1.8rem;
-    height: 1.8rem;
-    font-size: 1rem;
-  }
-
-  .header-actions strong {
-    font-size: 0.72rem;
-  }
-
-  .header-actions small {
-    font-size: 0.6rem;
-  }
-
+@media (max-width: bp.$content-compact-max) {
   .category-title-icon {
     width: 2.5rem;
     height: 2.5rem;
     font-size: 1.15rem;
-  }
-
-  .summary-overview {
-    grid-template-columns: 1fr;
-    margin-top: var(--space-3);
-  }
-
-  .summary-kpi {
-    padding: var(--space-4);
-    border-right: 0;
-    border-bottom: 1px solid var(--color-line);
-  }
-
-  .summary-icon {
-    width: 2.7rem;
-    height: 2.7rem;
-    font-size: 1.25rem;
-  }
-
-  .summary-copy strong {
-    margin-bottom: 0.55rem;
-    font-size: 2.65rem;
-  }
-
-  .summary-label {
-    font-size: 0.84rem;
-  }
-
-  .monthly-average {
-    font-size: 0.8rem;
-  }
-
-  .monthly-average b {
-    font-size: 0.9rem;
-  }
-
-  .subcategory-table-heading {
-    display: none;
   }
 
   .item-panel-heading h2 {
@@ -1397,7 +1184,7 @@ async function persist(operation) {
   }
 
   .expense-row {
-    grid-template-columns: auto minmax(0, 1fr) auto auto auto;
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
     align-items: start;
     gap: 0.6rem;
   }
@@ -1413,7 +1200,7 @@ async function persist(operation) {
   }
 
   .expense-value {
-    grid-column: 4;
+    grid-column: 3;
     grid-row: 1;
     padding-top: 0.1rem;
     text-align: right;
@@ -1421,7 +1208,7 @@ async function persist(operation) {
   }
 
   .expense-row > .q-btn {
-    grid-column: 5;
+    grid-column: 4;
     grid-row: 1;
     align-self: center;
   }

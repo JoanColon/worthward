@@ -1,5 +1,5 @@
 <template>
-  <section class="subcategory-breakdown" :aria-label="title">
+  <section class="category-breakdown" :aria-label="title">
     <div ref="chartElement" class="breakdown-chart" :style="{ height: `${chartHeight}px` }" />
 
     <button
@@ -11,8 +11,8 @@
     >
       <span>{{
         expanded
-          ? t('expenses.overview.showFewerCategories')
-          : t('expenses.overview.showMoreCategories', { count: hiddenEntryCount })
+          ? t('financial.categoryBreakdown.showFewer')
+          : t('financial.categoryBreakdown.showMore', { count: hiddenEntryCount })
       }}</span>
       <q-icon :name="expanded ? 'expand_less' : 'expand_more'" />
     </button>
@@ -110,12 +110,7 @@ function renderChart() {
         formatter: ({ data, marker }) =>
           `${marker}<strong>${escapeHtml(data.name)}</strong><br/>${formatPercentage(data.value)}`,
       },
-      xAxis: {
-        type: 'value',
-        min: 0,
-        max: 100,
-        show: false,
-      },
+      xAxis: { type: 'value', min: 0, max: 100, show: false },
       yAxis: {
         type: 'category',
         inverse: true,
@@ -136,14 +131,8 @@ function renderChart() {
           type: 'bar',
           barWidth: compact ? 7 : 9,
           showBackground: true,
-          backgroundStyle: {
-            color: CHART_COLORS.grid,
-            borderRadius: 999,
-          },
-          itemStyle: {
-            color: CHART_COLORS.primary,
-            borderRadius: 999,
-          },
+          backgroundStyle: { color: CHART_COLORS.grid, borderRadius: 999 },
+          itemStyle: { color: CHART_COLORS.primary, borderRadius: 999 },
           data: visibleEntries.value.map((entry) => ({
             name: entry.name,
             value: entryPercentage(entry),
@@ -179,7 +168,7 @@ function renderChart() {
 
 function entryPercentage(entry) {
   if (props.total <= 0) return 0
-  return Math.min(100, Math.max(0, (Number(entry.annualValue || 0) / props.total) * 100))
+  return Math.min(100, Math.max(0, (Number(entry.value || 0) / props.total) * 100))
 }
 
 function formatPercentage(value) {
@@ -198,8 +187,9 @@ function escapeHtml(value) {
 
 <style scoped lang="scss">
 @use '@/css/mixins' as *;
+@use '@/css/foundation/breakpoints' as bp;
 
-.subcategory-breakdown {
+.category-breakdown {
   position: relative;
   min-width: 0;
   padding: var(--space-5);
@@ -213,9 +203,9 @@ function escapeHtml(value) {
 
 .breakdown-toggle {
   position: absolute;
+  right: var(--space-5);
   bottom: 0.55rem;
   left: var(--space-5);
-  right: var(--space-5);
   z-index: 1;
   display: inline-flex;
   align-items: center;
@@ -260,14 +250,14 @@ function escapeHtml(value) {
   font-size: 2rem;
 }
 
-@media (max-width: 760px) {
-  .subcategory-breakdown {
+@media (max-width: bp.$content-compact-max) {
+  .category-breakdown {
     padding: var(--space-4);
   }
 
   .breakdown-toggle {
-    left: var(--space-4);
     right: var(--space-4);
+    left: var(--space-4);
   }
 }
 </style>

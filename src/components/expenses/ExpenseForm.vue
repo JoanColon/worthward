@@ -131,23 +131,59 @@
       :caption="monthlyScheduleSummary"
       class="form-expansion monthly-schedule-section"
     >
-      <div class="monthly-grid">
-        <div v-for="month in CALENDAR_MONTH_IDS" :key="month" class="month-field">
-          <label :for="`expense-month-${month}`">{{ t(`income.months.${month}`) }}</label>
-          <q-input
-            :id="`expense-month-${month}`"
-            :model-value="monthAmount(month)"
-            outlined
-            dense
-            hide-bottom-space
-            type="number"
-            min="0"
-            step="0.01"
-            :prefix="currencySymbol"
-            @update:model-value="setMonthAmount(month, $event)"
-          />
-        </div>
-      </div>
+      <q-markup-table flat bordered dense class="monthly-schedule">
+        <thead>
+          <tr>
+            <th class="text-left">{{ t('income.form.month') }}</th>
+            <th class="text-right">{{ t('expenses.form.modelAmount') }}</th>
+            <th class="text-right">{{ t('expenses.form.actualAmount') }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="month in CALENDAR_MONTH_IDS" :key="month">
+            <td>{{ t(`income.months.${month}`) }}</td>
+            <td class="model-amount-cell">
+              <q-btn
+                flat
+                dense
+                no-caps
+                class="model-amount-value"
+                :label="formatCurrency(monthAmount(month))"
+                :aria-label="t('expenses.form.editMonth', { month: t(`income.months.${month}`) })"
+              >
+                <q-popup-edit
+                  :model-value="monthlyAmounts[month]"
+                  buttons
+                  :label-set="t('common.save')"
+                  :label-cancel="t('common.cancel')"
+                  @save="setMonthAmount(month, $event)"
+                >
+                  <template #default="scope">
+                    <q-input
+                      v-model="scope.value"
+                      autofocus
+                      dense
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      :prefix="currencySymbol"
+                      :label="
+                        t('expenses.form.amountForMonth', {
+                          month: t(`income.months.${month}`),
+                        })
+                      "
+                      @keyup.enter="scope.set"
+                    />
+                  </template>
+                </q-popup-edit>
+              </q-btn>
+            </td>
+            <td class="text-right actual-amount">
+              {{ actualAmount(month) == null ? '—' : formatCurrency(actualAmount(month)) }}
+            </td>
+          </tr>
+        </tbody>
+      </q-markup-table>
     </q-expansion-item>
 
     <q-expansion-item
@@ -437,6 +473,20 @@ function monthAmount(month) {
   return normalizeNonNegativeMoneyOrNull(monthlyAmounts.value?.[month]) || 0
 }
 
+function actualAmount(month) {
+  return financialYearMonthExpense(month)?.actual ?? null
+}
+
+function financialYearMonthExpense(month) {
+  const monthNumber = CALENDAR_MONTH_IDS.indexOf(month) + 1
+  if (monthNumber < 1 || !props.expense?.id) return null
+  const monthKey = String(monthNumber).padStart(2, '0')
+  return (
+    props.financialYear?.months?.[monthKey]?.expenses?.categories?.[props.category.id]
+      ?.subcategories?.[subcategoryId.value]?.items?.[props.expense.id] || null
+  )
+}
+
 function setMonthAmount(month, value) {
   const normalized = normalizeNonNegativeMoneyOrNull(value)
   if (normalized === null) return
@@ -617,24 +667,41 @@ function submit() {
   font-weight: 400;
 }
 
-.monthly-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.7rem;
+.monthly-schedule {
+  margin-top: 0.25rem;
+  overflow: visible;
 }
 
-.month-field {
-  display: grid;
-  gap: 0.3rem;
-}
-
-.month-field label {
-  overflow: hidden;
+.monthly-schedule th {
   color: var(--color-copy);
   font-size: 0.72rem;
   font-weight: var(--font-weight-semibold);
-  text-overflow: ellipsis;
-  white-space: nowrap;
+}
+
+.monthly-schedule td {
+  color: var(--color-ink);
+  font-size: 0.78rem;
+}
+
+.model-amount-cell {
+  width: 8rem;
+  text-align: right;
+}
+
+.model-amount-value {
+  min-width: 6.5rem;
+  color: var(--color-ink);
+  font-weight: var(--font-weight-semibold);
+}
+
+.model-amount-value :deep(.q-btn__content) {
+  justify-content: flex-end;
+}
+
+.actual-amount {
+  width: 7rem;
+  color: var(--color-copy) !important;
+  font-weight: var(--font-weight-semibold);
 }
 
 .more-options-fields {
@@ -668,8 +735,18 @@ function submit() {
     gap: 0.25rem;
   }
 
-  .monthly-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .form-expansion :deep(.q-expansion-item__content) {
+    padding-right: 0.5rem;
+    padding-left: 0.5rem;
+  }
+
+  .model-amount-cell,
+  .actual-amount {
+    width: auto;
+  }
+
+  .model-amount-value {
+    min-width: 4.75rem;
   }
 }
 </style>

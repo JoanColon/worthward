@@ -46,30 +46,19 @@
           </template>
         </AppPageHeader>
 
-        <section class="overview-card">
-          <article class="overview-kpi">
-            <span class="total-icon"><q-icon name="account_balance_wallet" /></span>
-            <div class="total-copy">
-              <span class="kpi-label">{{ t('expenses.overview.annualCost') }}</span>
-              <strong>{{ formatCurrency(totals.annualCostOfLife) }}</strong>
-              <div class="kpi-meta">
-                <span class="monthly-average">
-                  <b>{{ formatCurrency(totals.monthlyCostOfLife) }}</b>
-                  {{ t('expenses.overview.averagePerMonth') }}
-                </span>
-                <span class="scope-label">{{ scopeLabel }}</span>
-              </div>
-            </div>
-          </article>
-
-          <ExpenseBreakdownChart
-            :title="t('expenses.overview.breakdownTitle')"
-            :total-label="t('dashboard.year')"
-            :empty-label="t('expenses.overview.breakdownEmpty')"
-            :entries="breakdownEntries"
-            embedded
-          />
-        </section>
+        <FinancialOverviewCard
+          tone="expenses"
+          icon="account_balance_wallet"
+          :label="t('expenses.overview.annualCost')"
+          :formatted-total="formatCurrency(totals.annualCostOfLife)"
+          :secondary-value="formatCurrency(totals.monthlyCostOfLife)"
+          :secondary-label="t('expenses.overview.averagePerMonth')"
+          :scope-label="scopeLabel"
+          :chart-title="t('expenses.overview.breakdownTitle')"
+          :total-label="t('dashboard.year')"
+          :empty-label="t('expenses.overview.breakdownEmpty')"
+          :entries="breakdownEntries"
+        />
 
         <section class="category-list" :aria-label="t('expenses.enabledCategories')">
           <div class="category-table-heading" aria-hidden="true">
@@ -212,8 +201,8 @@ import { computed, ref, watch } from 'vue'
 import { useQuasar } from 'quasar'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
-import ExpenseBreakdownChart from '@/components/expenses/ExpenseBreakdownChart.vue'
 import ExpenseCategorySetup from '@/components/expenses/ExpenseCategorySetup.vue'
+import FinancialOverviewCard from '@/components/financial/FinancialOverviewCard.vue'
 import SimpleValueEditor from '@/components/financial/SimpleValueEditor.vue'
 import AppPageHeader from '@/components/layout/AppPageHeader.vue'
 import AppConfirmDialog from '@/components/ui/AppConfirmDialog.vue'
@@ -583,6 +572,7 @@ async function runSaving(operation) {
 
 <style scoped lang="scss">
 @use '@/css/mixins' as *;
+@use '@/css/foundation/breakpoints' as bp;
 
 .expenses-page {
   @include financial-page;
@@ -604,185 +594,8 @@ async function runSaving(operation) {
   margin: 0.35rem;
 }
 
-.overview-card {
-  @include dashboard-card;
-  display: grid;
-  grid-template-columns: minmax(18rem, 0.72fr) minmax(30rem, 1.28fr);
-  overflow: hidden;
-  margin-top: var(--space-4);
-}
-
-.overview-kpi {
-  display: flex;
-  align-items: center;
-  gap: var(--space-6);
-  min-width: 0;
-  padding: clamp(1.5rem, 3vw, 2.5rem);
-  border-right: 1px solid var(--color-line);
-  background: var(--color-surface);
-}
-
-.total-icon {
-  display: grid;
-  flex: 0 0 auto;
-  place-items: center;
-  width: 3.75rem;
-  height: 3.75rem;
-  border-radius: 50%;
-  background: var(--color-red-soft);
-  color: var(--color-financial-expenses);
-  font-size: 1.7rem;
-}
-
-.total-copy {
-  display: grid;
-  min-width: 0;
-}
-
-.kpi-label {
-  color: var(--color-copy);
-  font-size: 0.95rem;
-  font-weight: var(--font-weight-medium);
-  letter-spacing: -0.01em;
-}
-
-.total-copy strong {
-  margin: 0.35rem 0 0.7rem;
-  color: var(--color-ink);
-  font-size: clamp(3rem, 5vw, 4.35rem);
-  line-height: 0.95;
-  letter-spacing: -0.06em;
-}
-
-.kpi-meta {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.55rem;
-}
-
-.monthly-average {
-  color: var(--color-copy);
-  font-size: 0.92rem;
-}
-
-.monthly-average b {
-  color: var(--color-ink);
-  font-size: 1.05rem;
-  font-weight: var(--font-weight-bold);
-}
-
-.scope-label {
-  padding: 0.25rem 0.55rem;
-  border-radius: 999px;
-  background: var(--color-surface-muted);
-  color: var(--color-copy);
-  font-size: 0.72rem;
-  font-weight: var(--font-weight-semibold);
-}
-
-.overview-card :deep(.breakdown-card) {
-  min-height: 14rem;
-}
-
-.context-actions {
-  display: flex;
-  gap: var(--space-3);
-}
-
-.context-actions a {
-  display: grid;
-  grid-template-columns: auto minmax(8rem, 1fr) auto;
-  align-items: center;
-  gap: var(--space-2);
-  min-width: 13.5rem;
-  padding: 0.6rem 0.75rem;
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-button);
-  background: var(--color-surface);
-  color: var(--color-ink);
-  text-decoration: none;
-  box-shadow: var(--shadow-control);
-}
-
-.context-actions a > .q-icon:first-child {
-  display: grid;
-  place-items: center;
-  width: 2rem;
-  height: 2rem;
-  border-radius: 50%;
-  background: var(--color-red-soft);
-  color: var(--color-financial-expenses);
-  font-size: 1.1rem;
-}
-
-.context-actions span,
-.context-actions strong,
-.context-actions small {
-  display: block;
-}
-
-.context-actions strong {
-  font-size: 0.8rem;
-}
-
-.context-actions small {
-  margin-top: 0.1rem;
-  color: var(--color-muted);
-  font-size: 0.68rem;
-}
-
-.context-actions a:focus-visible {
-  @include focus-ring;
-}
-
-.category-list {
-  @include dashboard-card;
-  overflow: hidden;
-  margin-top: var(--space-4);
-  margin-bottom: 0.75rem;
-}
-
-.category-table-heading {
-  display: grid;
-  grid-template-columns: minmax(13rem, 1fr) 10rem 9rem 5rem;
-  gap: 0.4rem;
-  padding: 0.7rem 0.75rem;
-  border-bottom: 1px solid var(--color-line);
-  color: var(--color-copy);
-  font-size: 0.84rem;
-  font-weight: var(--font-weight-semibold);
-}
-
-.category-table-heading span:not(:first-child) {
-  text-align: right;
-}
-
-.category-row {
-  display: grid;
-  grid-template-columns: minmax(13rem, 1fr) 10rem 9rem 5rem;
-  align-items: center;
-  gap: 0.4rem;
-  min-height: 5rem;
-  padding: 0.55rem 0.75rem;
-  border-bottom: 1px solid var(--color-line);
-  cursor: pointer;
-  transition: background-color 150ms ease;
-}
-
-.category-row:hover {
-  background: var(--color-surface-soft);
-}
-
-.category-row:focus-visible {
-  @include focus-ring;
-  position: relative;
-  z-index: 1;
-}
-
-.category-row:last-child {
-  border-bottom: 0;
-}
+@include financial-context-actions;
+@include financial-overview-list(minmax(13rem, 1fr) 10rem 9rem 5rem);
 
 .category-monthly {
   display: grid;
@@ -805,42 +618,9 @@ async function runSaving(operation) {
   font-weight: 400;
 }
 
-.category-actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 0.75rem;
-  padding: 0.8rem 0.75rem;
-  border-top: 1px solid var(--color-line);
-}
-
-.category-main {
-  display: flex;
-  align-items: center;
-  gap: 0.85rem;
-  min-width: 0;
-  text-align: left;
-}
-
 .category-icon {
-  display: grid;
-  flex: 0 0 auto;
-  place-items: center;
-  width: 2.7rem;
-  height: 2.7rem;
-  border-radius: 50%;
   background: var(--color-red-soft);
   color: var(--color-danger);
-  font-size: 1.3rem;
-}
-
-.category-copy strong,
-.category-copy small {
-  display: block;
-}
-
-.category-copy small {
-  color: var(--color-muted);
 }
 
 .category-dialog {
@@ -852,98 +632,9 @@ async function runSaving(operation) {
   max-width: none;
 }
 
-@media (max-width: 749px) {
-  .overview-card {
-    grid-template-columns: 1fr;
-    margin-top: var(--space-3);
-  }
-
-  .overview-kpi {
-    padding: var(--space-4);
-    border-right: 0;
-    border-bottom: 1px solid var(--color-line);
-  }
-
-  .total-icon {
-    width: 2.7rem;
-    height: 2.7rem;
-    font-size: 1.25rem;
-  }
-
-  .total-copy strong {
-    margin-bottom: 0.55rem;
-    font-size: 2.65rem;
-  }
-
-  .kpi-label {
-    font-size: 0.84rem;
-  }
-
-  .monthly-average {
-    font-size: 0.8rem;
-  }
-
-  .monthly-average b {
-    font-size: 0.9rem;
-  }
-
-  .category-table-heading {
-    display: none;
-  }
-
-  .category-row {
-    grid-template-columns: minmax(0, 1fr) auto auto;
-    @include mobile-financial-row;
-  }
-
+@media (max-width: bp.$overview-stack-max) {
   .category-monthly {
     display: none;
-  }
-
-  .category-actions {
-    align-items: center;
-    flex-direction: row;
-    padding: 0.55rem 0.65rem;
-  }
-
-  .category-icon {
-    width: 2.35rem;
-    height: 2.35rem;
-    font-size: 1.1rem;
-  }
-
-  .category-main {
-    gap: 0.6rem;
-  }
-
-  .category-actions :deep(.q-btn) {
-    width: auto;
-  }
-
-  .header-actions {
-    display: grid;
-    width: 100%;
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .header-actions a {
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    min-width: 0;
-    padding: 0.55rem;
-  }
-
-  .header-actions a > .q-icon:first-child {
-    width: 1.8rem;
-    height: 1.8rem;
-    font-size: 1rem;
-  }
-
-  .header-actions strong {
-    font-size: 0.72rem;
-  }
-
-  .header-actions small {
-    font-size: 0.6rem;
   }
 }
 </style>
