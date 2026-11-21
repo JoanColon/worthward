@@ -624,15 +624,14 @@ async function runSaving(operation) {
 }
 
 .category-dialog {
-  @include financial-dialog-card(76rem);
-  max-width: none;
-}
-
-.category-dialog :deep(.setup-panel) {
-  max-width: none;
+  @include financial-category-dialog-card;
 }
 
 @media (max-width: bp.$overview-stack-max) {
+  .header-actions {
+    display: none;
+  }
+
   .category-monthly {
     display: none;
   }

@@ -11,73 +11,27 @@
         <q-btn color="primary" unelevated no-caps label="Retry" @click="prepare(true)" />
       </div>
       <template v-else>
-        <header class="strategy-header">
-          <div>
-            <q-btn
-              flat
-              dense
-              no-caps
-              color="grey-7"
-              icon="arrow_back"
-              :label="t('navigation.plan')"
-              :to="{ name: 'plan', params: { workspaceId } }"
-              class="back-button"
+        <AppPageHeader
+          class="strategy-header"
+          :title="t('whatIf.strategy.title')"
+          :subtitle="
+            t('whatIf.strategy.pageDescription', { amount: formatCurrency(monthlySavings) })
+          "
+          :back-label="t('navigation.plan')"
+          :back-to="{ name: 'plan', params: { workspaceId } }"
+        >
+          <template #actions>
+            <StrategyScenarioActions
+              :active-scenario-id="activeScenario.id"
+              :scenario-options="scenarioOptions"
+              :scenario-count="config.scenarios.length"
+              @select="selectScenario"
+              @add="addScenario"
+              @reset="resetScenario"
+              @delete="deleteScenario"
             />
-            <h1>{{ t('whatIf.strategy.title') }}</h1>
-            <p>
-              {{ t('whatIf.strategy.pageDescription', { amount: formatCurrency(monthlySavings) }) }}
-            </p>
-          </div>
-          <div class="scenario-actions">
-            <q-select
-              :model-value="activeScenario.id"
-              :options="scenarioOptions"
-              emit-value
-              map-options
-              outlined
-              dense
-              options-dense
-              class="scenario-select"
-              :label="t('whatIf.strategy.scenario')"
-              @update:model-value="selectScenario"
-            />
-            <q-btn
-              outline
-              no-caps
-              icon="add"
-              class="scenario-secondary-action"
-              :label="t('whatIf.strategy.newScenario')"
-              :disable="config.scenarios.length >= 10"
-              @click="addScenario"
-            />
-            <q-btn
-              flat
-              round
-              icon="more_horiz"
-              class="scenario-secondary-action"
-              :aria-label="t('whatIf.strategy.scenarioActions')"
-            >
-              <q-menu auto-close>
-                <q-list dense style="min-width: 11rem">
-                  <q-item clickable @click="resetScenario">
-                    <q-item-section avatar><q-icon name="restart_alt" /></q-item-section>
-                    <q-item-section>{{ t('whatIf.strategy.reset') }}</q-item-section>
-                  </q-item>
-                  <q-item
-                    :disable="config.scenarios.length === 1"
-                    clickable
-                    @click="deleteScenario"
-                  >
-                    <q-item-section avatar
-                      ><q-icon name="delete_outline" color="negative"
-                    /></q-item-section>
-                    <q-item-section>{{ t('whatIf.strategy.delete') }}</q-item-section>
-                  </q-item>
-                </q-list>
-              </q-menu>
-            </q-btn>
-          </div>
-        </header>
+          </template>
+        </AppPageHeader>
 
         <q-banner v-if="projectionWarnings.length" rounded class="projection-warning">
           <template #avatar><q-icon name="warning_amber" /></template>
@@ -190,24 +144,11 @@
                 <div>
                   <h2>{{ t('whatIf.strategy.cashDetails') }}</h2>
                 </div>
-                <div class="horizon-options">
-                  <button
-                    v-for="years in [10, 20, 30]"
-                    :key="years"
-                    type="button"
-                    :class="{ selected: activeScenario.horizonYears === years }"
-                    @click="updateScenario({ horizonYears: years })"
-                  >
-                    {{ years }} years
-                  </button>
-                  <button
-                    type="button"
-                    :class="{ selected: ![10, 20, 30].includes(activeScenario.horizonYears) }"
-                    @click="setCustomHorizon"
-                  >
-                    {{ t('whatIf.reduction.custom') }}
-                  </button>
-                </div>
+                <StrategyHorizonSwitch
+                  :model-value="activeScenario.horizonYears"
+                  @update:model-value="updateScenario({ horizonYears: $event })"
+                  @custom="setCustomHorizon"
+                />
               </div>
               <StrategyProjectionChart
                 :strategy-points="cashProjectionPoints"
@@ -252,40 +193,12 @@
                   <h2>{{ t('whatIf.strategy.investmentDetails') }}</h2>
                 </div>
                 <div class="desktop-projection-controls">
-                  <div class="horizon-options">
-                    <button
-                      v-for="years in [10, 20, 30]"
-                      :key="years"
-                      type="button"
-                      :class="{ selected: activeScenario.horizonYears === years }"
-                      @click="updateScenario({ horizonYears: years })"
-                    >
-                      {{ years }} years
-                    </button>
-                    <button
-                      type="button"
-                      :class="{ selected: ![10, 20, 30].includes(activeScenario.horizonYears) }"
-                      @click="setCustomHorizon"
-                    >
-                      {{ t('whatIf.reduction.custom') }}
-                    </button>
-                  </div>
-                  <div class="projection-view-switch">
-                    <button
-                      type="button"
-                      :class="{ selected: projectionChartMode === 'total' }"
-                      @click="projectionChartMode = 'total'"
-                    >
-                      {{ t('whatIf.strategy.chartView.total') }}
-                    </button>
-                    <button
-                      type="button"
-                      :class="{ selected: projectionChartMode === 'breakdown' }"
-                      @click="projectionChartMode = 'breakdown'"
-                    >
-                      {{ t('whatIf.strategy.chartView.breakdown') }}
-                    </button>
-                  </div>
+                  <StrategyHorizonSwitch
+                    :model-value="activeScenario.horizonYears"
+                    @update:model-value="updateScenario({ horizonYears: $event })"
+                    @custom="setCustomHorizon"
+                  />
+                  <StrategyProjectionViewSwitch v-model="projectionChartMode" />
                 </div>
               </div>
 
@@ -330,42 +243,12 @@
                   <h2>{{ t('whatIf.strategy.netWorthDetails') }}</h2>
                 </div>
                 <div class="desktop-projection-controls">
-                  <div class="horizon-options">
-                    <button
-                      v-for="years in [10, 20, 30]"
-                      :key="years"
-                      type="button"
-                      :class="{ selected: activeScenario.horizonYears === years }"
-                      @click="updateScenario({ horizonYears: years })"
-                    >
-                      {{ years }} years
-                    </button>
-                    <button
-                      type="button"
-                      :class="{ selected: ![10, 20, 30].includes(activeScenario.horizonYears) }"
-                      @click="setCustomHorizon"
-                    >
-                      {{ t('whatIf.reduction.custom') }}
-                    </button>
-                  </div>
-                  <div class="projection-view-switch">
-                    <button
-                      type="button"
-                      :class="{ selected: netWorthChartMode === 'total' }"
-                      :aria-pressed="netWorthChartMode === 'total'"
-                      @click="netWorthChartMode = 'total'"
-                    >
-                      {{ t('whatIf.strategy.chartView.total') }}
-                    </button>
-                    <button
-                      type="button"
-                      :class="{ selected: netWorthChartMode === 'breakdown' }"
-                      :aria-pressed="netWorthChartMode === 'breakdown'"
-                      @click="netWorthChartMode = 'breakdown'"
-                    >
-                      {{ t('whatIf.strategy.chartView.breakdown') }}
-                    </button>
-                  </div>
+                  <StrategyHorizonSwitch
+                    :model-value="activeScenario.horizonYears"
+                    @update:model-value="updateScenario({ horizonYears: $event })"
+                    @custom="setCustomHorizon"
+                  />
+                  <StrategyProjectionViewSwitch v-model="netWorthChartMode" />
                 </div>
               </div>
               <StrategyProjectionChart
@@ -804,24 +687,13 @@
         </q-card-section>
         <q-card-section class="strategy-sheet-scroll detail-sheet-content">
           <section v-if="detailSheetKind === 'cash'" class="detail-sheet-section">
-            <div class="horizon-options detail-horizon-options">
-              <button
-                v-for="years in [10, 20, 30]"
-                :key="years"
-                type="button"
-                :class="{ selected: activeScenario.horizonYears === years }"
-                @click="updateScenario({ horizonYears: years })"
-              >
-                {{ years }}y
-              </button>
-              <button
-                type="button"
-                :class="{ selected: ![10, 20, 30].includes(activeScenario.horizonYears) }"
-                @click="setCustomHorizon"
-              >
-                {{ t('whatIf.reduction.custom') }}
-              </button>
-            </div>
+            <StrategyHorizonSwitch
+              compact
+              class="detail-horizon-options"
+              :model-value="activeScenario.horizonYears"
+              @update:model-value="updateScenario({ horizonYears: $event })"
+              @custom="setCustomHorizon"
+            />
             <StrategyProjectionChart
               :strategy-points="cashProjectionPoints"
               :baseline-points="baselineCashProjectionPoints"
@@ -872,41 +744,18 @@
             class="detail-sheet-section"
           >
             <div class="detail-section-heading investment-detail-heading">
-              <div class="projection-view-switch detail-view-switch">
-                <button
-                  type="button"
-                  :class="{ selected: projectionChartMode === 'total' }"
-                  @click="projectionChartMode = 'total'"
-                >
-                  {{ t('whatIf.strategy.chartView.total') }}
-                </button>
-                <button
-                  type="button"
-                  :class="{ selected: projectionChartMode === 'breakdown' }"
-                  @click="projectionChartMode = 'breakdown'"
-                >
-                  {{ t('whatIf.strategy.chartView.breakdown') }}
-                </button>
-              </div>
+              <StrategyProjectionViewSwitch
+                v-model="projectionChartMode"
+                class="detail-view-switch"
+              />
             </div>
-            <div class="horizon-options detail-horizon-options">
-              <button
-                v-for="years in [10, 20, 30]"
-                :key="years"
-                type="button"
-                :class="{ selected: activeScenario.horizonYears === years }"
-                @click="updateScenario({ horizonYears: years })"
-              >
-                {{ years }}y
-              </button>
-              <button
-                type="button"
-                :class="{ selected: ![10, 20, 30].includes(activeScenario.horizonYears) }"
-                @click="setCustomHorizon"
-              >
-                {{ t('whatIf.reduction.custom') }}
-              </button>
-            </div>
+            <StrategyHorizonSwitch
+              compact
+              class="detail-horizon-options"
+              :model-value="activeScenario.horizonYears"
+              @update:model-value="updateScenario({ horizonYears: $event })"
+              @custom="setCustomHorizon"
+            />
             <StrategyProjectionChart
               :strategy-points="investmentProjectionPoints"
               :baseline-points="baselineInvestmentProjectionPoints"
@@ -945,40 +794,17 @@
 
           <section v-if="detailSheetKind === 'netWorth'" class="detail-sheet-section">
             <div class="detail-section-heading net-worth-detail-controls">
-              <div class="horizon-options detail-horizon-options">
-                <button
-                  v-for="years in [10, 20, 30]"
-                  :key="years"
-                  type="button"
-                  :class="{ selected: activeScenario.horizonYears === years }"
-                  @click="updateScenario({ horizonYears: years })"
-                >
-                  {{ years }}y
-                </button>
-                <button
-                  type="button"
-                  :class="{ selected: ![10, 20, 30].includes(activeScenario.horizonYears) }"
-                  @click="setCustomHorizon"
-                >
-                  {{ t('whatIf.reduction.custom') }}
-                </button>
-              </div>
-              <div class="projection-view-switch detail-view-switch">
-                <button
-                  type="button"
-                  :class="{ selected: netWorthChartMode === 'total' }"
-                  @click="netWorthChartMode = 'total'"
-                >
-                  {{ t('whatIf.strategy.chartView.total') }}
-                </button>
-                <button
-                  type="button"
-                  :class="{ selected: netWorthChartMode === 'breakdown' }"
-                  @click="netWorthChartMode = 'breakdown'"
-                >
-                  {{ t('whatIf.strategy.chartView.breakdown') }}
-                </button>
-              </div>
+              <StrategyHorizonSwitch
+                compact
+                class="detail-horizon-options"
+                :model-value="activeScenario.horizonYears"
+                @update:model-value="updateScenario({ horizonYears: $event })"
+                @custom="setCustomHorizon"
+              />
+              <StrategyProjectionViewSwitch
+                v-model="netWorthChartMode"
+                class="detail-view-switch"
+              />
             </div>
             <StrategyProjectionChart
               :strategy-points="netWorthPoints"
@@ -1271,9 +1097,13 @@ import { computed, ref, watch } from 'vue'
 import { useQuasar } from 'quasar'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
+import AppPageHeader from '@/components/layout/AppPageHeader.vue'
 import MortgageComparisonChart from '@/components/liabilities/MortgageComparisonChart.vue'
 import StrategyAllocationRow from '@/components/what-if/StrategyAllocationRow.vue'
+import StrategyHorizonSwitch from '@/components/what-if/StrategyHorizonSwitch.vue'
 import StrategyProjectionChart from '@/components/what-if/StrategyProjectionChart.vue'
+import StrategyProjectionViewSwitch from '@/components/what-if/StrategyProjectionViewSwitch.vue'
+import StrategyScenarioActions from '@/components/what-if/StrategyScenarioActions.vue'
 import { getLiabilityCategory } from '@/config/liability-categories'
 import {
   buildStrategyCalculationContext,
@@ -2215,31 +2045,9 @@ function liabilityCategoryName(categoryId) {
   min-height: 28rem;
   color: var(--color-copy);
 }
-.strategy-header {
-  @include financial-header;
-}
-.back-button {
-  @include financial-back-button;
-}
-h1 {
-  @include financial-title;
-}
-.strategy-header p,
-.projection-heading p {
-  margin: 0.35rem 0 0;
-  color: var(--color-copy);
-}
 .projection-warning {
   color: #7a4b00;
   background: #fff4d6;
-}
-.scenario-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-.scenario-select {
-  width: 13rem;
 }
 .strategy-overview {
   display: grid;
@@ -2435,8 +2243,8 @@ h1 {
   align-items: center;
   gap: 0.75rem;
 }
-.desktop-projection-controls .horizon-options button {
-  min-width: 4.5rem;
+.desktop-projection-controls .horizon-options {
+  --strategy-horizon-option-min-width: 4.5rem;
 }
 .desktop-strategy-chart,
 .desktop-mortgage-chart {
@@ -2855,27 +2663,12 @@ h1 {
 .detail-section-heading h3 {
   font-size: 1rem;
 }
-.detail-view-switch {
-  align-self: start;
-  justify-self: start;
-}
-.detail-view-switch button {
-  min-width: 4.6rem;
-  padding: 0.4rem 0.6rem;
-  font-size: 0.7rem;
-}
 .net-worth-detail-controls {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
 }
 .net-worth-detail-controls .detail-horizon-options {
   min-width: 0;
-}
-.detail-horizon-options {
-  width: 100%;
-}
-.detail-horizon-options button {
-  flex: 1;
 }
 .large-detail-values strong {
   font-size: 1.05rem;
@@ -2921,7 +2714,8 @@ h1 {
   line-height: 1.25;
 }
 .projection-heading p {
-  margin-top: 0.25rem;
+  margin: 0.25rem 0 0;
+  color: var(--color-copy);
   font-size: 0.72rem;
   line-height: 1.35;
 }
@@ -3233,57 +3027,6 @@ h1 {
   flex-wrap: wrap;
   gap: 0.5rem;
 }
-.horizon-options,
-.projection-view-switch {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  padding: 0.2rem;
-  border: 1px solid var(--color-line);
-  background: var(--color-surface-soft);
-}
-.horizon-options {
-  border-radius: 0.55rem;
-}
-.projection-view-switch {
-  border-radius: 999px;
-}
-.horizon-options button,
-.projection-view-switch button {
-  border: 0;
-  background: transparent;
-  color: var(--color-copy);
-  line-height: 1;
-  white-space: nowrap;
-  cursor: pointer;
-}
-.horizon-options button {
-  min-width: 3rem;
-  height: 1.75rem;
-  padding: 0.2rem 0.45rem;
-  font-size: 0.61rem;
-}
-.horizon-options button.selected {
-  background: white;
-  color: var(--color-primary);
-  box-shadow: 0 1px 4px rgb(15 23 42 / 10%);
-}
-.projection-view-switch button {
-  min-width: 5.5rem;
-  padding: 0.42rem 0.72rem;
-  border-radius: 999px;
-  font-size: 0.76rem;
-  font-weight: 700;
-}
-.projection-view-switch button.selected {
-  background: var(--color-ink);
-  color: white;
-  box-shadow: 0 2px 8px rgb(24 43 68 / 12%);
-}
-.horizon-options button:focus-visible,
-.projection-view-switch button:focus-visible {
-  @include focus-ring;
-}
 .result-breakdown {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -3458,14 +3201,9 @@ h1 {
     align-items: stretch;
     flex-direction: column;
   }
-  .scenario-actions {
-    display: block;
-  }
-  .scenario-select {
-    width: auto;
-  }
-  .scenario-secondary-action {
-    display: none;
+  .strategy-header :deep(.app-page-header__actions) {
+    align-self: stretch;
+    width: 100%;
   }
   .strategy-overview {
     grid-template-columns: minmax(0, 1fr);

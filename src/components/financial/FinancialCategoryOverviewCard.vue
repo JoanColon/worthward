@@ -16,6 +16,7 @@
     </article>
 
     <FinancialCategoryBreakdown
+      :tone="tone"
       :title="chartTitle"
       :empty-label="emptyLabel"
       :entries="entries"

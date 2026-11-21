@@ -5,6 +5,7 @@ import {
   currentFinancialYear,
 } from '../../functions/shared/positions/annual-projection.js'
 import {
+  ensureFinancialYear,
   getFinancialYear,
   subscribeFinancialYear,
 } from '@/services/firebase/financial-years.service'
@@ -17,15 +18,16 @@ export const useFinancialYearsStore = defineStore('financial-years', () => {
   const loadingKeys = new Set()
   const ensuredPeriods = new Set()
   const ensureRequests = new Map()
+  const readRequests = new Map()
   let activeSubscription = null
   let latestLoadId = 0
 
   async function load(workspaceId, year = currentFinancialYear(), force = false) {
     const key = `${workspaceId}:${year}`
     const loadId = ++latestLoadId
+    watchFinancialYear(workspaceId, year)
     if (!force && Object.hasOwn(documents.value, key)) {
-      if (year === currentFinancialYear()) await ensureCurrentPeriod(workspaceId, year, key)
-      if (loadId === latestLoadId) watchFinancialYear(workspaceId, year)
+      if (year === currentFinancialYear()) refreshCurrentPeriod(workspaceId, year)
       return documents.value[key]
     }
     const currentRequest = (requestIds.get(key) || 0) + 1
@@ -33,11 +35,9 @@ export const useFinancialYearsStore = defineStore('financial-years', () => {
     loadingKeys.add(key)
     loading.value = true
     setError(key, null)
+    if (year === currentFinancialYear()) refreshCurrentPeriod(workspaceId, year, force)
     try {
-      const value =
-        year === currentFinancialYear()
-          ? await ensureCurrentPeriod(workspaceId, year, key, force)
-          : await getFinancialYear(workspaceId, year)
+      const value = await readFinancialYear(workspaceId, year, key)
       if (currentRequest !== requestIds.get(key)) return null
       documents.value = { ...documents.value, [key]: value }
       if (loadId === latestLoadId) watchFinancialYear(workspaceId, year)
@@ -68,6 +68,7 @@ export const useFinancialYearsStore = defineStore('financial-years', () => {
     loadingKeys.clear()
     ensuredPeriods.clear()
     ensureRequests.clear()
+    readRequests.clear()
     documents.value = {}
     loading.value = false
     errors.value = {}
@@ -114,6 +115,9 @@ export const useFinancialYearsStore = defineStore('financial-years', () => {
     for (const key of ensureRequests.keys()) {
       if (key.startsWith(prefix)) ensureRequests.delete(key)
     }
+    for (const key of readRequests.keys()) {
+      if (key.startsWith(prefix)) readRequests.delete(key)
+    }
     loading.value = loadingKeys.size > 0
   }
 
@@ -129,25 +133,35 @@ export const useFinancialYearsStore = defineStore('financial-years', () => {
     errors.value = next
   }
 
-  async function ensureCurrentPeriod(workspaceId, year, documentKey, force = false) {
+  function refreshCurrentPeriod(workspaceId, year, force = false) {
     const key = periodKey(workspaceId, year)
     if (force) ensuredPeriods.delete(key)
-    if (ensuredPeriods.has(key)) return documents.value[documentKey] || null
+    if (ensuredPeriods.has(key)) return Promise.resolve()
     if (!ensureRequests.has(key)) {
-      ensureRequests.set(
-        key,
-        getFinancialYear(workspaceId, year, { ensure: true }).then((value) => {
-          documents.value = { ...documents.value, [documentKey]: value }
-          ensuredPeriods.add(key)
-          return value
-        }),
-      )
+      const request = ensureFinancialYear(workspaceId, year)
+        .then(() => {
+          if (ensureRequests.get(key) === request) ensuredPeriods.add(key)
+        })
+        .catch(() => {
+          // The existing snapshot remains valid. The active listener will receive
+          // any update if the background synchronization completed remotely.
+        })
+        .finally(() => {
+          if (ensureRequests.get(key) === request) ensureRequests.delete(key)
+        })
+      ensureRequests.set(key, request)
     }
-    try {
-      return await ensureRequests.get(key)
-    } finally {
-      ensureRequests.delete(key)
+    return ensureRequests.get(key)
+  }
+
+  function readFinancialYear(workspaceId, year, key) {
+    if (!readRequests.has(key)) {
+      const request = getFinancialYear(workspaceId, year).finally(() => {
+        if (readRequests.get(key) === request) readRequests.delete(key)
+      })
+      readRequests.set(key, request)
     }
+    return readRequests.get(key)
   }
 
   function periodKey(workspaceId, year) {

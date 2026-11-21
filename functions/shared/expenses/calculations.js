@@ -59,9 +59,9 @@ export function buildMonthlyExpenseSchedule(estimate) {
   return Object.fromEntries(
     CALENDAR_MONTH_IDS.map((month, index) => [
       month,
-      index >= startIndex && (index - startIndex) % interval === 0
-        ? normalized.amount
-        : 0,
+      index >= startIndex && (index - startIndex) % interval === 0 ?
+        normalized.amount :
+        0,
     ]),
   )
 }

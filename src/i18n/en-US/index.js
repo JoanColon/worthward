@@ -737,6 +737,8 @@ export default {
         'Allocate your {amount}/month and adjust the assumptions behind your projections.',
       projectedOutcomes: 'Projected outcomes',
       projectedOutcomesDescription: 'Based on your current strategy and a {years}-year horizon.',
+      horizonSelector: 'Projection horizon',
+      projectionViewSelector: 'Projection view',
       viewDetails: 'View details',
       viewProjectionDetails: 'View projection details',
       projectionDetails: 'Projection details',
@@ -1563,7 +1565,8 @@ export default {
     totalIncome: 'Total income',
     availableIncome: 'Available income',
     reinvestedIncome: 'Reinvested',
-    availableIncomeDescription: 'After dividend reinvestment',
+    availableIncomeDescription:
+      'The portion of your income available to spend or plan with after subtracting amounts set aside for reinvestment.',
     annualTotal: 'Annual total',
     monthlyTotal: 'Monthly total',
     perYear: '/ year',

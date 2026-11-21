@@ -545,6 +545,10 @@ async function persist(action) {
   color: var(--color-success-dark);
 }
 
+.category-dialog {
+  @include financial-category-dialog-card;
+}
+
 .ownership-dialog-card h2 {
   margin-bottom: 1.25rem;
 }

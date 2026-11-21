@@ -24,21 +24,11 @@
       </section>
 
       <template v-else-if="mortgage">
-        <header class="mortgage-header">
-          <div>
-            <q-btn
-              flat
-              dense
-              no-caps
-              color="grey-7"
-              icon="arrow_back"
-              :label="t('liabilities.mortgage.backToMortgages')"
-              :to="mortgagesRoute"
-              class="back-button"
-            />
-            <h1>{{ mortgage.itemName }}</h1>
-          </div>
-        </header>
+        <AppPageHeader
+          :title="mortgage.itemName"
+          :back-label="t('liabilities.mortgage.backToMortgages')"
+          :back-to="mortgagesRoute"
+        />
 
         <section v-if="!configured" class="setup-card">
           <span class="setup-icon"><q-icon name="account_balance" /></span>
@@ -510,6 +500,7 @@ import { computed, reactive, ref, watch } from 'vue'
 import { useQuasar } from 'quasar'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
+import AppPageHeader from '@/components/layout/AppPageHeader.vue'
 import MortgageBalanceChart from '@/components/liabilities/MortgageBalanceChart.vue'
 import { mortgageDetailFromLiability } from '@/domain/financial/mortgage-liability-adapter'
 import {
@@ -971,22 +962,6 @@ function moneyColumn(name, labelKey) {
   margin: 0;
 }
 
-.mortgage-header {
-  @include financial-header;
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 1rem;
-}
-
-.back-button {
-  @include financial-back-button;
-}
-
-h1 {
-  @include financial-title;
-}
-
 .setup-card,
 .mortgage-overview,
 .chart-card {
@@ -1326,14 +1301,6 @@ h1 {
 }
 
 @media (max-width: 599px) {
-  .mortgage-header {
-    align-items: flex-start;
-  }
-
-  .mortgage-header > .q-btn {
-    margin-top: 2.25rem;
-  }
-
   .field-grid {
     grid-template-columns: 1fr;
   }

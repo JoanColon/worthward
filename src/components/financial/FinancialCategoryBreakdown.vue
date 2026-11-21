@@ -1,5 +1,9 @@
 <template>
   <section class="category-breakdown" :aria-label="title">
+    <header class="breakdown-heading">
+      <h2>{{ title }}</h2>
+    </header>
+
     <div ref="chartElement" class="breakdown-chart" :style="{ height: `${chartHeight}px` }" />
 
     <button
@@ -36,6 +40,11 @@ import { CHART_COLORS } from '@/config/chart-theme'
 use([BarChart, GridComponent, TooltipComponent, AriaComponent, CanvasRenderer])
 
 const props = defineProps({
+  tone: {
+    type: String,
+    required: true,
+    validator: (value) => ['assets', 'liabilities', 'income', 'expenses'].includes(value),
+  },
   title: { type: String, required: true },
   emptyLabel: { type: String, required: true },
   entries: { type: Array, default: () => [] },
@@ -47,12 +56,15 @@ const { t, locale } = useI18n()
 const chartElement = ref(null)
 const expanded = ref(false)
 const hiddenEntryCount = computed(() => Math.max(0, props.entries.length - props.initialLimit))
+const barColor = computed(() =>
+  ['liabilities', 'expenses'].includes(props.tone) ? CHART_COLORS.danger : CHART_COLORS.primary,
+)
 const visibleEntries = computed(() =>
   expanded.value ? props.entries : props.entries.slice(0, props.initialLimit),
 )
 const chartHeight = computed(() => {
-  if (!expanded.value) return 212
-  return Math.max(212, visibleEntries.value.length * 36 + 44)
+  if (!visibleEntries.value.length) return 132
+  return visibleEntries.value.length * 36 + 8
 })
 let chart = null
 let resizeObserver = null
@@ -73,7 +85,7 @@ onBeforeUnmount(() => {
 })
 
 watch(
-  () => [visibleEntries.value, props.total, locale.value, chartHeight.value],
+  () => [visibleEntries.value, props.total, props.tone, locale.value, chartHeight.value],
   () =>
     nextTick(() => {
       chart?.resize()
@@ -90,7 +102,6 @@ function renderChart() {
   }
 
   const compact = chartElement.value?.clientWidth < 520
-  const hasToggle = hiddenEntryCount.value > 0
   chart.setOption(
     {
       animationDuration: 300,
@@ -98,8 +109,8 @@ function renderChart() {
       grid: {
         left: compact ? 4 : 8,
         right: compact ? 42 : 50,
-        top: 10,
-        bottom: hasToggle ? 34 : 8,
+        top: 4,
+        bottom: 4,
         containLabel: true,
       },
       tooltip: {
@@ -132,7 +143,7 @@ function renderChart() {
           barWidth: compact ? 7 : 9,
           showBackground: true,
           backgroundStyle: { color: CHART_COLORS.grid, borderRadius: 999 },
-          itemStyle: { color: CHART_COLORS.primary, borderRadius: 999 },
+          itemStyle: { color: barColor.value, borderRadius: 999 },
           data: visibleEntries.value.map((entry) => ({
             name: entry.name,
             value: entryPercentage(entry),
@@ -195,24 +206,26 @@ function escapeHtml(value) {
   padding: var(--space-5);
 }
 
+.breakdown-heading h2 {
+  margin: 0 0 var(--space-3);
+  color: var(--color-ink);
+  font-size: 1rem;
+  line-height: 1.25;
+}
+
 .breakdown-chart {
   width: 100%;
-  min-height: 13.25rem;
   transition: height 220ms ease;
 }
 
 .breakdown-toggle {
-  position: absolute;
-  right: var(--space-5);
-  bottom: 0.55rem;
-  left: var(--space-5);
-  z-index: 1;
-  display: inline-flex;
+  display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.25rem;
   min-height: 1.8rem;
-  margin: 0 auto;
+  width: 100%;
+  margin: var(--space-2) auto 0;
   padding: 0.25rem;
   border: 0;
   background: transparent;
@@ -237,7 +250,7 @@ function escapeHtml(value) {
 
 .empty-copy {
   position: absolute;
-  inset: 0;
+  inset: 3rem 0 0;
   display: grid;
   place-content: center;
   justify-items: center;
@@ -253,11 +266,6 @@ function escapeHtml(value) {
 @media (max-width: bp.$content-compact-max) {
   .category-breakdown {
     padding: var(--space-4);
-  }
-
-  .breakdown-toggle {
-    right: var(--space-4);
-    left: var(--space-4);
   }
 }
 </style>

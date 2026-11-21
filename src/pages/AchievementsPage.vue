@@ -9,59 +9,20 @@
         :back-to="{ name: 'progress', params: { workspaceId } }"
       >
         <template #actions>
-          <section class="milestone-summary" :aria-label="t('achievements.summaryLabel')">
-            <div class="summary-item summary-item--total">
-              <q-icon name="emoji_events" />
-              <span>
-                <strong>{{ achievedCount }} / {{ visibleMilestones.length }}</strong>
-                <small>{{ t('achievements.milestonesAchieved') }}</small>
-              </span>
-            </div>
-            <div class="summary-item summary-item--achieved">
-              <q-icon name="check" />
-              <span>
-                <strong>{{ achievedCount }}</strong>
-                <small>{{ t('achievements.achieved') }}</small>
-              </span>
-            </div>
-            <div class="summary-item summary-item--progress">
-              <span class="summary-progress-ring" />
-              <span>
-                <strong>{{ inProgressCount }}</strong>
-                <small>{{ t('achievements.inProgress') }}</small>
-              </span>
-            </div>
-          </section>
+          <MilestoneSummary
+            :total-count="visibleMilestones.length"
+            :achieved-count="achievedCount"
+            :in-progress-count="inProgressCount"
+          />
         </template>
       </AppPageHeader>
 
-      <section
+      <MilestoneSummary
         v-else
-        class="milestone-summary milestone-summary--embedded"
-        :aria-label="t('achievements.summaryLabel')"
-      >
-        <div class="summary-item summary-item--total">
-          <q-icon name="emoji_events" />
-          <span>
-            <strong>{{ achievedCount }} / {{ visibleMilestones.length }}</strong>
-            <small>{{ t('achievements.milestonesAchieved') }}</small>
-          </span>
-        </div>
-        <div class="summary-item summary-item--achieved">
-          <q-icon name="check" />
-          <span>
-            <strong>{{ achievedCount }}</strong>
-            <small>{{ t('achievements.achieved') }}</small>
-          </span>
-        </div>
-        <div class="summary-item summary-item--progress">
-          <span class="summary-progress-ring" />
-          <span>
-            <strong>{{ inProgressCount }}</strong>
-            <small>{{ t('achievements.inProgress') }}</small>
-          </span>
-        </div>
-      </section>
+        :total-count="visibleMilestones.length"
+        :achieved-count="achievedCount"
+        :in-progress-count="inProgressCount"
+      />
 
       <q-banner v-if="!trackingActive && !loading" rounded class="setup-banner">
         <template #avatar>
@@ -270,6 +231,7 @@ import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 import AppPageHeader from '@/components/layout/AppPageHeader.vue'
 import MilestoneBadge from '@/components/milestones/MilestoneBadge.vue'
+import MilestoneSummary from '@/components/milestones/MilestoneSummary.vue'
 import { milestoneFamilies } from '@/config/milestone-families'
 import { calculateMilestoneProgress } from '@/domain/milestones/calculations'
 import { authUser } from '@/services/auth'
@@ -490,14 +452,10 @@ function achievedDateLabel(milestoneId) {
   padding: 0;
   background: transparent;
 }
-.achievements-shell {
-  @include financial-shell;
-}
 .achievements-page--embedded .achievements-shell {
   max-width: none;
 }
 .family-header p,
-.achievement-list p,
 .achievement-list small,
 .state {
   color: var(--color-copy);
@@ -523,13 +481,6 @@ function achievedDateLabel(milestoneId) {
   margin: 0.2rem 0 0;
   color: var(--color-copy);
   font-size: 0.84rem;
-}
-
-.milestone-summary {
-  margin-top: 2rem;
-}
-.milestone-summary--embedded {
-  margin-top: 0;
 }
 
 .family-grid {
@@ -560,9 +511,6 @@ function achievedDateLabel(milestoneId) {
   text-align: left;
   cursor: pointer;
 }
-.family-header.expanded {
-  border-bottom: 1px solid var(--color-line);
-}
 .family-header:hover {
   background: var(--color-surface);
 }
@@ -589,38 +537,7 @@ function achievedDateLabel(milestoneId) {
   margin-top: 0.2rem;
   font-size: 0.8rem;
 }
-.family-meta {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  flex: 0 0 auto;
-  margin-left: auto;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  font: inherit;
-  cursor: pointer;
-}
-.family-meta:focus-visible {
-  border-radius: var(--radius-sm);
-  outline: 2px solid var(--color-primary);
-  outline-offset: 3px;
-}
-.family-meta strong {
-  color: var(--color-copy);
-  font-size: 0.8rem;
-}
-.expand-icon {
-  color: var(--color-copy);
-  font-size: 1.35rem;
-  transition: transform 180ms ease;
-}
-.family-header.expanded .expand-icon {
-  transform: rotate(180deg);
-}
-
-.family-icon,
-.status-icon {
+.family-icon {
   display: grid;
   place-items: center;
   flex: 0 0 auto;
@@ -726,15 +643,6 @@ function achievedDateLabel(milestoneId) {
   border-bottom: 1px solid var(--color-line);
   opacity: 0.65;
 }
-.achievement-list article:last-child {
-  border-bottom: 0;
-}
-.empty-family {
-  margin: 0;
-  padding: 1.25rem;
-  color: var(--color-copy);
-  font-size: 0.82rem;
-}
 .achievement-list article.unlocked {
   opacity: 1;
 }
@@ -742,44 +650,15 @@ function achievedDateLabel(milestoneId) {
   min-width: 0;
 }
 .achievement-list strong,
-.achievement-list p,
 .achievement-list small {
   display: block;
-}
-.achievement-list p {
-  margin: 0.15rem 0 0;
-  font-size: 0.8rem;
 }
 .achievement-list small {
   margin-top: 0.2rem;
   font-size: 0.76rem;
 }
-.status-icon {
-  width: 2.7rem;
-  height: 2.7rem;
-  background: var(--color-surface-soft);
-  color: var(--color-muted);
-  font-size: 1.2rem;
-}
-.unlocked .status-icon {
-  background: var(--color-green-soft);
-  color: var(--color-success-dark);
-}
 .achievement-list article.pending {
   opacity: 1;
-}
-.pending .status-icon {
-  background: var(--color-blue-soft);
-  color: var(--color-primary);
-}
-.preview .status-icon {
-  background: var(--color-blue-soft);
-  color: var(--color-primary);
-}
-.check-icon {
-  margin-left: auto;
-  color: var(--color-success-dark);
-  font-size: 1.45rem;
 }
 
 .state {
@@ -794,112 +673,9 @@ function achievedDateLabel(milestoneId) {
   margin: 0;
 }
 
-@media (max-width: 899px) {
-  .family-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 760px) {
-  .family-grid {
-    margin-top: 1.25rem;
-  }
-  .family-card {
-    border-radius: var(--radius-md);
-  }
-  .family-header {
-    min-height: 5.5rem;
-    padding: 0.85rem 1rem;
-  }
-  .family-header p {
-    display: none;
-  }
-  .achievement-list article {
-    margin: 0 0.9rem;
-  }
-}
-
 /* Narrative milestone board */
 .achievements-shell {
   @include financial-shell(analytical);
-}
-
-.milestone-summary {
-  display: grid;
-  grid-template-columns: repeat(3, auto);
-  min-width: min(32rem, 46vw);
-  margin: 0;
-  padding: 0.75rem 0.9rem;
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-card);
-  background: rgb(255 255 255 / 90%);
-  box-shadow: var(--shadow-card);
-}
-
-.summary-item {
-  display: flex;
-  align-items: center;
-  gap: 0.65rem;
-  min-width: 0;
-  padding: 0 1rem;
-  border-left: 1px solid var(--color-line);
-}
-
-.summary-item:first-child {
-  padding-left: 0.2rem;
-  border-left: 0;
-}
-
-.summary-item:last-child {
-  padding-right: 0.2rem;
-}
-
-.summary-item > .q-icon {
-  display: grid;
-  width: 2.15rem;
-  height: 2.15rem;
-  place-items: center;
-  flex: 0 0 auto;
-  border-radius: 50%;
-  font-size: 1.25rem;
-}
-
-.summary-item--total > .q-icon {
-  background: var(--color-purple-soft);
-  color: var(--color-purple);
-}
-
-.summary-item--achieved > .q-icon {
-  background: var(--color-green-soft);
-  color: var(--color-success);
-}
-
-.summary-item > span:not(.summary-progress-ring) {
-  display: grid;
-  gap: 0.08rem;
-}
-
-.summary-item strong {
-  color: var(--color-ink);
-  font-size: 0.95rem;
-  line-height: 1;
-}
-
-.summary-item small {
-  color: var(--color-copy);
-  font-size: 0.67rem;
-  white-space: nowrap;
-}
-
-.summary-progress-ring {
-  width: 2.15rem;
-  height: 2.15rem;
-  flex: 0 0 auto;
-  border: 0.36rem solid var(--color-blue-soft);
-  border-top-color: var(--color-primary);
-  border-right-color: var(--color-primary);
-  border-radius: 50%;
-  transform: rotate(25deg);
 }
 
 .milestone-filters {
@@ -1159,72 +935,7 @@ function achievedDateLabel(milestoneId) {
   text-align: center;
 }
 
-@media (max-width: 1050px) {
-  .milestone-summary {
-    min-width: 0;
-  }
-
-  .summary-item {
-    padding: 0 0.65rem;
-  }
-
-  .summary-item--total small {
-    white-space: normal;
-  }
-}
-
 @media (max-width: 760px) {
-  .milestone-summary {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    width: 100%;
-    padding: 0.7rem 0.45rem;
-    border-radius: var(--radius-md);
-  }
-
-  .summary-item,
-  .summary-item:first-child,
-  .summary-item:last-child {
-    gap: 0.4rem;
-    padding: 0 0.55rem;
-    border-top: 0;
-    border-left: 1px solid var(--color-line);
-  }
-
-  .summary-item:first-child {
-    padding-left: 0.2rem;
-    border-left: 0;
-  }
-
-  .summary-item:last-child {
-    padding-right: 0.2rem;
-  }
-
-  .summary-item > .q-icon,
-  .summary-progress-ring {
-    width: 1.9rem;
-    height: 1.9rem;
-  }
-
-  .summary-item > .q-icon {
-    font-size: 1.05rem;
-  }
-
-  .summary-progress-ring {
-    border-width: 0.3rem;
-  }
-
-  .summary-item strong {
-    font-size: 0.82rem;
-  }
-
-  .summary-item small {
-    overflow: hidden;
-    font-size: 0.58rem;
-    line-height: 1.15;
-    text-overflow: ellipsis;
-    white-space: normal;
-  }
-
   .milestone-filters {
     overflow-x: auto;
     padding-bottom: 0.25rem;

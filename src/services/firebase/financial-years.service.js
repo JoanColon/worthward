@@ -6,20 +6,16 @@ function financialYearRef(workspaceId, year) {
   return doc(db, 'workspaces', workspaceId, 'financialYears', String(year))
 }
 
-export async function getFinancialYear(workspaceId, year, { ensure = false } = {}) {
+export async function getFinancialYear(workspaceId, year) {
   assertYear(year)
   const reference = financialYearRef(workspaceId, year)
-  if (ensure) {
-    await httpsCallable(
-      functions,
-      'ensureFinancialYear',
-    )({
-      workspaceId,
-      year,
-    })
-  }
   const snapshot = await getDoc(reference)
   return snapshot.exists() ? { id: snapshot.id, ...snapshot.data() } : null
+}
+
+export async function ensureFinancialYear(workspaceId, year) {
+  assertYear(year)
+  return httpsCallable(functions, 'ensureFinancialYear')({ workspaceId, year })
 }
 
 export function subscribeFinancialYear(workspaceId, year, onValue, onError) {

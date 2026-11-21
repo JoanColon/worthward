@@ -4,6 +4,7 @@ import { createPinia, setActivePinia } from 'pinia'
 const {
   activateMilestoneTracking,
   calculateMilestoneProgress,
+  ensureFinancialYear,
   getAchievements,
   getFinancialHistory,
   getFinancialYear,
@@ -11,6 +12,7 @@ const {
 } = vi.hoisted(() => ({
   activateMilestoneTracking: vi.fn(),
   calculateMilestoneProgress: vi.fn(),
+  ensureFinancialYear: vi.fn(),
   getAchievements: vi.fn(),
   getFinancialHistory: vi.fn(),
   getFinancialYear: vi.fn(),
@@ -26,6 +28,7 @@ vi.mock('@/services/firebase/achievements.service', () => ({
 }))
 vi.mock('@/services/firebase/history.service', () => ({ getFinancialHistory }))
 vi.mock('@/services/firebase/financial-years.service', () => ({
+  ensureFinancialYear,
   getFinancialYear,
   subscribeFinancialYear: vi.fn(() => vi.fn()),
 }))
@@ -36,6 +39,7 @@ import { useWorkspaceStore } from '../../src/stores/workspace-store'
 describe('milestones store', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
+    ensureFinancialYear.mockReset().mockResolvedValue({})
     getFinancialYear.mockReset().mockResolvedValue({ year: 2026, months: {} })
     getFinancialHistory.mockReset().mockResolvedValue([{ year: 2025, months: {} }])
     getAchievements.mockReset().mockResolvedValue([])

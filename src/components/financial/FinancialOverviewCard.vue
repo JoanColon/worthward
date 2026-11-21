@@ -10,6 +10,20 @@
             <b>{{ secondaryValue }}</b>
             {{ secondaryLabel }}
           </span>
+          <span v-if="comparisonValue" class="comparison-value">
+            {{ comparisonLabel }}
+            <q-icon
+              v-if="comparisonHelp"
+              name="info_outline"
+              class="comparison-info"
+              role="img"
+              tabindex="0"
+              :aria-label="comparisonHelp"
+            >
+              <q-tooltip max-width="18rem">{{ comparisonHelp }}</q-tooltip>
+            </q-icon>
+            <b>{{ comparisonValue }}</b>
+          </span>
           <span v-if="scopeLabel" class="scope-label">{{ scopeLabel }}</span>
         </div>
       </div>
@@ -39,6 +53,9 @@ defineProps({
   formattedTotal: { type: String, required: true },
   secondaryValue: { type: String, default: '' },
   secondaryLabel: { type: String, default: '' },
+  comparisonValue: { type: String, default: '' },
+  comparisonLabel: { type: String, default: '' },
+  comparisonHelp: { type: String, default: '' },
   scopeLabel: { type: String, default: '' },
   chartTitle: { type: String, required: true },
   totalLabel: { type: String, required: true },
@@ -124,7 +141,28 @@ defineProps({
   font-size: 0.92rem;
 }
 
-.secondary-value b {
+.comparison-value {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: var(--color-copy);
+  font-size: 0.92rem;
+}
+
+.comparison-info {
+  color: var(--color-muted);
+  font-size: 1rem;
+  cursor: help;
+}
+
+.comparison-info:focus-visible {
+  border-radius: 50%;
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.secondary-value b,
+.comparison-value b {
   color: var(--color-ink);
   font-size: 1.05rem;
   font-weight: var(--font-weight-bold);
@@ -174,7 +212,12 @@ defineProps({
     font-size: 0.8rem;
   }
 
-  .secondary-value b {
+  .comparison-value {
+    font-size: 0.8rem;
+  }
+
+  .secondary-value b,
+  .comparison-value b {
     font-size: 0.9rem;
   }
 }

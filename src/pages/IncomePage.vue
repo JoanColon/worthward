@@ -31,10 +31,13 @@
         <FinancialOverviewCard
           tone="income"
           icon="payments"
-          :label="t('income.overview.annualIncome')"
+          :label="t('income.totalIncome')"
           :formatted-total="formatCurrency(total)"
           :secondary-value="formatCurrency(total / 12)"
           :secondary-label="t('income.overview.averagePerMonth')"
+          :comparison-label="t('income.availableIncome')"
+          :comparison-value="formatCurrency(availableIncome)"
+          :comparison-help="t('income.availableIncomeDescription')"
           :scope-label="scopeLabel"
           :chart-title="t('income.overview.breakdownTitle')"
           :total-label="t('dashboard.year')"
@@ -179,6 +182,7 @@ import { incomeCategories } from '@/config/income-categories'
 import { CHART_SERIES_COLORS } from '@/config/chart-theme'
 import {
   currentFinancialYear,
+  financialYearAvailableIncomeValue,
   financialYearFlowCategoryValue,
   financialYearFlowValue,
 } from '../../functions/shared/positions/annual-projection.js'
@@ -243,6 +247,9 @@ const pageLoading = computed(
 )
 const total = computed(() =>
   financialYearFlowValue(financialYear.value, 'income', selectedMemberId.value),
+)
+const availableIncome = computed(() =>
+  financialYearAvailableIncomeValue(financialYear.value, selectedMemberId.value),
 )
 const breakdownEntries = computed(() => {
   const entries = enabledCategories.value
@@ -470,11 +477,7 @@ async function persist(action) {
 }
 
 .category-dialog {
-  @include financial-dialog-card(76rem);
-  max-width: none;
-}
-.category-dialog :deep(.setup-panel) {
-  max-width: none;
+  @include financial-category-dialog-card;
 }
 
 @media (max-width: bp.$overview-stack-max) {

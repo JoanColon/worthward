@@ -109,52 +109,6 @@
   text-align: center;
 }
 
-@mixin compact-segmented-control {
-  display: flex;
-  padding: 0.16rem;
-  overflow: hidden;
-  border: 1px solid var(--color-ink);
-  border-radius: 999px;
-  background: var(--color-ink);
-
-  button {
-    @include button-reset;
-    display: inline-flex;
-    flex: 1;
-    align-items: center;
-    justify-content: center;
-    min-width: 0;
-    min-height: 1.75rem;
-    padding: 0.32rem 0.65rem;
-    border-radius: 999px;
-    color: var(--color-inverse-muted);
-    font-size: 0.73rem;
-    font-weight: 650;
-    text-align: center;
-  }
-
-  button.selected,
-  button.active {
-    background: var(--color-surface);
-    color: var(--color-ink);
-    box-shadow: var(--shadow-control);
-  }
-
-  button:focus-visible {
-    @include focus-ring;
-  }
-
-  @media (max-width: 599px) {
-    padding: 0.1rem;
-
-    button {
-      min-height: 1.45rem;
-      padding: 0.12rem 0.2rem;
-      font-size: 0.58rem;
-    }
-  }
-}
-
 @mixin financial-page {
   width: 100%;
   min-width: 0;
@@ -226,41 +180,6 @@
   @media (max-width: 760px) {
     font-size: 2rem;
     line-height: 1.05;
-  }
-}
-
-@mixin financial-total-card($display: grid) {
-  display: $display;
-  min-height: 7.25rem;
-  margin-top: 0.75rem;
-  padding: 1.5rem;
-  border: 1px solid var(--color-ink);
-  border-radius: var(--radius-card);
-  background: var(--color-ink);
-  color: var(--color-inverse);
-  box-shadow: var(--shadow-card);
-
-  @media (max-width: 760px) {
-    min-height: auto;
-    margin-top: 0.85rem;
-    padding: 0.9rem 1rem;
-  }
-}
-
-@mixin financial-total-secondary {
-  color: var(--color-inverse);
-  opacity: 0.72;
-}
-
-@mixin financial-total-value {
-  margin: 0.15rem 0;
-  color: var(--color-inverse);
-  font-size: clamp(2.2rem, 5vw, 3.5rem);
-  line-height: 1;
-  letter-spacing: -0.055em;
-
-  @media (max-width: 760px) {
-    font-size: 2rem;
   }
 }
 
@@ -404,6 +323,15 @@
     width: calc(100vw - 1rem);
     max-height: calc(100dvh - 1rem);
     border-radius: 0.85rem;
+  }
+}
+
+@mixin financial-category-dialog-card {
+  @include financial-dialog-card(76rem);
+  max-width: none;
+
+  :deep(.setup-panel) {
+    max-width: none;
   }
 }
 
@@ -964,11 +892,6 @@
     gap: 0.75rem;
     padding: 0.8rem 0.75rem;
     border-top: 1px solid var(--color-line);
-  }
-
-  .category-dialog {
-    @include financial-dialog-card(68rem);
-    max-width: none;
   }
 
   .ownership-dialog-card {

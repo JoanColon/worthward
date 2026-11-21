@@ -1,5 +1,5 @@
 <template>
-  <section class="setup-panel">
+  <section class="setup-panel" :class="{ 'setup-panel--dialog': editMode }">
     <div class="setup-copy">
       <h1>{{ editMode ? t('income.setup.editTitle') : t('income.setup.title') }}</h1>
       <p>{{ t('income.setup.subtitle') }}</p>
@@ -28,7 +28,7 @@
     <div class="setup-actions">
       <q-btn
         v-if="editMode"
-        flat
+        outline
         no-caps
         :label="t('common.cancel')"
         :disable="saving"
@@ -77,7 +77,7 @@ function toggle(categoryId) {
 <style scoped lang="scss">
 @use '@/css/mixins' as *;
 
-@include category-setup;
+@include category-setup($dialog: true);
 
 .category-icon {
   background: var(--color-green-soft);

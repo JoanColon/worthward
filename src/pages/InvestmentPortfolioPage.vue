@@ -21,21 +21,11 @@
       </section>
 
       <template v-else-if="investment">
-        <header class="portfolio-header">
-          <div>
-            <q-btn
-              flat
-              dense
-              no-caps
-              color="grey-7"
-              icon="arrow_back"
-              :label="t('assets.portfolio.backToInvestments')"
-              :to="investmentsRoute"
-              class="back-button"
-            />
-            <h1>{{ investment.itemName }}</h1>
-          </div>
-        </header>
+        <AppPageHeader
+          :title="investment.itemName"
+          :back-label="t('assets.portfolio.backToInvestments')"
+          :back-to="investmentsRoute"
+        />
 
         <section v-if="!configured || editing" class="setup-card">
           <span class="setup-icon"><q-icon name="table_view" /></span>
@@ -422,6 +412,7 @@ import { computed, ref, watch } from 'vue'
 import { useQuasar } from 'quasar'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
+import AppPageHeader from '@/components/layout/AppPageHeader.vue'
 import AppConfirmDialog from '@/components/ui/AppConfirmDialog.vue'
 import PortfolioAllocationChart from '@/components/assets/PortfolioAllocationChart.vue'
 import {
@@ -843,15 +834,6 @@ function tableColumn(name, label, align, width, sortField = null) {
 .error-state p {
   margin: 0;
 }
-.portfolio-header {
-  @include financial-header;
-}
-.back-button {
-  @include financial-back-button;
-}
-h1 {
-  @include financial-title;
-}
 .setup-card,
 .portfolio-content-card {
   @include dashboard-card;
@@ -867,21 +849,16 @@ h1 {
 .setup-icon {
   display: grid;
   place-items: center;
+  width: 3.5rem;
+  height: 3.5rem;
   border-radius: 1rem;
   background: var(--color-green-soft);
   color: var(--color-success-dark);
-}
-.setup-icon {
-  width: 3.5rem;
-  height: 3.5rem;
   font-size: 1.65rem;
 }
 .setup-copy h2 {
-  margin: 0;
+  margin: 1rem 0 0;
   color: var(--color-ink);
-}
-.setup-copy h2 {
-  margin-top: 1rem;
   font-size: 1.65rem;
 }
 .setup-copy p {

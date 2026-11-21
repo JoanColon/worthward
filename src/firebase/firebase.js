@@ -1,7 +1,12 @@
 import { initializeApp } from 'firebase/app'
 import { getAuth } from 'firebase/auth'
-import { getFirestore } from 'firebase/firestore'
+import {
+  initializeFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager,
+} from 'firebase/firestore'
 import { getFunctions } from 'firebase/functions'
+import { Platform } from 'quasar'
 
 const firebaseConfig = {
   apiKey: 'AIzaSyBo43_5VY5_W76APFbIxopO9iPnDWMnR4Q',
@@ -15,6 +20,11 @@ const firebaseConfig = {
 const firebaseApp = initializeApp(firebaseConfig)
 
 export const auth = getAuth(firebaseApp)
-export const db = getFirestore(firebaseApp)
+export const db = initializeFirestore(
+  firebaseApp,
+  Platform.is?.capacitor
+    ? { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) }
+    : {},
+)
 export const functions = getFunctions(firebaseApp, 'europe-west1')
 export default firebaseApp
