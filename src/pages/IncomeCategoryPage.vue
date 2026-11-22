@@ -184,7 +184,7 @@ const categoryConfig = computed(() => incomeStore.config?.categories?.[categoryI
 const workspace = computed(
   () => workspaceStore.workspaces.find((candidate) => candidate.id === workspaceId.value) || null,
 )
-const members = computed(() => getWorkspaceMembers(workspace.value, authUser.value))
+const members = computed(() => getWorkspaceMembers(workspace.value))
 const memberIds = computed(() => members.value.map((member) => member.id))
 const selectedMemberId = computed({
   get: () => scopeStore.get(workspaceId.value, memberIds.value, authUser.value?.uid),
@@ -482,7 +482,18 @@ $income-table-compact-max: 720px;
   font-weight: 700;
   cursor: pointer;
 }
+@media (min-width: 721px) and (max-width: 760px) {
+  .detail-table-heading {
+    grid-template-columns: minmax(0, 1fr) 9rem 9rem auto;
+  }
+}
 @media (max-width: $income-table-compact-max) {
+  .detail-table-heading {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+  }
+  .detail-table-heading span:nth-child(3) {
+    display: none;
+  }
   .income-row {
     grid-template-columns: minmax(0, 1fr) auto auto;
     @include mobile-financial-row;

@@ -120,13 +120,13 @@ El proyecto Firebase por defecto está fijado en [`.firebaserc`](.firebaserc). R
 
 El proyecto nativo vive en `src-capacitor/android`, apunta a Android 16/API 36 y está registrado en Firebase como `com.worthward.app`. El login de Google usa el plugin nativo de Firebase Authentication y entrega su credencial al SDK JavaScript, de modo que Firestore y Functions conservan una única sesión.
 
-El proyecto Android incluye `@capgo/native-purchases` y el permiso `com.android.vending.BILLING`, por lo que un AAB nuevo anuncia compatibilidad con Google Play Billing. El reconocimiento de derechos ya existe, pero el catálogo, la compra anual, la verificación del token y las notificaciones de renovación siguen pendientes.
+El proyecto Android incluye `@capgo/native-purchases` y el permiso `com.android.vending.BILLING`. La compra anual se verifica en el servidor y las suscripciones guardadas se reconcilian periódicamente con Google Play; el cliente nunca se concede acceso Pro por sí solo.
 
 La huella del certificado debug está registrada en Firebase. Antes de publicar se debe crear una clave de subida fuera del repositorio, configurar el firmado release y añadir a Firebase las huellas de la clave de subida y de Play App Signing. Los archivos `*.jks` y `*.keystore` están ignorados.
 
 Los enlaces HTTPS `https://cost-of-life-f23b2.web.app/invite/:token` abren directamente la invitación en Android. `public/.well-known/assetlinks.json` contiene por ahora la huella debug; debe añadirse la huella de Play App Signing antes de producción y desplegarse Firebase Hosting.
 
-Para forzar Java 21 si existe otra versión activa:
+Gradle requiere JDK 21. Confirma `java -version` antes de compilar y, si existe otra versión activa, selecciona Java 21:
 
 ```bash
 export JAVA_HOME=$(/usr/libexec/java_home -v 21)
@@ -272,7 +272,7 @@ Preferencias privadas del usuario: `activeWorkspaceId` y `quickLinksByWorkspace`
 
 ### `workspaces/{workspaceId}`
 
-Documento raíz con `name`, `type`, `currency`, `createdBy`, timestamps, `milestoneTracking`, `memberIds` y un mapa `members`. Cada miembro tiene rol `owner` o `member`; solo el owner puede borrar el workspace. `memberIds` existe además del mapa para consultas `array-contains` y comprobaciones de reglas. La configuración de moneda y nombres pasa por `updateWorkspaceSettings`, que exige un código de tres letras y un nombre no vacío para cada miembro.
+Documento raíz con `name`, `type`, `currency`, `createdBy`, timestamps, `milestoneTracking`, `memberIds`, un mapa `members` y la proyección obligatoria `entitlement`. Cada miembro tiene rol `owner` o `member`; solo el owner puede borrar el workspace. `memberIds` existe además del mapa para consultas `array-contains` y comprobaciones de reglas. `entitlement` contiene únicamente el tier efectivo del owner y su caducidad, por lo que la UI conoce el acceso al leer el workspace sin llamar a otra Function. La configuración de moneda y nombres pasa por `updateWorkspaceSettings`, que exige un código de tres letras y un nombre no vacío para cada miembro.
 
 Una invitación dura siete días, tiene rol `member`, es de un solo uso y guarda únicamente el hash SHA-256 del token como ID. `workspaceInvites` solo es accesible desde Functions.
 
@@ -280,9 +280,9 @@ Una invitación dura siete días, tiene rol `member`, es de un solo uso y guarda
 
 Guarda `setupCompleted` y el mapa de categorías activas. En Expenses e Income, las subcategorías se derivan de los items guardados en `modelExpenses` y `modelIncome`; los catálogos de sugerencias no se persisten ni crean filas automáticamente. Cada item usa `categoryId` y `subcategoryId`, mientras que su `itemId` estable es el ID del documento. `expenseTracking` guarda las subcategorías habilitadas.
 
-La simulación se divide por compatibilidad en dos documentos escritos en un único batch:
+La simulación se divide en dos documentos con permisos independientes. El cliente puede leerlos, pero sus escrituras pasan por callables para que la autorización Free/Pro y la normalización no dependan de las reglas:
 
-- `whatIf`: reducción discrecional, ahorro extra y una representación legacy del escenario activo;
+- `whatIf`: reducción discrecional y ahorro extra, disponible en Free;
 - `whatIfStrategies`: hasta diez escenarios, el activo y todos sus supuestos (asignación cash/invest/debt, mix y rentabilidades, inflación, horizonte, colchón objetivo y deuda elegida).
 
 Solo se guardan supuestos. Las proyecciones se recomputan con `functions/shared/plan/what-if.js` y `strategy-simulation.js`.
@@ -328,7 +328,7 @@ Los años anteriores se leen como historial y no se regeneran automáticamente d
 
 ### `achievements/{milestoneId}`
 
-El progreso se deriva del año financiero, posiciones actuales e historial. Al activar por primera vez el seguimiento, los hitos ya cumplidos se guardan directamente como `achieved`. Después, una nueva calificación se guarda como `pending` y solo se confirma como `achieved` si continúa cumpliéndose tras 24 horas; si deja de cumplirse, el pending se elimina. Los logrados son permanentes. Las reglas restringen familia, transición, timestamps y batch de activación.
+El progreso se deriva del año financiero, posiciones actuales e historial. Al activar por primera vez el seguimiento, los hitos ya cumplidos se guardan directamente como `achieved`. Después, una nueva calificación se guarda como `pending` y solo se confirma como `achieved` si continúa cumpliéndose tras 24 horas. Si el valor vuelve a quedar por debajo del objetivo, el hito desaparece independientemente de que estuviera `pending` o `achieved`. El cliente envía el progreso calculado a Functions; el backend controla la membresía, las transiciones, los timestamps y las escrituras.
 
 ### Portfolio conectado a Google Sheets
 
@@ -344,6 +344,7 @@ La sincronización admite resultados parciales. Los errores de fórmula de Sheet
 Vista → Store → Service
                   ├─ lectura Firestore → estado Pinia → Vista
                   ├─ config/tracking Firestore → trigger → financialYears
+                  ├─ callables de What If e hitos → Firestore
                   └─ callable mutateFinancialModel
                          └─ transacción: model* + financialYears
 
@@ -357,29 +358,37 @@ Los caminos de escritura no son intercambiables:
 3. **Tracking mensual**: el cliente actualiza `expenseTracking/{period}`; un trigger integra el mes en `financialYears/{year}`.
 4. **Preferencias personales**: el cliente escribe `users/{uid}`.
 5. **Workspace, membresía y portfolio**: usan callables por sus permisos, relaciones o acceso a Google Sheets.
-6. **Hitos**: el cliente usa transacciones/batches directos estrechamente validados por reglas.
+6. **What If e hitos**: el cliente llama Functions; el backend valida acceso y controla sus escrituras.
 
 Antes de mutar ítems detallados debe existir el documento del año actual. [`src/stores/financial-years-store.js`](src/stores/financial-years-store.js) se encarga de solicitarlo y mantener una suscripción en tiempo real para el workspace activo.
 
 ## Cloud Functions
 
-| Export                              | Tipo              | Responsabilidad                                                                      |
-| ----------------------------------- | ----------------- | ------------------------------------------------------------------------------------ |
-| `ensureFinancialYear`               | Callable          | Crea/refresca el año actual, modelos con valor temporal y posiciones.                |
-| `mutateFinancialModel`              | Callable          | Crea, edita o borra ítems/categorías y sus relaciones de forma atómica.              |
-| `onModelConfigWritten`              | Firestore trigger | Reproyecta assets, liabilities, income o expenses tras cambiar su configuración.     |
-| `onExpenseTrackingWritten`          | Firestore trigger | Inserta el mes registrado en la proyección anual.                                    |
-| `closeMonthlyFinancialPositions`    | Scheduler         | A las 00:05 del día 1 (Madrid), sincroniza portfolios y cierra el mes anterior.      |
-| `updateInvestmentPortfolio`         | Callable          | Conecta, cambia o desconecta el Google Sheet de una inversión.                       |
-| `readInvestmentPortfolioSheet`      | Callable          | Refresca una inversión conectada respetando caché o `force`.                         |
-| `syncWorkspaceInvestmentPortfolios` | Callable          | Sincroniza todos los portfolios conectados de un workspace.                          |
-| `createWorkspaceInvite`             | Callable          | Crea una invitación de siete días para un miembro del workspace.                     |
-| `getWorkspaceInvite`                | Callable          | Valida token/estado y devuelve metadatos seguros; no exige login para consultar.     |
-| `acceptWorkspaceInvite`             | Callable          | Añade al usuario autenticado y consume la invitación de forma idempotente para él.   |
-| `updateWorkspaceSettings`           | Callable          | Valida moneda y nombres y actualiza el workspace sin abrir cambios de membresía.     |
-| `deleteWorkspace`                   | Callable          | Verifica ownership, marca borrado y elimina workspace e invitaciones recursivamente. |
+| Export                              | Tipo              | Responsabilidad                                                                       |
+| ----------------------------------- | ----------------- | ------------------------------------------------------------------------------------- |
+| `ensureFinancialYear`               | Callable          | Crea/refresca el año actual, modelos con valor temporal y posiciones.                 |
+| `mutateFinancialModel`              | Callable          | Crea, edita o borra ítems/categorías y sus relaciones de forma atómica.               |
+| `onModelConfigWritten`              | Firestore trigger | Reproyecta assets, liabilities, income o expenses tras cambiar su configuración.      |
+| `onExpenseTrackingWritten`          | Firestore trigger | Inserta el mes registrado en la proyección anual.                                     |
+| `closeMonthlyFinancialPositions`    | Scheduler         | A las 00:05 del día 1 (Madrid), sincroniza portfolios y cierra el mes anterior.       |
+| `updateInvestmentPortfolio`         | Callable          | Conecta, cambia o desconecta el Google Sheet de una inversión.                        |
+| `readInvestmentPortfolioSheet`      | Callable          | Refresca una inversión conectada respetando caché o `force`.                          |
+| `syncWorkspaceInvestmentPortfolios` | Callable          | Sincroniza todos los portfolios conectados de un workspace.                           |
+| `verifyGooglePlaySubscription`      | Callable          | Verifica la compra y actualiza atómicamente suscripción y entitlements de workspaces. |
+| `reconcileGooglePlaySubscriptions`  | Scheduler         | Revalida cada seis horas el purchase token autoritativo de cada suscripción.          |
+| `createWorkspace`                   | Callable          | Crea el workspace y aplica atómicamente el límite Free/Pro.                           |
+| `createWorkspaceInvite`             | Callable          | Crea una invitación de siete días para un miembro del workspace.                      |
+| `getWorkspaceInvite`                | Callable          | Valida token/estado y devuelve metadatos seguros; no exige login para consultar.      |
+| `acceptWorkspaceInvite`             | Callable          | Añade al usuario autenticado y consume la invitación de forma idempotente para él.    |
+| `updateWorkspaceSettings`           | Callable          | Valida moneda y nombres y actualiza el workspace sin abrir cambios de membresía.      |
+| `deleteWorkspace`                   | Callable          | Verifica ownership, marca borrado y elimina workspace e invitaciones recursivamente.  |
+| `deleteAccount`                     | Callable          | Elimina cuenta, datos privados, memberships y workspaces personales.                  |
+| `saveWhatIfAssumptions`             | Callable          | Normaliza y guarda los supuestos Free de What If.                                     |
+| `saveWhatIfStrategy`                | Callable          | Exige Pro y guarda los escenarios de Strategy.                                        |
+| `activateMilestoneTracking`         | Callable          | Activa el seguimiento y registra el estado inicial de los hitos.                      |
+| `syncMilestoneAchievements`         | Callable          | Aplica las transiciones pending/achieved y sus tiempos desde el backend.              |
 
-Todas se despliegan en `europe-west1`; las opciones globales limitan cada export a diez instancias salvo override local. `functions/index.js` inicializa Admin SDK una vez y agrega los exports de `api/`, `triggers/` y `scheduled/`. La lógica transaccional testeable vive en `functions/services`; los wrappers de entrada deben permanecer pequeños.
+Todas se despliegan en `europe-west1`; las opciones globales limitan cada export a diez instancias salvo override local. `functions/index.js` inicializa Admin SDK una vez y expone los entry points de cada feature. La lógica transaccional testeable vive junto a su feature; los wrappers de entrada deben permanecer pequeños.
 
 ## Seguridad
 
@@ -387,10 +396,10 @@ Todas se despliegan en `europe-west1`; las opciones globales limitan cada export
 
 - solo miembros autenticados leen un workspace y sus subcolecciones permitidas;
 - cada usuario solo accede a sus propias preferencias;
-- una creación de workspace debe incluir al creador como owner; una actualización cliente no puede cambiar `memberIds` ni `members`;
+- la creación, membresía y eliminación de workspaces solo pasan por Admin SDK; una actualización cliente no puede cambiar `memberIds` ni `members`;
 - los ítems `model*` y los años financieros no admiten escritura cliente;
-- configuración y tracking sí permiten escritura a miembros de un workspace activo; `whatIf` y `whatIfStrategies` tienen allowlists adicionales;
-- los hitos solo admiten el esquema y las transiciones temporales descritas arriba;
+- la configuración financiera simple y el tracking permiten escritura a miembros de un workspace activo;
+- `whatIf`, `whatIfStrategies` y los hitos no admiten escritura cliente: sus callables aplican respectivamente acceso Free, acceso Pro y transiciones temporales;
 - invitaciones no tienen acceso directo desde el cliente;
 - el borrado de workspaces solo ocurre mediante Admin SDK.
 

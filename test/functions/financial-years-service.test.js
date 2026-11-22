@@ -356,7 +356,7 @@ describe('financial year persistence', () => {
     expect(updates[0].data.balance).toBe(8_191)
   })
 
-  it('rejects unsupported legacy mortgage models', async () => {
+  it('rejects unsupported mortgage model versions', async () => {
     const { firestore, updates } = createPositionRefreshFirestore({
       mortgages: [
         {

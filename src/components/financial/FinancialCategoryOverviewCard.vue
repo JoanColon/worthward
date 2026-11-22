@@ -98,7 +98,7 @@ defineProps({
 
 .category-kpi-label {
   color: var(--color-copy);
-  font-size: 0.95rem;
+  font-size: var(--font-size-kpi-label);
   font-weight: var(--font-weight-medium);
   letter-spacing: -0.01em;
 }
@@ -121,7 +121,7 @@ defineProps({
 
 .category-kpi-secondary {
   color: var(--color-copy);
-  font-size: 0.92rem;
+  font-size: var(--font-size-kpi-supporting);
 }
 
 .category-kpi-secondary b {
@@ -163,11 +163,11 @@ defineProps({
   }
 
   .category-kpi-label {
-    font-size: 0.84rem;
+    font-size: var(--font-size-kpi-label-compact);
   }
 
   .category-kpi-secondary {
-    font-size: 0.8rem;
+    font-size: var(--font-size-kpi-supporting-compact);
   }
 
   .category-kpi-secondary b {

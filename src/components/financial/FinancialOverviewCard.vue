@@ -115,7 +115,7 @@ defineProps({
 
 .kpi-label {
   color: var(--color-copy);
-  font-size: 0.95rem;
+  font-size: var(--font-size-kpi-label);
   font-weight: var(--font-weight-medium);
   letter-spacing: -0.01em;
 }
@@ -138,7 +138,7 @@ defineProps({
 
 .secondary-value {
   color: var(--color-copy);
-  font-size: 0.92rem;
+  font-size: var(--font-size-kpi-supporting);
 }
 
 .comparison-value {
@@ -146,7 +146,7 @@ defineProps({
   align-items: center;
   gap: 0.25rem;
   color: var(--color-copy);
-  font-size: 0.92rem;
+  font-size: var(--font-size-kpi-supporting);
 }
 
 .comparison-info {
@@ -205,15 +205,15 @@ defineProps({
   }
 
   .kpi-label {
-    font-size: 0.84rem;
+    font-size: var(--font-size-kpi-label-compact);
   }
 
   .secondary-value {
-    font-size: 0.8rem;
+    font-size: var(--font-size-kpi-supporting-compact);
   }
 
   .comparison-value {
-    font-size: 0.8rem;
+    font-size: var(--font-size-kpi-supporting-compact);
   }
 
   .secondary-value b,

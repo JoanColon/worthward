@@ -3,11 +3,75 @@
  */
 import crypto from 'node:crypto'
 import { FieldValue, Timestamp } from 'firebase-admin/firestore'
+import {
+  resolveUserEntitlements,
+  workspaceEntitlementProjection,
+} from '../../shared/billing/entitlements.js'
 
 // Workspace membership, invitations and deletion are persisted together in this feature service.
 const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000
 const INVITE_TOKEN_PATTERN = /^[A-Za-z0-9_-]{43}$/
 const CURRENCY_PATTERN = /^[A-Z]{3}$/
+const WORKSPACE_NAME_MAX_LENGTH = 80
+
+async function createWorkspace(firestore, { userId, displayName = '', name }) {
+  const normalizedName = String(name || '').trim()
+  if (!normalizedName || normalizedName.length > WORKSPACE_NAME_MAX_LENGTH) {
+    throw workspaceError('invalid-argument', 'A valid workspace name is required')
+  }
+  const workspaceReference = firestore.collection('workspaces').doc()
+  let workspace
+  await firestore.runTransaction(async (transaction) => {
+    const ownedWorkspaces = await transaction.get(
+      firestore.collection('workspaces').where('createdBy', '==', userId),
+    )
+    const subscription = await transaction.get(
+      firestore.collection('users').doc(userId).collection('private').doc('subscription'),
+    )
+    const ownedWorkspaceCount = ownedWorkspaces.docs.filter(
+      (document) => !document.data()?.deletionPendingAt,
+    ).length
+    const capabilities = resolveUserEntitlements(subscription.data(), { ownedWorkspaceCount })
+    if (!capabilities.canCreateWorkspace) {
+      throw workspaceError('permission-denied', 'Worthward Pro is required for another workspace')
+    }
+
+    workspace = {
+      name: normalizedName,
+      type: 'personal',
+      createdBy: userId,
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+      isPrimaryWorkspace: ownedWorkspaceCount === 0,
+      entitlement: workspaceEntitlementProjection(subscription.data()),
+      milestoneTracking: { status: 'setup' },
+      currency: 'EUR',
+      memberIds: [userId],
+      members: {
+        [userId]: {
+          displayName: String(displayName || '').trim().slice(0, 80),
+          role: 'owner',
+          joinedAt: FieldValue.serverTimestamp(),
+        },
+      },
+    }
+    transaction.create(workspaceReference, workspace)
+  })
+  return {
+    id: workspaceReference.id,
+    name: workspace.name,
+    type: workspace.type,
+    createdBy: workspace.createdBy,
+    isPrimaryWorkspace: workspace.isPrimaryWorkspace,
+    entitlement: workspace.entitlement,
+    milestoneTracking: workspace.milestoneTracking,
+    currency: workspace.currency,
+    memberIds: workspace.memberIds,
+    members: {
+      [userId]: { ...workspace.members[userId], joinedAt: null },
+    },
+  }
+}
 
 /**
  * Creates a service error carrying a Firebase-compatible code.
@@ -117,7 +181,7 @@ async function getWorkspaceInvite(firestore, { token, userId = null, now = Date.
  */
 async function acceptWorkspaceInvite(
   firestore,
-  { token, userId, displayName = '', photoURL = '', now = Date.now() },
+  { token, userId, displayName = '', photoURL = '', now = Date.now(), maximumMembers = 5 },
 ) {
   const inviteReference = firestore.collection('workspaceInvites').doc(inviteDocumentId(token))
 
@@ -149,6 +213,9 @@ async function acceptWorkspaceInvite(
     }
 
     const existingMember = workspace.members?.[userId]
+    if (!existingMember && (workspace.memberIds || []).length >= maximumMembers) {
+      throw workspaceError('resource-exhausted', 'The workspace member limit has been reached')
+    }
     const member = existingMember || {
       displayName,
       photoURL,
@@ -265,6 +332,7 @@ function isWorkspaceMember(workspace, userId) {
 
 export {
   acceptWorkspaceInvite,
+  createWorkspace,
   createWorkspaceInvite,
   deleteWorkspaceData,
   getWorkspaceInvite,

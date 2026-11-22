@@ -402,7 +402,7 @@ const workspaceId = computed(() => String(route.params.workspaceId))
 const workspace = computed(
   () => workspaceStore.workspaces.find(({ id }) => id === workspaceId.value) || null,
 )
-const members = computed(() => getWorkspaceMembers(workspace.value, authUser.value))
+const members = computed(() => getWorkspaceMembers(workspace.value))
 const memberIds = computed(() => members.value.map(({ id }) => id))
 const selectedMemberId = computed(() =>
   scopeStore.get(workspaceId.value, memberIds.value, authUser.value?.uid),
@@ -517,7 +517,7 @@ const investmentScenario = computed(() =>
   calculateInvestmentContributionScenario({
     monthlyContribution: simulation.value.simulatedSavingsCapacity,
     currentMonthlyContribution: simulation.value.currentSavingsCapacity,
-    annualReturnPercent: activeScenario.value.investmentMix.stockMarket?.annualReturnPercent || 7,
+    annualReturnPercent: activeScenario.value.investmentMix.stockMarket?.annualReturnPercent ?? 7,
     startingValue: startingPosition.value.investmentTotal,
   }),
 )
@@ -574,7 +574,7 @@ async function prepare(force = false) {
   try {
     await Promise.all([
       financialYearsStore.load(workspaceId.value, currentYear, force),
-      whatIfStore.load(workspaceId.value, force),
+      whatIfStore.load(workspaceId.value, force, { includeStrategy: false }),
       assetsStore.loadCategory(workspaceId.value, 'cash', force),
       liabilitiesStore.loadCategory(workspaceId.value, 'mortgage', force),
     ])
@@ -585,7 +585,7 @@ async function prepare(force = false) {
 
 async function persist(changes) {
   try {
-    await whatIfStore.save(workspaceId.value, changes)
+    await whatIfStore.saveSimulation(workspaceId.value, changes)
     return true
   } catch {
     $q.notify({ type: 'negative', message: t('whatIf.errors.save'), position: 'top' })

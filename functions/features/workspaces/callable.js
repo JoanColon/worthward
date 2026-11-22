@@ -4,8 +4,14 @@
 import { getFirestore } from 'firebase-admin/firestore'
 import { HttpsError, onCall } from 'firebase-functions/https'
 import {
+  assertWorkspaceCapability,
+  getWorkspaceAccess,
+  promotePrimaryWorkspace,
+} from './access.js'
+import {
   acceptWorkspaceInvite as acceptWorkspaceInviteData,
   createWorkspaceInvite as createWorkspaceInviteData,
+  createWorkspace as createWorkspaceData,
   deleteWorkspaceData,
   getWorkspaceInvite as getWorkspaceInviteData,
   isWorkspaceOwner,
@@ -23,6 +29,7 @@ function callableError(error) {
     'invalid-argument',
     'not-found',
     'permission-denied',
+    'resource-exhausted',
   ])
   return new HttpsError(
     supportedCodes.has(error?.code) ? error.code : 'internal',
@@ -40,6 +47,11 @@ const createWorkspaceInvite = onCall({ region: 'europe-west1' }, async (request)
   if (!workspaceId) throw new HttpsError('invalid-argument', 'A workspace is required')
 
   try {
+    await assertWorkspaceCapability(
+      getFirestore(),
+      { workspaceId, userId: request.auth.uid },
+      'canInviteMembers',
+    )
     return await createWorkspaceInviteData(getFirestore(), {
       workspaceId,
       userId: request.auth.uid,
@@ -70,11 +82,37 @@ const acceptWorkspaceInvite = onCall({ region: 'europe-west1' }, async (request)
   if (!request.auth) throw new HttpsError('unauthenticated', 'Authentication is required')
 
   try {
-    return await acceptWorkspaceInviteData(getFirestore(), {
+    const firestore = getFirestore()
+    const invite = await getWorkspaceInviteData(firestore, {
+      token: request.data?.token,
+      userId: request.auth.uid,
+    })
+    const access = await getWorkspaceAccess(firestore, {
+      workspaceId: invite.workspaceId,
+      userId: request.auth.uid,
+    })
+    if (!access.capabilities.isPro) {
+      throw new HttpsError('permission-denied', 'The workspace owner needs Worthward Pro')
+    }
+    return await acceptWorkspaceInviteData(firestore, {
       token: request.data?.token,
       userId: request.auth.uid,
       displayName: request.auth.token.name || request.auth.token.email || '',
       photoURL: request.auth.token.picture || '',
+      maximumMembers: access.capabilities.maximumWorkspaceMembers,
+    })
+  } catch (error) {
+    throw callableError(error)
+  }
+})
+
+const createWorkspace = onCall({ region: 'europe-west1' }, async (request) => {
+  if (!request.auth) throw new HttpsError('unauthenticated', 'Authentication is required')
+  try {
+    return await createWorkspaceData(getFirestore(), {
+      userId: request.auth.uid,
+      displayName: request.auth.token.name || request.auth.token.email || '',
+      name: request.data?.name,
     })
   } catch (error) {
     throw callableError(error)
@@ -101,7 +139,9 @@ const deleteWorkspace = onCall({ region: 'europe-west1' }, async (request) => {
     throw new HttpsError('permission-denied', 'Workspace ownership is required')
   }
 
-  return deleteWorkspaceData(firestore, workspaceReference)
+  const result = await deleteWorkspaceData(firestore, workspaceReference)
+  await promotePrimaryWorkspace(firestore, request.auth.uid)
+  return result
 })
 
 /**
@@ -111,8 +151,14 @@ const updateWorkspaceSettings = onCall({ region: 'europe-west1' }, async (reques
   if (!request.auth) throw new HttpsError('unauthenticated', 'Authentication is required')
 
   try {
+    const workspaceId = String(request.data?.workspaceId || '').trim()
+    await assertWorkspaceCapability(
+      getFirestore(),
+      { workspaceId, userId: request.auth.uid },
+      'canWrite',
+    )
     return await updateWorkspaceSettingsData(getFirestore(), {
-      workspaceId: String(request.data?.workspaceId || '').trim(),
+      workspaceId,
       userId: request.auth.uid,
       currency: request.data?.currency,
       memberNames: request.data?.memberNames,
@@ -124,6 +170,7 @@ const updateWorkspaceSettings = onCall({ region: 'europe-west1' }, async (reques
 
 export {
   acceptWorkspaceInvite,
+  createWorkspace,
   createWorkspaceInvite,
   deleteWorkspace,
   getWorkspaceInvite,

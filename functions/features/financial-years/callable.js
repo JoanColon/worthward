@@ -4,6 +4,7 @@
 import { getFirestore } from 'firebase-admin/firestore'
 import { HttpsError, onCall } from 'firebase-functions/https'
 import * as logger from 'firebase-functions/logger'
+import { assertWorkspaceCapability } from '../workspaces/access.js'
 import {
   madridToday,
   currentYear,
@@ -53,14 +54,11 @@ async function handleFinancialYearRequest(request) {
     throw new HttpsError('invalid-argument', 'Only the current financial year can be ensured')
   }
   const firestore = getFirestore()
-  const workspace = await firestore.collection('workspaces').doc(workspaceId).get()
-  if (
-    !workspace.exists ||
-    workspace.data()?.deletionPendingAt ||
-    !workspace.data()?.memberIds?.includes(request.auth.uid)
-  ) {
-    throw new HttpsError('permission-denied', 'Workspace membership is required')
-  }
+  await assertWorkspaceCapability(
+    firestore,
+    { workspaceId, userId: request.auth.uid },
+    'canWrite',
+  )
   const refresh = request.data?.refresh === true
   const modeledPositions = await refreshModeledPositions(firestore, workspaceId, request.auth.uid)
   const assetsChanged = modeledPositions.assetsUpdated > 0

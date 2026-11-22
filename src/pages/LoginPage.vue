@@ -142,7 +142,7 @@ const router = useRouter()
 const email = ref('')
 const password = ref('')
 const showPassword = ref(false)
-const isRegistering = ref(false)
+const isRegistering = ref(route.query.register === '1')
 const loading = ref(false)
 const errorMessage = ref('')
 

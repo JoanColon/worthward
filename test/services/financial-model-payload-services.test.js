@@ -233,7 +233,7 @@ describe('financial model service payloads', () => {
     )
   })
 
-  it('rejects legacy mortgage models', async () => {
+  it('rejects unsupported mortgage model versions', async () => {
     await expect(
       updateLiability(
         'workspace-a',

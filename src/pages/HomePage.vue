@@ -14,6 +14,7 @@
       >
         <template #actions>
           <q-btn
+            v-if="canCreateWorkspace"
             unelevated
             no-caps
             color="primary"
@@ -51,7 +52,12 @@
           >
             <q-menu anchor="bottom right" self="top right">
               <q-list dense class="workspace-menu">
-                <q-item clickable v-close-popup @click="requestInvite(workspace)">
+                <q-item
+                  v-if="canInviteMembers(workspace)"
+                  clickable
+                  v-close-popup
+                  @click="requestInvite(workspace)"
+                >
                   <q-item-section avatar><q-icon name="person_add_alt" /></q-item-section>
                   <q-item-section>{{ t('workspace.invite.action') }}</q-item-section>
                 </q-item>
@@ -166,12 +172,14 @@ import { BRAND } from '@/config/brand'
 import { authUser } from '@/services/auth'
 import { createWorkspaceInvite } from '@/services/firebase/workspace.service'
 import { useFinancialYearsStore } from '@/stores/financial-years-store'
+import { useEntitlementsStore } from '@/stores/entitlements-store'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 
 const $q = useQuasar()
 const { t } = useI18n()
 const router = useRouter()
 const financialYearsStore = useFinancialYearsStore()
+const entitlementsStore = useEntitlementsStore()
 const workspaceStore = useWorkspaceStore()
 const deleteDialog = ref(false)
 const deleting = ref(false)
@@ -182,6 +190,9 @@ const workspaceToInvite = ref(null)
 const inviteLink = ref('')
 const inviteError = ref(null)
 const canShare = computed(() => typeof navigator.share === 'function')
+const canCreateWorkspace = computed(
+  () => entitlementsStore.entitlements.isPro || !workspaceStore.hasWorkspaces,
+)
 
 async function openWorkspace(workspaceId) {
   await workspaceStore.setActiveWorkspace(workspaceId)
@@ -203,6 +214,10 @@ function isWorkspaceOwner(workspace) {
   return workspace.members?.[authUser.value?.uid]?.role === 'owner'
 }
 
+function canInviteMembers(workspace) {
+  return isWorkspaceOwner(workspace) && entitlementsStore.entitlements.canInviteMembers
+}
+
 function requestDelete(workspace) {
   workspaceToDelete.value = workspace
   deleteDialog.value = true
@@ -222,8 +237,9 @@ async function generateInvite() {
   inviteError.value = null
   try {
     const { token } = await createWorkspaceInvite(workspaceToInvite.value.id)
-    const appOrigin = $q.platform.is.capacitor ? BRAND.currentAppUrl : window.location.origin
-    inviteLink.value = new URL(`/invite/${token}`, appOrigin).href
+    inviteLink.value = $q.platform.is.capacitor
+      ? new URL(`/invite/${token}`, BRAND.currentAppUrl).href
+      : `${window.location.origin}/#/invite/${token}`
   } catch (error) {
     inviteError.value = error
   } finally {

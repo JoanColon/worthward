@@ -9,7 +9,7 @@ import {
 describe('workspace currency formatting', () => {
   afterEach(() => setWorkspaceCurrency('EUR'))
 
-  it('defaults legacy workspaces to EUR', () => {
+  it('defaults missing or invalid currency to EUR', () => {
     setWorkspaceCurrency(null)
     expect(workspaceCurrency.value).toBe('EUR')
     expect(formatCurrency(1250)).toContain('1,250')

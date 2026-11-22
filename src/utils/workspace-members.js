@@ -1,4 +1,4 @@
-export function getWorkspaceMembers(workspace, fallbackUser = null) {
+export function getWorkspaceMembers(workspace) {
   const memberIds = [...new Set((workspace?.memberIds || []).filter(Boolean))]
   const entries = memberIds.map((id) => {
     const member = workspace?.members?.[id] || {}
@@ -8,15 +8,5 @@ export function getWorkspaceMembers(workspace, fallbackUser = null) {
       photoURL: member.photoURL || '',
     }
   })
-
-  if (entries.length) return entries
-  if (!fallbackUser) return []
-
-  return [
-    {
-      id: fallbackUser.uid,
-      name: fallbackUser.displayName || fallbackUser.email?.split('@')[0] || 'Member',
-      photoURL: fallbackUser.photoURL || '',
-    },
-  ]
+  return entries
 }

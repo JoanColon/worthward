@@ -47,6 +47,7 @@
               <AppPeriodSwitch
                 v-model="period"
                 class="period-switch"
+                variant="light"
                 :aria-label="t('plan.periodSelector')"
                 :options="periodOptions"
               />
@@ -65,12 +66,6 @@
             <div>
               <span>{{ t('plan.costOfLife') }}</span
               ><strong>−{{ formatCurrency(displayedCostOfLife) }}</strong>
-            </div>
-            <div class="available-total">
-              <span>{{
-                annualSavings >= 0 ? t('plan.availableToPlan') : t('plan.shortfall')
-              }}</span>
-              <strong>{{ formatCurrency(displayedSavings) }}</strong>
             </div>
           </div>
         </section>
@@ -226,7 +221,7 @@ const workspaceId = computed(() => String(route.params.workspaceId))
 const workspace = computed(
   () => workspaceStore.workspaces.find(({ id }) => id === workspaceId.value) || null,
 )
-const members = computed(() => getWorkspaceMembers(workspace.value, authUser.value))
+const members = computed(() => getWorkspaceMembers(workspace.value))
 const memberIds = computed(() => members.value.map(({ id }) => id))
 const selectedMemberId = computed({
   get: () => scopeStore.get(workspaceId.value, memberIds.value, authUser.value?.uid),
@@ -379,7 +374,7 @@ const featuredInvestment = computed(() =>
   calculateInvestmentContributionScenario({
     monthlyContribution: simulation.value.simulatedSavingsCapacity,
     currentMonthlyContribution: simulation.value.currentSavingsCapacity,
-    annualReturnPercent: activeScenario.value.investmentMix.stockMarket?.annualReturnPercent || 7,
+    annualReturnPercent: activeScenario.value.investmentMix.stockMarket?.annualReturnPercent ?? 7,
     startingValue: startingPosition.value.investmentTotal,
   }).find(({ years }) => years === 20),
 )
@@ -540,15 +535,14 @@ function liabilityCategoryName(categoryId) {
   color: var(--color-copy);
 }
 .capacity-card {
+  @include dashboard-card;
   position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1.25fr) minmax(19rem, 0.9fr);
   gap: 2.5rem;
   margin-top: 1.1rem;
   padding: clamp(1.5rem, 4vw, 2.5rem);
-  border-radius: var(--radius-card);
-  background: var(--color-ink);
-  color: white;
+  color: var(--color-ink);
 }
 .period-switch {
   position: absolute;
@@ -561,10 +555,10 @@ function liabilityCategoryName(categoryId) {
   gap: 0.35rem;
 }
 .capacity-heading > span {
-  font-size: 0.78rem;
+  color: var(--color-copy);
+  font-size: var(--font-size-kpi-label);
   font-weight: 700;
   letter-spacing: 0.06em;
-  opacity: 0.8;
   text-transform: uppercase;
 }
 .capacity-main > strong {
@@ -583,18 +577,19 @@ function liabilityCategoryName(categoryId) {
 }
 .capacity-main p {
   margin: 0.3rem 0 0;
-  opacity: 0.7;
+  color: var(--color-copy);
+  font-size: var(--font-size-kpi-supporting);
 }
-.capacity-card.negative .capacity-main > strong,
-.capacity-card.negative .available-total strong {
-  color: var(--color-danger-on-dark);
+.capacity-card.negative .capacity-main > strong {
+  color: var(--color-danger);
 }
 .capacity-breakdown {
   display: grid;
   align-content: center;
   gap: 0.8rem;
   padding: 2.1rem 0 0 2.5rem;
-  border-left: 1px solid var(--color-inverse-line);
+  border-left: 1px solid var(--color-line);
+  font-size: var(--font-size-kpi-supporting);
 }
 .capacity-breakdown > div {
   display: flex;
@@ -602,12 +597,7 @@ function liabilityCategoryName(categoryId) {
   gap: 1rem;
 }
 .capacity-breakdown span {
-  opacity: 0.78;
-}
-.capacity-breakdown .available-total {
-  margin-top: 0.25rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--color-inverse-line);
+  color: var(--color-copy);
 }
 
 .section-label {
@@ -856,12 +846,11 @@ function liabilityCategoryName(categoryId) {
 
   .capacity-main > strong small,
   .capacity-main b {
-    font-size: 0.85rem;
+    font-size: var(--font-size-kpi-supporting);
   }
 
   .capacity-main p {
     margin-top: 0.15rem;
-    font-size: 0.82rem;
   }
 
   .period-switch {
@@ -876,12 +865,6 @@ function liabilityCategoryName(categoryId) {
   .capacity-breakdown {
     gap: 0.45rem;
     padding: 1.65rem 0 0 1.5rem;
-    font-size: 0.85rem;
-  }
-
-  .capacity-breakdown .available-total {
-    margin-top: 0.1rem;
-    padding-top: 0.55rem;
   }
 
   .section-label {
@@ -951,7 +934,7 @@ function liabilityCategoryName(categoryId) {
   }
   .capacity-breakdown {
     padding: 1.5rem 0 0;
-    border-top: 1px solid var(--color-inverse-line);
+    border-top: 1px solid var(--color-line);
     border-left: 0;
   }
   .plan-actions {
@@ -971,6 +954,9 @@ function liabilityCategoryName(categoryId) {
     justify-content: space-between;
     gap: 0.75rem;
   }
+  .capacity-heading > span {
+    font-size: var(--font-size-kpi-label-compact);
+  }
   .period-switch {
     --app-period-option-min-width-mobile: 0;
     --app-period-option-padding-mobile: 0.32rem 0.58rem;
@@ -988,24 +974,20 @@ function liabilityCategoryName(categoryId) {
   }
   .capacity-main > strong small {
     margin-left: 0.35rem;
-    font-size: 0.85rem;
+    font-size: var(--font-size-kpi-supporting-compact);
   }
   .capacity-main b {
-    font-size: 0.9rem;
+    font-size: var(--font-size-kpi-supporting-compact);
   }
   .capacity-main p {
     margin-top: 0.25rem;
-    font-size: 0.82rem;
+    font-size: var(--font-size-kpi-supporting-compact);
     line-height: 1.4;
   }
   .capacity-breakdown {
     gap: 0.6rem;
     padding-top: 0.9rem;
-    font-size: 0.82rem;
-  }
-  .capacity-breakdown .available-total {
-    margin-top: 0.1rem;
-    padding-top: 0.75rem;
+    font-size: var(--font-size-kpi-supporting-compact);
   }
   .allocation-summary li {
     gap: 0.65rem;

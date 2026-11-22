@@ -4,6 +4,8 @@ import {
   normalizeSubscription,
   resolveUserEntitlements,
   resolveWorkspaceEntitlements,
+  workspaceEntitlementIsPro,
+  workspaceEntitlementProjection,
 } from '../../functions/shared/billing/entitlements.js'
 
 describe('subscription entitlements', () => {
@@ -34,6 +36,7 @@ describe('subscription entitlements', () => {
       source: 'google_play',
       status: 'active',
       entitlementActive: true,
+      currentPeriodEndsAt: '2099-01-01T00:00:00.000Z',
     })
 
     expect(entitlements).toMatchObject({
@@ -41,47 +44,84 @@ describe('subscription entitlements', () => {
       isPro: true,
       canUsePlan: true,
       canUseWhatIf: true,
+      canUseStrategy: true,
       canCreateAdditionalWorkspace: true,
       maximumWorkspaceMembers: 5,
     })
   })
 
   it('allows a Free account to create its first workspace but not another one', () => {
-    expect(resolveUserEntitlements(null, { ownedWorkspaceCount: 0 }).canCreateWorkspace).toBe(true)
+    const firstWorkspace = resolveUserEntitlements(null, { ownedWorkspaceCount: 0 })
+    expect(firstWorkspace).toMatchObject({
+      canCreateWorkspace: true,
+      canUsePlan: true,
+      canUseWhatIf: true,
+      canUseStrategy: false,
+      canUseAdvancedModels: false,
+    })
     expect(resolveUserEntitlements(null, { ownedWorkspaceCount: 1 }).canCreateWorkspace).toBe(false)
   })
 
   it("inherits the owner's Pro capabilities without letting a guest invite members", () => {
-    const ownerSubscription = { plan: 'pro', status: 'active', entitlementActive: true }
+    const workspaceEntitlement = workspaceEntitlementProjection({
+      plan: 'pro',
+      status: 'active',
+      entitlementActive: true,
+      currentPeriodEndsAt: '2099-01-01T00:00:00.000Z',
+    })
 
     expect(
-      resolveWorkspaceEntitlements({ ownerSubscription, isMember: true, isOwner: false }),
+      resolveWorkspaceEntitlements({ workspaceEntitlement, isMember: true, isOwner: false }),
     ).toMatchObject({
       tier: 'pro',
+      isPro: true,
       canRead: true,
       canWrite: true,
       canUsePlan: true,
+      canUseStrategy: true,
       canInviteMembers: false,
     })
   })
 
-  it('keeps only the primary personal workspace editable for a Free owner', () => {
-    expect(
-      resolveWorkspaceEntitlements({
-        ownerSubscription: null,
-        isMember: true,
-        isOwner: true,
-        isPrimaryWorkspace: true,
-      }).canWrite,
-    ).toBe(true)
-    expect(
-      resolveWorkspaceEntitlements({
-        ownerSubscription: null,
-        isMember: true,
-        isOwner: true,
-        isPrimaryWorkspace: true,
-        isSharedWorkspace: true,
-      }).canWrite,
-    ).toBe(false)
+  it('keeps ordinary workspace writes available to Free members', () => {
+    const freeWorkspace = resolveWorkspaceEntitlements({
+      workspaceEntitlement: { tier: 'free', expiresAt: null },
+      isMember: true,
+      isOwner: true,
+    })
+    expect(freeWorkspace).toMatchObject({
+      canWrite: true,
+      canUsePlan: true,
+      canUseWhatIf: true,
+      canUseStrategy: false,
+      canUseAdvancedModels: false,
+    })
+    expect(resolveWorkspaceEntitlements({ isMember: false }).canWrite).toBe(false)
+  })
+
+  it('keeps Free What If available without enabling Strategy', () => {
+    const capabilities = resolveWorkspaceEntitlements({
+      workspaceEntitlement: { tier: 'free', expiresAt: null },
+      isMember: true,
+      isOwner: false,
+    })
+
+    expect(capabilities.canWrite).toBe(true)
+    expect(capabilities.canUseWhatIf).toBe(true)
+    expect(capabilities.canUseStrategy).toBe(false)
+  })
+
+  it('expires a workspace projection without another backend call', () => {
+    const projection = workspaceEntitlementProjection(
+      {
+        plan: 'pro',
+        entitlementActive: true,
+        currentPeriodEndsAt: '2027-01-01T00:00:00.000Z',
+      },
+      { now: Date.UTC(2026, 0, 1) },
+    )
+
+    expect(workspaceEntitlementIsPro(projection, { now: Date.UTC(2026, 0, 1) })).toBe(true)
+    expect(workspaceEntitlementIsPro(projection, { now: Date.UTC(2028, 0, 1) })).toBe(false)
   })
 })

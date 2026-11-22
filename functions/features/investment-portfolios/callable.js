@@ -4,6 +4,7 @@
 import { getFirestore } from 'firebase-admin/firestore'
 import { HttpsError, onCall } from 'firebase-functions/https'
 import * as logger from 'firebase-functions/logger'
+import { assertWorkspaceCapability } from '../workspaces/access.js'
 import {
   syncInvestmentPortfolio as syncInvestmentPortfolioData,
   syncWorkspaceInvestmentPortfolios as syncWorkspaceInvestmentPortfoliosData,
@@ -17,8 +18,15 @@ const updateInvestmentPortfolio = onCall({ region: 'europe-west1' }, async (requ
   if (!request.auth) throw new HttpsError('unauthenticated', 'Authentication is required')
 
   try {
-    return await updateInvestmentPortfolioData(getFirestore(), {
-      workspaceId: String(request.data?.workspaceId || '').trim(),
+    const firestore = getFirestore()
+    const workspaceId = String(request.data?.workspaceId || '').trim()
+    await assertWorkspaceCapability(
+      firestore,
+      { workspaceId, userId: request.auth.uid },
+      'canUseAdvancedModels',
+    )
+    return await updateInvestmentPortfolioData(firestore, {
+      workspaceId,
       userId: request.auth.uid,
       assetId: String(request.data?.assetId || '').trim(),
       spreadsheetUrl: request.data?.spreadsheetUrl ?? null,
@@ -38,7 +46,13 @@ const readInvestmentPortfolioSheet = onCall({ region: 'europe-west1' }, async (r
   const workspaceId = String(request.data?.workspaceId || '').trim()
   const assetId = String(request.data?.assetId || '').trim()
   try {
-    return await syncInvestmentPortfolioData(getFirestore(), {
+    const firestore = getFirestore()
+    await assertWorkspaceCapability(
+      firestore,
+      { workspaceId, userId: request.auth.uid },
+      'canUseAdvancedModels',
+    )
+    return await syncInvestmentPortfolioData(firestore, {
       workspaceId,
       userId: request.auth.uid,
       assetId,
@@ -65,7 +79,13 @@ const syncWorkspaceInvestmentPortfolios = onCall(
 
     const workspaceId = String(request.data?.workspaceId || '').trim()
     try {
-      return await syncWorkspaceInvestmentPortfoliosData(getFirestore(), {
+      const firestore = getFirestore()
+      await assertWorkspaceCapability(
+        firestore,
+        { workspaceId, userId: request.auth.uid },
+        'canUseAdvancedModels',
+      )
+      return await syncWorkspaceInvestmentPortfoliosData(firestore, {
         workspaceId,
         userId: request.auth.uid,
         force: Boolean(request.data?.force),

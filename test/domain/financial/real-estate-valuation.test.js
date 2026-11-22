@@ -18,7 +18,7 @@ describe('annual real estate valuation', () => {
     expect(annualRealEstateValue(model, '2024-04-01')).toBe(110_381.29)
   })
 
-  it('uses the model for Layer 2 value and retains legacy manual values', () => {
+  it('uses the model when configured and otherwise retains the manual value', () => {
     expect(
       effectiveRealEstateValue(
         { currentValue: 90_000, detail: { realEstate: model } },

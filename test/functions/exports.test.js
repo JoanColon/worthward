@@ -4,7 +4,9 @@ import * as firebaseFunctions from '../../functions/index.js'
 const publicFunctionNames = [
   'acceptWorkspaceInvite',
   'closeMonthlyFinancialPositions',
+  'createWorkspace',
   'createWorkspaceInvite',
+  'deleteAccount',
   'deleteWorkspace',
   'ensureFinancialYear',
   'getWorkspaceInvite',
@@ -12,6 +14,7 @@ const publicFunctionNames = [
   'onExpenseTrackingWritten',
   'onModelConfigWritten',
   'readInvestmentPortfolioSheet',
+  'reconcileGooglePlaySubscriptions',
   'syncWorkspaceInvestmentPortfolios',
   'updateInvestmentPortfolio',
   'updateWorkspaceSettings',
@@ -45,11 +48,26 @@ describe('Firebase Functions public entry points', () => {
         timeZone: 'Europe/Madrid',
       },
     })
+    expect(firebaseFunctions.reconcileGooglePlaySubscriptions.__endpoint).toMatchObject({
+      region: ['europe-west1'],
+      timeoutSeconds: 540,
+      scheduleTrigger: {
+        schedule: 'every 6 hours',
+        retryConfig: { retryCount: 3 },
+        timeZone: 'Europe/Madrid',
+      },
+    })
   })
 
   it('preserves callable regions and the portfolio timeout override', () => {
     const callableNames = publicFunctionNames.filter(
-      (name) => !['closeMonthlyFinancialPositions', 'onExpenseTrackingWritten', 'onModelConfigWritten'].includes(name),
+      (name) =>
+        ![
+          'closeMonthlyFinancialPositions',
+          'reconcileGooglePlaySubscriptions',
+          'onExpenseTrackingWritten',
+          'onModelConfigWritten',
+        ].includes(name),
     )
     for (const name of callableNames) {
       expect(firebaseFunctions[name].__endpoint).toMatchObject({

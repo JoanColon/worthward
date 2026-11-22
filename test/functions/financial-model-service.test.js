@@ -340,6 +340,35 @@ describe('atomic financial model mutations', () => {
     expect(writes).toEqual([])
   })
 
+  it('checks advanced-model entitlement inside the mutation transaction', async () => {
+    const { firestore, writes } = createFirestore({
+      section: 'assets',
+      collection: 'modelAssets',
+      category: 'cash',
+      entitlement: { tier: 'free', expiresAt: null },
+    })
+
+    await expect(
+      mutateFinancialModel(firestore, {
+        workspaceId: 'workspace-a',
+        userId: 'member-a',
+        section: 'assets',
+        operation: 'create',
+        item: {
+          categoryId: 'cash',
+          subcategoryId: 'current_account',
+          itemName: 'Savings',
+          notes: '',
+          currentValue: 100,
+          detail: { cash: { schemaVersion: 1, annualReturnPercent: 2 } },
+          valueSource: 'manual',
+          ownership,
+        },
+      }),
+    ).rejects.toThrow('Your plan does not allow this workspace operation')
+    expect(writes).toEqual([])
+  })
+
   it('rejects money that the client has not canonicalized', async () => {
     const { firestore, writes } = createFirestore({
       section: 'assets',
@@ -413,7 +442,7 @@ describe('atomic financial model mutations', () => {
     expect(financialYearValue(financialYear, 'savings')).toBe(-240)
   })
 
-  it('updates a legacy unlinked expense when the client normalizes its missing liability to null', async () => {
+  it('normalizes a missing optional liability link to null', async () => {
     const existing = {
       id: 'property-tax-a',
       categoryId: 'housing',
@@ -941,6 +970,7 @@ function createFirestore({
   linkedAssets = [],
   linkedLiabilities = [],
   linkedExpenses = [],
+  entitlement = { tier: 'pro', expiresAt: new Date(Date.now() + 86_400_000) },
 }) {
   const writes = []
   let generatedId = 0
@@ -968,7 +998,7 @@ function createFirestore({
 
   function snapshotFor(target) {
     if (target.path === 'workspaces/workspace-a') {
-      return documentSnapshot({ memberIds })
+      return documentSnapshot({ memberIds, entitlement })
     }
     if (target.path === `workspaces/workspace-a/modelConfig/${section}`) {
       return documentSnapshot({ categories: { [category]: configCategory } })

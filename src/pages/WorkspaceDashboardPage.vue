@@ -23,7 +23,9 @@
         <PlanSummaryCard
           class="plan-summary"
           :data="planData"
+          :progress-data="progressData"
           :plan-route="{ name: 'plan', params: { workspaceId } }"
+          :progress-route="{ name: 'progress', params: { workspaceId } }"
           :setup-route="{ name: 'setup', params: { workspaceId } }"
         />
       </section>
@@ -54,7 +56,12 @@ import {
   modeledLiabilitiesForPositions,
 } from '@/domain/financial/calculation-context'
 import { calculateDebtPayoffImpact } from '@/domain/financial/debt-payoff'
-import { buildNetWorthSeries, withCurrentPosition } from '@/domain/financial/history'
+import {
+  buildMonthlyFlowSeries,
+  buildNetWorthSeries,
+  buildProgressSeries,
+  withCurrentPosition,
+} from '@/domain/financial/history'
 import {
   financialYearAvailableIncomeValue,
   financialYearExpenseNecessityValue,
@@ -89,7 +96,7 @@ import { useWhatIfStore } from '@/stores/what-if-store'
 import { formatCurrency } from '@/utils/formatters'
 import { getWorkspaceMembers } from '@/utils/workspace-members'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const assetsStore = useAssetsStore()
@@ -103,12 +110,19 @@ const whatIfStore = useWhatIfStore()
 const setupLoading = ref(true)
 
 const workspaceId = computed(() => String(route.params.workspaceId))
-const { currentMonth, currentYear, financialYear, historyDocuments, historyError, historyLoading } =
-  storeToRefs(milestonesStore)
+const {
+  currentMonth,
+  currentYear,
+  excludedLiabilityIds,
+  financialYear,
+  historyDocuments,
+  historyError,
+  historyLoading,
+} = storeToRefs(milestonesStore)
 const workspace = computed(
   () => workspaceStore.workspaces.find((candidate) => candidate.id === workspaceId.value) || null,
 )
-const members = computed(() => getWorkspaceMembers(workspace.value, authUser.value))
+const members = computed(() => getWorkspaceMembers(workspace.value))
 const memberIds = computed(() => members.value.map((member) => member.id))
 const selectedMemberId = computed({
   get: () => scopeStore.get(workspaceId.value, memberIds.value, authUser.value?.uid),
@@ -123,6 +137,35 @@ const historyPoints = computed(() =>
     },
   ),
 )
+const progressDocuments = computed(() => {
+  if (!financialYear.value) return historyDocuments.value
+  const year = Number(financialYear.value.year || financialYear.value.id)
+  return [
+    ...historyDocuments.value.filter((document) => Number(document?.year || document?.id) !== year),
+    financialYear.value,
+  ]
+})
+const progressHistoryOptions = computed(() => ({
+  throughPeriod: `${currentYear.value}-${currentMonth.value}`,
+  memberId: selectedMemberId.value,
+  excludedLiabilityIds: excludedLiabilityIds.value,
+}))
+const progressPoints = computed(() =>
+  buildProgressSeries(progressDocuments.value, progressHistoryOptions.value),
+)
+const progressFlowPoints = computed(() =>
+  buildMonthlyFlowSeries(progressDocuments.value, progressHistoryOptions.value),
+)
+const progressEndPoint = computed(() => progressPoints.value.at(-1) || null)
+const progressStartPoint = computed(() => {
+  const end = progressEndPoint.value
+  if (!end) return null
+  const cutoff = periodIndex(end.period) - 12
+  return (
+    [...progressPoints.value].reverse().find(({ period }) => periodIndex(period) <= cutoff) ||
+    progressPoints.value[0]
+  )
+})
 const dashboardData = computed(() => {
   const assets = financialYearMonthValue(
     financialYear.value,
@@ -162,6 +205,52 @@ const dashboardData = computed(() => {
       selectedMemberId.value,
     ),
   }
+})
+const progressData = computed(() => {
+  const start = progressStartPoint.value
+  const end = progressEndPoint.value
+  const currentFlow = progressFlowPoints.value.at(-1)
+  const hasComparison = Boolean(start && end && start.period !== end.period)
+  const wealthChange = hasComparison ? end.netWorth - start.netWorth : null
+  const currentNetWorth = Number(end?.netWorth ?? dashboardData.value.netWorth)
+  const monthlySavings = Number(
+    currentFlow?.savingsCapacity ?? dashboardData.value.monthlySavingsCapacity,
+  )
+
+  return [
+    {
+      id: 'wealth-creation',
+      label: t('progress.evolution.wealthCreation.label'),
+      value: wealthChange == null ? '—' : signedCurrency(wealthChange),
+      icon: 'account_balance_wallet',
+      tone: 'green',
+      negative: wealthChange < 0,
+    },
+    {
+      id: 'composition',
+      label: t('progress.evolution.composition.label'),
+      value: formatCurrency(currentNetWorth),
+      icon: 'donut_large',
+      tone: 'warning',
+      negative: currentNetWorth < 0,
+    },
+    {
+      id: 'freedom',
+      label: t('progress.evolution.freedom.label'),
+      value: formatYears(end?.yearsFunded),
+      icon: 'shield',
+      tone: 'purple',
+      negative: false,
+    },
+    {
+      id: 'cost-of-life',
+      label: t('progress.evolution.costOfLife.label'),
+      value: formatCurrency(monthlySavings),
+      icon: 'savings',
+      tone: 'blue',
+      negative: monthlySavings < 0,
+    },
+  ]
 })
 const activeScenario = computed(
   () =>
@@ -527,6 +616,23 @@ function debtOutcome(payoff, hasDebt, debtName) {
   return t('plan.outcomes.paidOffNamed', {
     name: debtName || t('whatIf.debt.title'),
     date: formatMonthYear(payoff.accelerated.payoffDate),
+  })
+}
+
+function periodIndex(period) {
+  const [year, month] = String(period || '')
+    .split('-')
+    .map(Number)
+  return year * 12 + month - 1
+}
+
+function signedCurrency(value) {
+  return `${value >= 0 ? '+' : '−'}${formatCurrency(Math.abs(value || 0))}`
+}
+
+function formatYears(value) {
+  return t('progress.yearsValue', {
+    value: new Intl.NumberFormat(locale.value, { maximumFractionDigits: 1 }).format(value || 0),
   })
 }
 

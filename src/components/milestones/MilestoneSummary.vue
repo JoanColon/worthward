@@ -1,184 +1,155 @@
 <template>
   <section class="milestone-summary" :aria-label="t('achievements.summaryLabel')">
-    <div class="summary-item summary-item--total">
-      <q-icon name="emoji_events" />
-      <span>
-        <strong>{{ achievedCount }} / {{ totalCount }}</strong>
-        <small>{{ t('achievements.milestonesAchieved') }}</small>
-      </span>
+    <div class="summary-icon"><q-icon name="workspace_premium" /></div>
+    <div class="summary-copy">
+      <small>{{ t('achievements.yourProgress') }}</small>
+      <strong>{{ achievedCount }} / {{ totalCount }}</strong>
     </div>
-    <div class="summary-item summary-item--achieved">
-      <q-icon name="check" />
-      <span>
-        <strong>{{ achievedCount }}</strong>
-        <small>{{ t('achievements.achieved') }}</small>
+    <div class="summary-progress">
+      <span class="summary-progress-track">
+        <span :style="{ width: `${percentage}%` }" />
       </span>
-    </div>
-    <div class="summary-item summary-item--progress">
-      <span class="summary-progress-ring" />
-      <span>
-        <strong>{{ inProgressCount }}</strong>
-        <small>{{ t('achievements.inProgress') }}</small>
-      </span>
+      <b>{{ percentage }}%</b>
     </div>
   </section>
 </template>
 
 <script setup>
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
-defineProps({
+const props = defineProps({
   totalCount: { type: Number, required: true },
   achievedCount: { type: Number, required: true },
   inProgressCount: { type: Number, required: true },
 })
 
 const { t } = useI18n()
+const percentage = computed(() =>
+  props.totalCount ? Math.round((props.achievedCount / props.totalCount) * 100) : 0,
+)
 </script>
 
 <style scoped lang="scss">
 .milestone-summary {
+  position: relative;
   display: grid;
-  grid-template-columns: repeat(3, auto);
-  min-width: min(32rem, 46vw);
-  margin: 0;
-  padding: 0.75rem 0.9rem;
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-card);
-  background: rgb(255 255 255 / 90%);
-  box-shadow: var(--shadow-card);
-}
-
-.summary-item {
-  display: flex;
+  grid-template-columns: auto auto minmax(9rem, 1fr);
   align-items: center;
-  gap: 0.65rem;
-  min-width: 0;
-  padding: 0 1rem;
-  border-left: 1px solid var(--color-line);
+  gap: 0.9rem;
+  min-width: min(33rem, 47vw);
+  margin: 0;
+  padding: 0.8rem 1rem;
+  border: 1px solid var(--color-line);
+  border-radius: 1.15rem;
+  background: rgb(255 255 255 / 92%);
+  box-shadow: var(--shadow-card);
+  backdrop-filter: blur(10px);
 }
 
-.summary-item:first-child {
-  padding-left: 0.2rem;
-  border-left: 0;
-}
-
-.summary-item:last-child {
-  padding-right: 0.2rem;
-}
-
-.summary-item > .q-icon {
+.summary-icon {
   display: grid;
-  width: 2.15rem;
-  height: 2.15rem;
+  width: 3rem;
+  height: 3rem;
   place-items: center;
   flex: 0 0 auto;
-  border-radius: 50%;
-  font-size: 1.25rem;
-}
-
-.summary-item--total > .q-icon {
-  background: var(--color-purple-soft);
-  color: var(--color-purple);
-}
-
-.summary-item--achieved > .q-icon {
+  border-radius: 0.85rem;
   background: var(--color-green-soft);
   color: var(--color-success);
+  font-size: 1.55rem;
 }
 
-.summary-item > span:not(.summary-progress-ring) {
+.summary-copy {
   display: grid;
-  gap: 0.08rem;
+  gap: 0.2rem;
+  min-width: 6.5rem;
 }
 
-.summary-item strong {
+.summary-copy strong {
   color: var(--color-ink);
-  font-size: 0.95rem;
+  font-size: 1.35rem;
   line-height: 1;
 }
 
-.summary-item small {
+.summary-copy small {
   color: var(--color-copy);
-  font-size: 0.67rem;
+  font-size: 0.72rem;
+  font-weight: 650;
   white-space: nowrap;
 }
 
-.summary-progress-ring {
-  width: 2.15rem;
-  height: 2.15rem;
-  flex: 0 0 auto;
-  border: 0.36rem solid var(--color-blue-soft);
-  border-top-color: var(--color-primary);
-  border-right-color: var(--color-primary);
-  border-radius: 50%;
-  transform: rotate(25deg);
+.summary-progress {
+  display: grid;
+  grid-template-columns: minmax(5rem, 1fr) auto;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.summary-progress-track {
+  display: block;
+  height: 0.5rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--color-surface-muted);
+}
+
+.summary-progress-track > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--color-success), #49bd8c);
+}
+
+.summary-progress b {
+  min-width: 2.6rem;
+  color: var(--color-ink);
+  font-size: 0.9rem;
+  text-align: right;
 }
 
 @media (max-width: 1050px) {
   .milestone-summary {
     min-width: 0;
   }
-
-  .summary-item {
-    padding: 0 0.65rem;
-  }
-
-  .summary-item--total small {
-    white-space: normal;
-  }
 }
 
 @media (max-width: 760px) {
   .milestone-summary {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: auto minmax(0, 1fr) auto;
     width: 100%;
-    padding: 0.7rem 0.45rem;
-    border-radius: var(--radius-md);
+    padding: 0.85rem 0.9rem;
+    border-radius: 1.15rem;
   }
 
-  .summary-item,
-  .summary-item:first-child,
-  .summary-item:last-child {
-    gap: 0.4rem;
-    padding: 0 0.55rem;
-    border-top: 0;
-    border-left: 1px solid var(--color-line);
+  .summary-icon {
+    width: 2.75rem;
+    height: 2.75rem;
+    font-size: 1.4rem;
   }
 
-  .summary-item:first-child {
-    padding-left: 0.2rem;
-    border-left: 0;
+  .summary-copy {
+    min-width: 0;
   }
 
-  .summary-item:last-child {
-    padding-right: 0.2rem;
+  .summary-copy strong {
+    font-size: 1.2rem;
   }
 
-  .summary-item > .q-icon,
-  .summary-progress-ring {
-    width: 1.9rem;
-    height: 1.9rem;
+  .summary-progress {
+    display: flex;
+    gap: 0;
   }
 
-  .summary-item > .q-icon {
-    font-size: 1.05rem;
+  .summary-progress-track {
+    position: absolute;
+    right: 0.9rem;
+    bottom: 0.65rem;
+    left: 0.9rem;
+    height: 0.35rem;
   }
 
-  .summary-progress-ring {
-    border-width: 0.3rem;
-  }
-
-  .summary-item strong {
-    font-size: 0.82rem;
-  }
-
-  .summary-item small {
-    overflow: hidden;
-    font-size: 0.58rem;
-    line-height: 1.15;
-    text-overflow: ellipsis;
-    white-space: normal;
+  .summary-progress b {
+    font-size: 0.88rem;
   }
 }
 </style>

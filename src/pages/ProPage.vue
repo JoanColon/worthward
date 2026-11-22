@@ -123,8 +123,7 @@ const message = ref('')
 const messageTone = ref('success')
 const isNativeAndroid = computed(() => $q.platform.is.capacitor && $q.platform.is.android)
 const benefits = computed(() => [
-  t('pro.benefits.plan'),
-  t('pro.benefits.whatIf'),
+  t('pro.benefits.strategy'),
   t('pro.benefits.models'),
   t('pro.benefits.workspaces'),
 ])

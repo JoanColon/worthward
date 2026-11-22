@@ -1,19 +1,7 @@
-import {
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  runTransaction,
-  serverTimestamp,
-} from 'firebase/firestore'
-import { milestoneDefinitions } from '@/domain/milestones/definitions'
+import { collection, doc, getDocs, serverTimestamp, writeBatch } from 'firebase/firestore'
 import { db } from '@/firebase/firebase'
 
 export const MILESTONE_CONFIRMATION_DELAY_MS = 24 * 60 * 60 * 1000
-
-const definitionsById = new Map(
-  milestoneDefinitions.map((definition) => [definition.id, definition]),
-)
 
 export async function getAchievements(workspaceId) {
   const snapshot = await getDocs(collection(db, 'workspaces', workspaceId, 'achievements'))
@@ -25,54 +13,43 @@ export async function activateMilestoneTracking(
   milestoneProgress,
   existingAchievements = [],
 ) {
+  const batch = writeBatch(db)
   const workspaceReference = doc(db, 'workspaces', workspaceId)
-  const baseline = milestoneProgress.filter(({ id, reached }) => definitionsById.has(id) && reached)
-  const achievementIds = new Set([
-    ...existingAchievements.map(({ milestoneId, id }) => milestoneId || id),
-    ...baseline.map(({ id }) => id),
-  ])
-  const achievementReferences = [...achievementIds]
-    .filter(Boolean)
-    .map((id) => doc(db, 'workspaces', workspaceId, 'achievements', id))
-  const baselineIds = new Set(baseline.map(({ id }) => id))
+  const reached = milestoneProgress.filter((milestone) => milestone.reached)
+  const reachedIds = new Set(reached.map((milestone) => milestone.id))
+  const activatedAt = new Date()
 
-  await runTransaction(db, async (transaction) => {
-    const workspaceSnapshot = await transaction.get(workspaceReference)
-    const achievementSnapshots = await Promise.all(
-      achievementReferences.map((reference) => transaction.get(reference)),
-    )
-    if (!workspaceSnapshot.exists()) throw new Error('Workspace not found')
-    if (workspaceSnapshot.data()?.milestoneTracking?.status === 'active') return
-
-    achievementSnapshots.forEach((snapshot) => {
-      if (snapshot.exists() && !baselineIds.has(snapshot.id)) transaction.delete(snapshot.ref)
+  for (const achievement of existingAchievements) {
+    const milestoneId = achievement.milestoneId || achievement.id
+    if (milestoneId && !reachedIds.has(milestoneId)) {
+      batch.delete(achievementReference(workspaceId, milestoneId))
+    }
+  }
+  for (const milestone of reached) {
+    batch.set(achievementReference(workspaceId, milestone.id), {
+      milestoneId: milestone.id,
+      family: milestone.family,
+      status: 'achieved',
+      achievedAt: serverTimestamp(),
+      achievedValue: milestone.currentValue,
     })
-    baseline.forEach((milestone) => {
-      const definition = definitionsById.get(milestone.id)
-      transaction.set(doc(db, 'workspaces', workspaceId, 'achievements', milestone.id), {
-        milestoneId: milestone.id,
-        family: definition.family,
-        status: 'achieved',
-        achievedAt: serverTimestamp(),
-        achievedValue: Number(milestone.currentValue || 0),
-      })
-    })
-    transaction.update(workspaceReference, {
-      milestoneTracking: {
-        status: 'active',
-        activatedAt: serverTimestamp(),
-      },
-      updatedAt: serverTimestamp(),
-    })
+  }
+  batch.update(workspaceReference, {
+    milestoneTracking: { status: 'active', activatedAt: serverTimestamp() },
+    updatedAt: serverTimestamp(),
   })
+  await batch.commit()
 
-  const [workspaceSnapshot, achievements] = await Promise.all([
-    getDoc(workspaceReference),
-    getAchievements(workspaceId),
-  ])
   return {
-    achievements,
-    milestoneTracking: workspaceSnapshot.data()?.milestoneTracking || { status: 'active' },
+    achievements: reached.map((milestone) => ({
+      id: milestone.id,
+      milestoneId: milestone.id,
+      family: milestone.family,
+      status: 'achieved',
+      achievedAt: activatedAt,
+      achievedValue: milestone.currentValue,
+    })),
+    milestoneTracking: { status: 'active', activatedAt },
   }
 }
 
@@ -82,68 +59,73 @@ export async function syncMilestoneAchievements(
   existingAchievements = [],
   now = Date.now(),
 ) {
-  const progressById = new Map(milestoneProgress.map((milestone) => [milestone.id, milestone]))
+  const batch = writeBatch(db)
   const existingById = new Map(
-    existingAchievements.map((achievement) => [achievement.milestoneId, achievement]),
+    existingAchievements.map((achievement) => [
+      achievement.milestoneId || achievement.id,
+      achievement,
+    ]),
   )
-  const newCandidateIds = milestoneProgress
-    .filter(({ id, reached }) => definitionsById.has(id) && reached && !existingById.has(id))
-    .map(({ id }) => id)
-  const staleAchievementIds = existingAchievements
-    .filter(({ milestoneId }) => {
-      if (!definitionsById.has(milestoneId)) return false
-      return !progressById.get(milestoneId)?.reached
-    })
-    .map(({ milestoneId }) => milestoneId)
-  const pendingActionIds = existingAchievements
-    .filter(({ milestoneId, status, qualifiedAt }) => {
-      if (status !== 'pending' || !definitionsById.has(milestoneId)) return false
-      const progress = progressById.get(milestoneId)
-      return !progress?.reached || confirmationIsDue(qualifiedAt, now)
-    })
-    .map(({ milestoneId }) => milestoneId)
-  const actionIds = [...new Set([...newCandidateIds, ...staleAchievementIds, ...pendingActionIds])]
-  if (!actionIds.length) return existingAchievements
+  const nextById = new Map(existingById)
+  let writeCount = 0
 
-  const references = actionIds.map((id) => doc(db, 'workspaces', workspaceId, 'achievements', id))
+  for (const milestone of milestoneProgress) {
+    const existing = existingById.get(milestone.id)
+    const reference = achievementReference(workspaceId, milestone.id)
+    if (!existing) {
+      if (!milestone.reached) continue
+      const qualifiedAt = new Date(now)
+      batch.set(reference, {
+        milestoneId: milestone.id,
+        family: milestone.family,
+        status: 'pending',
+        qualifiedAt: serverTimestamp(),
+        qualifiedValue: milestone.currentValue,
+      })
+      nextById.set(milestone.id, {
+        id: milestone.id,
+        milestoneId: milestone.id,
+        family: milestone.family,
+        status: 'pending',
+        qualifiedAt,
+        qualifiedValue: milestone.currentValue,
+      })
+      writeCount += 1
+      continue
+    }
 
-  await runTransaction(db, async (transaction) => {
-    const snapshots = await Promise.all(references.map((reference) => transaction.get(reference)))
+    if (!milestone.reached) {
+      batch.delete(reference)
+      nextById.delete(milestone.id)
+      writeCount += 1
+      continue
+    }
 
-    snapshots.forEach((snapshot, index) => {
-      const milestoneId = actionIds[index]
-      const progress = progressById.get(milestoneId)
-      const definition = definitionsById.get(milestoneId)
-
-      if (!snapshot.exists()) {
-        if (!progress?.reached || !definition) return
-        transaction.set(snapshot.ref, {
-          milestoneId,
-          family: definition.family,
-          status: 'pending',
-          qualifiedAt: serverTimestamp(),
-          qualifiedValue: Number(progress.currentValue || 0),
-        })
-        return
-      }
-
-      const achievement = snapshot.data()
-      if (!progress?.reached) {
-        transaction.delete(snapshot.ref)
-        return
-      }
-      if (achievement.status !== 'pending') return
-      if (!confirmationIsDue(achievement.qualifiedAt, now)) return
-
-      transaction.update(snapshot.ref, {
+    if (existing.status === 'pending' && confirmationIsDue(existing.qualifiedAt, now)) {
+      const achievedAt = new Date(now)
+      batch.update(reference, {
         status: 'achieved',
         achievedAt: serverTimestamp(),
-        achievedValue: Number(progress.currentValue || 0),
+        achievedValue: milestone.currentValue,
       })
-    })
-  })
+      nextById.set(milestone.id, {
+        ...existing,
+        id: existing.id || milestone.id,
+        milestoneId: milestone.id,
+        status: 'achieved',
+        achievedAt,
+        achievedValue: milestone.currentValue,
+      })
+      writeCount += 1
+    }
+  }
 
-  return getAchievements(workspaceId)
+  if (writeCount) await batch.commit()
+  return [...nextById.values()]
+}
+
+function achievementReference(workspaceId, milestoneId) {
+  return doc(db, 'workspaces', workspaceId, 'achievements', milestoneId)
 }
 
 export function confirmationIsDue(qualifiedAt, now = Date.now()) {

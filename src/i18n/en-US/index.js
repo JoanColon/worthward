@@ -120,14 +120,38 @@ export default {
     purchaseComplete: 'Worthward Pro is now active.',
     restoreComplete: 'Your Worthward Pro purchase has been restored.',
     nothingToRestore: 'No active Worthward Pro purchase was found for this Google Play account.',
+    gate: {
+      title: 'This is a Pro feature',
+      description: 'You need the Pro plan to access this functionality.',
+      action: 'View Pro plan',
+    },
     benefits: {
-      plan: 'Plan and Your Strategy',
-      whatIf: 'What If scenarios',
+      strategy: 'Your Strategy planning',
       models: 'Advanced models and projections',
       workspaces: 'Additional and shared workspaces',
     },
     errors: {
       generic: 'We could not complete the Google Play operation. Try again.',
+    },
+  },
+  account: {
+    title: 'Account and privacy',
+    subtitle: 'Manage your data and your Worthward account.',
+    privacyTitle: 'Your privacy',
+    privacyDescription:
+      'Review what data Worthward stores, why it is needed, and how account deletion works.',
+    privacyPolicy: 'Read privacy policy',
+    deleteTitle: 'Delete account',
+    deleteDescription:
+      'Permanently delete your personal workspaces, financial data, subscription records, and sign-in account. Google Play subscriptions must be cancelled separately.',
+    deleteAction: 'Delete my account',
+    confirmTitle: 'Permanently delete account?',
+    confirmDescription:
+      'This cannot be undone. If you own a shared workspace, delete that workspace first.',
+    deleted: 'Your Worthward account has been deleted.',
+    errors: {
+      sharedWorkspace: 'Delete your shared workspaces before deleting your account.',
+      generic: 'We could not delete your account. Try again.',
     },
   },
   workspace: {
@@ -309,7 +333,7 @@ export default {
     },
     planSummary: {
       title: 'Plan',
-      subtitle: 'Put your available money to work',
+      subtitle: 'Put your money to work',
       whatIfLabel: 'What if…',
       allocatedMonthly: '{amount} allocated per month',
       projectedValue: '{amount} projected in {years} years',
@@ -321,6 +345,13 @@ export default {
       emptyDescription: 'Add income and Cost of Life data to see your What if results.',
       action: 'View plan',
       addData: 'Add financial data',
+    },
+    summaryCarousel: {
+      navigationLabel: 'Plan and progress summary',
+    },
+    progressSummary: {
+      subtitle: 'Your financial progress at a glance',
+      action: 'View progress',
     },
   },
   setup: {
@@ -929,7 +960,7 @@ export default {
       confirmDescription:
         'Confirm that your financial setup is complete. Your current position will become the baseline, and milestones already reached will be recorded today.',
       confirmNote:
-        'Any achievements saved by the previous tracking system will be rebuilt from your current data. Future milestones must remain reached for 24 hours before they become permanent.',
+        'Milestones already reached will be recorded today. Future milestones must remain reached for 24 hours before they become permanent.',
       confirmAction: 'Activate tracking',
       previewSummary: '{achieved} of {total} milestones reached in this preview',
       previewReached: 'Reached in the current preview',
@@ -1038,14 +1069,16 @@ export default {
     },
   },
   achievements: {
-    title: 'Milestones',
-    subtitle: "Track your financial achievements and what's next.",
+    title: 'Achievements',
+    subtitle: 'Track your progress and celebrate your financial milestones.',
     summaryLabel: 'Milestone progress summary',
+    yourProgress: 'Your progress',
     milestonesAchieved: 'milestones achieved',
     achieved: 'Achieved',
     inProgress: 'In progress',
     positive: 'Positive',
     locked: 'Locked',
+    openDetails: 'Open details for {achievement}',
     filterLabel: 'Filter milestones',
     filterEmpty: 'No milestones match this filter yet.',
     filters: {
@@ -1056,6 +1089,13 @@ export default {
     familyCount: '{achieved} of {total}',
     noRelevantDebt: 'No debt milestones are relevant to this workspace yet.',
     toggleFamily: 'Toggle {family} milestones',
+    share: {
+      action: 'Share achievement',
+      title: 'Worthward achievement: {achievement}',
+      copied: 'Achievement image copied to the clipboard.',
+      downloaded: 'Achievement image downloaded.',
+      error: 'We could not share this achievement.',
+    },
   },
   assets: {
     title: 'Assets',

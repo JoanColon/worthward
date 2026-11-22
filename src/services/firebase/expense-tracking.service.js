@@ -1,10 +1,16 @@
 import {
   collection,
   doc,
+  documentId,
   getDoc,
+  getDocs,
+  endAt,
+  orderBy,
+  query,
   runTransaction,
   serverTimestamp,
   setDoc,
+  startAt,
   Timestamp,
 } from 'firebase/firestore'
 import { db } from '@/firebase/firebase'
@@ -46,10 +52,26 @@ export async function getExpenseTrackingYear(workspaceId, year) {
     { length: 12 },
     (_, index) => `${normalizedYear}-${String(index + 1).padStart(2, '0')}`,
   )
-  const months = await Promise.all(
-    periods.map((period) => getExpenseTrackingMonth(workspaceId, period)),
+  const snapshot = await getDocs(
+    query(
+      collection(db, 'workspaces', workspaceId, 'expenseTracking'),
+      orderBy(documentId()),
+      startAt(`${normalizedYear}-01`),
+      endAt(`${normalizedYear}-12`),
+    ),
   )
-  return Object.fromEntries(periods.map((period, index) => [period.slice(5), months[index]]))
+  const savedMonths = new Map(
+    snapshot.docs.map((document) => [
+      document.id,
+      normalizeTrackingMonth(document.data(), document.id),
+    ]),
+  )
+  return Object.fromEntries(
+    periods.map((period) => [
+      period.slice(5),
+      savedMonths.get(period) || emptyExpenseTrackingMonth(period),
+    ]),
+  )
 }
 
 export async function getExpenseTrackingPreferences(workspaceId) {

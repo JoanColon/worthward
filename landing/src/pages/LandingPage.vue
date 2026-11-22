@@ -10,8 +10,8 @@
           ><a href="#pricing">Pricing</a><a href="#learn">Learn</a>
         </nav>
         <div class="header-actions">
-          <a class="login" :href="appUrl + '/login'">Log in</a
-          ><a class="pill pill-primary" :href="appUrl + '/register'"
+          <a class="login" :href="loginUrl">Log in</a
+          ><a class="pill pill-primary" :href="registerUrl"
             >Get started <q-icon name="arrow_forward"
           /></a>
         </div>
@@ -27,7 +27,7 @@
       <nav v-if="menuOpen" class="mobile-nav" @click="menuOpen = false">
         <a href="#features">Features</a><a href="#how-it-works">How it works</a
         ><a href="#pricing">Pricing</a><a href="#learn">Learn</a
-        ><a :href="appUrl + '/register'">Get started</a>
+        ><a :href="registerUrl">Get started</a>
       </nav>
     </header>
     <main id="top">
@@ -42,7 +42,7 @@
               one place.
             </p>
             <div class="hero-actions">
-              <a class="pill pill-mint" :href="appUrl + '/register'"
+              <a class="pill pill-mint" :href="registerUrl"
                 >Get started free <q-icon name="arrow_forward" /></a
               ><a class="pill pill-outline" href="#how-it-works"
                 >See how it works <q-icon name="play_circle_outline"
@@ -122,7 +122,7 @@
               <li>Assets, liabilities, income and expenses</li>
               <li>Tracking and progress</li>
             </ul>
-            <a class="pill pill-dark" :href="appUrl + '/register'">Get started free</a>
+            <a class="pill pill-dark" :href="registerUrl">Get started free</a>
           </article>
           <article class="price-card featured">
             <div class="plan-label">MORE POSSIBILITIES</div>
@@ -135,7 +135,7 @@
               <li>Multiple and shared workspaces</li>
               <li>Advanced planning tools</li>
             </ul>
-            <a class="pill pill-dark" :href="appUrl + '/register'">Explore {{ BRAND.name }}</a>
+            <a class="pill pill-dark" :href="registerUrl">Explore {{ BRAND.name }}</a>
           </article>
         </div>
       </section>
@@ -143,7 +143,7 @@
         <div class="wrap">
           <h2>Your financial future starts with clarity.</h2>
           <p>Know your worth today. Find your way forward.</p>
-          <a class="pill pill-mint" :href="appUrl + '/register'"
+          <a class="pill pill-mint" :href="registerUrl"
             >Get started free <q-icon name="arrow_forward"
           /></a>
         </div>
@@ -154,8 +154,9 @@
         <div class="brand">
           <WorthwardMark /><span>{{ BRAND.wordmark }}<span class="green-dot">.</span></span>
         </div>
-        <span>© {{ new Date().getFullYear() }} {{ BRAND.name }}</span
-        ><a href="mailto:hello@example.com" title="Replace with your support address">Contact</a>
+        <span>© {{ new Date().getFullYear() }} {{ BRAND.name }}</span>
+        <router-link to="/privacy/">Privacy</router-link>
+        <router-link to="/delete-account/">Delete account</router-link>
       </div>
     </footer>
   </div>
@@ -167,6 +168,8 @@ import GrowthBackdrop from '../components/GrowthBackdrop.vue'
 import ProductPreview from '../components/ProductPreview.vue'
 import { BRAND } from '../config/brand.js'
 const appUrl = BRAND.currentAppUrl
+const loginUrl = `${appUrl}/#/`
+const registerUrl = `${appUrl}/#/?register=1`
 const menuOpen = ref(false)
 const features = [
   {

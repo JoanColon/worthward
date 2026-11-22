@@ -25,6 +25,11 @@ const routes = [
         component: () => import('@/pages/ProPage.vue'),
       },
       {
+        path: 'account',
+        name: 'account',
+        component: () => import('@/pages/AccountPage.vue'),
+      },
+      {
         path: 'workspaces/new',
         name: 'create-workspace',
         component: () => import('@/pages/CreateWorkspacePage.vue'),
@@ -47,16 +52,19 @@ const routes = [
       {
         path: 'workspaces/:workspaceId/assets/investment/:assetId/portfolio',
         name: 'investment-portfolio',
+        meta: { requiresPro: true },
         component: () => import('@/pages/InvestmentPortfolioPage.vue'),
       },
       {
         path: 'workspaces/:workspaceId/assets/real-estate/:assetId/model',
         name: 'real-estate-model',
+        meta: { requiresPro: true },
         component: () => import('@/pages/RealEstateModelPage.vue'),
       },
       {
         path: 'workspaces/:workspaceId/assets/cash/:assetId/model',
         name: 'cash-model',
+        meta: { requiresPro: true },
         component: () => import('@/pages/CashModelPage.vue'),
       },
       {
@@ -72,6 +80,7 @@ const routes = [
       {
         path: 'workspaces/:workspaceId/liabilities/mortgage/:liabilityId/model',
         name: 'mortgage-detail',
+        meta: { requiresPro: true },
         component: () => import('@/pages/MortgageDetailPage.vue'),
       },
       {
@@ -106,6 +115,7 @@ const routes = [
       {
         path: 'workspaces/:workspaceId/what-if/strategy',
         name: 'what-if-strategy',
+        meta: { requiresPro: true },
         component: () => import('@/pages/WhatIfStrategyPage.vue'),
       },
       {

@@ -42,24 +42,10 @@ export const defaultWhatIfConfig = Object.freeze({
   scenarios: Object.freeze([defaultStrategyScenario]),
 })
 
-/** Normalizes persisted What If assumptions and upgrades the legacy single-scenario shape. */
+/** Normalizes the canonical scenario-based What If configuration. */
 export function normalizeWhatIfConfig(config = {}) {
   const reduction = normalizeDisposableIncomePercent(config.discretionaryReductionPercent, 0)
-  const legacyScenario = {
-    ...defaultStrategyScenario,
-    allocation: normalizeStrategy(config.strategy) || defaultStrategyScenario.allocation,
-    investmentMix: {
-      stockMarket: {
-        allocation: 100,
-        annualReturnPercent: normalizeReturn(config.expectedAnnualReturnPercent) ?? 7,
-      },
-    },
-    ...normalizedCashReturnOverride(config),
-    inflationAnnualPercent: normalizeReturn(config.inflationAnnualPercent) ?? 2,
-    selectedLiabilityId:
-      typeof config.selectedLiabilityId === 'string' ? config.selectedLiabilityId : null,
-  }
-  const sourceScenarios = Array.isArray(config.scenarios) ? config.scenarios : [legacyScenario]
+  const sourceScenarios = Array.isArray(config.scenarios) ? config.scenarios : [defaultStrategyScenario]
   const scenarios = sourceScenarios.slice(0, 10).map(normalizeStrategyScenario).filter(Boolean)
   if (!scenarios.length) scenarios.push(normalizeStrategyScenario(defaultStrategyScenario))
   const activeScenarioId = scenarios.some(({ id }) => id === config.activeScenarioId) ?
@@ -80,7 +66,7 @@ export function normalizeStrategyScenario(scenario = {}) {
     .trim()
     .slice(0, 80)
   if (!id) return null
-  const allocation = normalizeStrategy(scenario.allocation || scenario.strategy)
+  const allocation = normalizeStrategy(scenario.allocation)
   const investmentMix = normalizeInvestmentMix(scenario.investmentMix)
   const horizon = Number(scenario.horizonYears)
   const cashTarget = Number(scenario.cashTargetMonths)

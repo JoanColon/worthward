@@ -7,6 +7,8 @@ import {
   GOOGLE_PLAY_SUBSCRIPTION,
   SUBSCRIPTION_PLANS,
   SUBSCRIPTION_STATUSES,
+  normalizeSubscription,
+  workspaceEntitlementProjection,
 } from '../../shared/billing/entitlements.js'
 
 export const ANDROID_PACKAGE_NAME = 'com.worthward.app'
@@ -49,7 +51,11 @@ export async function verifyGooglePlaySubscription(
   }
 
   const expectedAccountId = googlePlayAccountId(userId)
-  if (purchase?.externalAccountIdentifiers?.obfuscatedExternalAccountId !== expectedAccountId) {
+  const purchaseAccountIds = [
+    purchase?.externalAccountIdentifiers?.obfuscatedExternalAccountId,
+    purchase?.outOfAppPurchaseContext?.expiredExternalAccountIdentifiers?.obfuscatedExternalAccountId,
+  ].filter(Boolean)
+  if (!purchaseAccountIds.includes(expectedAccountId)) {
     throw billingError(
       'failed-precondition',
       'The subscription does not belong to this Worthward account',
@@ -68,6 +74,7 @@ export async function verifyGooglePlaySubscription(
 
   const state = resolveSubscriptionState(purchase.subscriptionState, lineItem.expiryTime, now)
   const tokenHash = purchaseTokenHash(token)
+  const linkedTokenHash = purchase.linkedPurchaseToken ? purchaseTokenHash(purchase.linkedPurchaseToken) : null
   const purchaseReference = firestore.collection('billingPurchases').doc(tokenHash)
   const subscriptionReference = firestore
     .collection('users')
@@ -84,11 +91,17 @@ export async function verifyGooglePlaySubscription(
     currentPeriodEndsAt: expiryTime,
     productId: GOOGLE_PLAY_SUBSCRIPTION.productId,
     basePlanId,
+    purchaseTokenHash: tokenHash,
     updatedAt: FieldValue.serverTimestamp(),
   }
 
-  await firestore.runTransaction(async (transaction) => {
-    const purchaseSnapshot = await transaction.get(purchaseReference)
+  const effectiveSubscription = await firestore.runTransaction(async (transaction) => {
+    const ownedWorkspacesQuery = firestore.collection('workspaces').where('createdBy', '==', userId)
+    const [purchaseSnapshot, currentSubscriptionSnapshot, ownedWorkspaces] = await Promise.all([
+      transaction.get(purchaseReference),
+      transaction.get(subscriptionReference),
+      transaction.get(ownedWorkspacesQuery),
+    ])
     if (purchaseSnapshot.exists && purchaseSnapshot.data()?.userId !== userId) {
       throw billingError(
         'permission-denied',
@@ -107,6 +120,7 @@ export async function verifyGooglePlaySubscription(
         basePlanId,
         purchaseToken: token,
         purchaseTokenHash: tokenHash,
+        linkedPurchaseTokenHash: linkedTokenHash,
         providerState: purchase.subscriptionState || null,
         expiryTime,
         acknowledgementState: purchase.acknowledgementState || null,
@@ -116,7 +130,28 @@ export async function verifyGooglePlaySubscription(
       },
       { merge: true },
     )
+
+    const currentSubscription = currentSubscriptionSnapshot.data()
+    if (
+      !purchaseShouldBecomeCurrent({
+        currentSubscription,
+        tokenHash,
+        linkedTokenHash,
+        expiryTime,
+      })
+    ) {
+      return currentSubscription
+    }
+
     transaction.set(subscriptionReference, subscriptionProjection, { merge: true })
+    const entitlement = {
+      ...workspaceEntitlementProjection(subscriptionProjection),
+      updatedAt: FieldValue.serverTimestamp(),
+    }
+    for (const workspace of ownedWorkspaces.docs) {
+      transaction.update(workspace.ref, { entitlement })
+    }
+    return subscriptionProjection
   })
 
   if (
@@ -145,11 +180,28 @@ export async function verifyGooglePlaySubscription(
     }
   }
 
+  const normalizedSubscription = normalizeSubscription(effectiveSubscription)
   return {
-    ...subscriptionProjection,
+    ...normalizedSubscription,
     updatedAt: null,
-    currentPeriodEndsAt: expiryTime?.toISOString() || null,
+    currentPeriodEndsAt: validDate(normalizedSubscription.currentPeriodEndsAt)?.toISOString() || null,
   }
+}
+
+function purchaseShouldBecomeCurrent({
+  currentSubscription,
+  tokenHash,
+  linkedTokenHash,
+  expiryTime,
+}) {
+  if (currentSubscription?.source && currentSubscription.source !== 'google_play') return false
+
+  const currentTokenHash = currentSubscription?.purchaseTokenHash || null
+  if (!currentTokenHash || currentTokenHash === tokenHash) return true
+  if (linkedTokenHash === currentTokenHash) return true
+  if (currentSubscription?.entitlementActive === true) return false
+
+  return dateValue(expiryTime) > dateValue(currentSubscription?.currentPeriodEndsAt)
 }
 
 function matchingLineItem(lineItems) {
@@ -162,11 +214,14 @@ function resolveSubscriptionState(providerState, expiryTime, now) {
   const hasRemainingAccess = dateValue(expiryTime) > now.getTime()
   const states = {
     SUBSCRIPTION_STATE_PENDING: { status: SUBSCRIPTION_STATUSES.PENDING, entitlementActive: false },
-    SUBSCRIPTION_STATE_ACTIVE: { status: SUBSCRIPTION_STATUSES.ACTIVE, entitlementActive: true },
+    SUBSCRIPTION_STATE_ACTIVE: {
+      status: SUBSCRIPTION_STATUSES.ACTIVE,
+      entitlementActive: hasRemainingAccess,
+    },
     SUBSCRIPTION_STATE_PAUSED: { status: SUBSCRIPTION_STATUSES.PAUSED, entitlementActive: false },
     SUBSCRIPTION_STATE_IN_GRACE_PERIOD: {
       status: SUBSCRIPTION_STATUSES.GRACE_PERIOD,
-      entitlementActive: true,
+      entitlementActive: hasRemainingAccess,
     },
     SUBSCRIPTION_STATE_ON_HOLD: {
       status: SUBSCRIPTION_STATUSES.ON_HOLD,
@@ -178,6 +233,10 @@ function resolveSubscriptionState(providerState, expiryTime, now) {
     },
     SUBSCRIPTION_STATE_EXPIRED: {
       status: SUBSCRIPTION_STATUSES.EXPIRED,
+      entitlementActive: false,
+    },
+    SUBSCRIPTION_STATE_REVOKED: {
+      status: SUBSCRIPTION_STATUSES.REVOKED,
       entitlementActive: false,
     },
   }

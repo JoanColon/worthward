@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   acceptWorkspaceInvite,
+  createWorkspace,
   createWorkspaceInvite,
   deleteWorkspaceData,
   getWorkspaceInvite,
@@ -11,6 +12,46 @@ import {
 } from '../../functions/features/workspaces/service.js'
 
 const validToken = 'a'.repeat(43)
+
+function createWorkspaceFirestore({ owned = [], subscription = null } = {}) {
+  const writes = []
+  const workspaceReference = { id: 'workspace-new', path: 'workspaces/workspace-new' }
+  const ownedQuery = { kind: 'owned-query' }
+  const subscriptionReference = { path: 'users/owner/private/subscription' }
+  const firestore = {
+    collection(name) {
+      if (name === 'workspaces') {
+        return {
+          doc: () => workspaceReference,
+          where: () => ownedQuery,
+        }
+      }
+      if (name === 'users') {
+        return {
+          doc: () => ({
+            collection: () => ({ doc: () => subscriptionReference }),
+          }),
+        }
+      }
+      throw new Error(`Unexpected collection: ${name}`)
+    },
+    async runTransaction(callback) {
+      return callback({
+        get(target) {
+          if (target === ownedQuery) {
+            return Promise.resolve({ docs: owned.map((data, index) => snapshot(String(index), data)) })
+          }
+          if (target === subscriptionReference) return Promise.resolve(snapshot('subscription', subscription))
+          throw new Error('Unexpected transaction read')
+        },
+        create(target, data) {
+          writes.push({ target, data })
+        },
+      })
+    },
+  }
+  return { firestore, writes }
+}
 
 function snapshot(id, data) {
   return { id, exists: data != null, data: () => data }
@@ -108,7 +149,7 @@ describe('workspace deletion', () => {
 
   it('only recognizes an explicit owner role', () => {
     const workspace = {
-      createdBy: 'legacy-owner',
+      createdBy: 'creator-without-owner-role',
       members: {
         owner: { role: 'owner' },
         member: { role: 'member' },
@@ -117,7 +158,7 @@ describe('workspace deletion', () => {
 
     expect(isWorkspaceOwner(workspace, 'owner')).toBe(true)
     expect(isWorkspaceOwner(workspace, 'member')).toBe(false)
-    expect(isWorkspaceOwner(workspace, 'legacy-owner')).toBe(false)
+    expect(isWorkspaceOwner(workspace, 'creator-without-owner-role')).toBe(false)
   })
 
   it('recognizes every user listed as a workspace member', () => {
@@ -126,6 +167,53 @@ describe('workspace deletion', () => {
     expect(isWorkspaceMember(workspace, 'owner')).toBe(true)
     expect(isWorkspaceMember(workspace, 'member')).toBe(true)
     expect(isWorkspaceMember(workspace, 'someone-else')).toBe(false)
+  })
+})
+
+describe('workspace creation entitlements', () => {
+  it('creates one primary workspace for a Free account', async () => {
+    const { firestore, writes } = createWorkspaceFirestore()
+
+    const result = await createWorkspace(firestore, {
+      userId: 'owner',
+      displayName: 'Owner',
+      name: 'Home',
+    })
+
+    expect(result).toMatchObject({ id: 'workspace-new', name: 'Home', isPrimaryWorkspace: true })
+    expect(result.entitlement).toEqual({ tier: 'free', expiresAt: null })
+    expect(writes).toHaveLength(1)
+  })
+
+  it('rejects an additional workspace for a Free account', async () => {
+    const { firestore, writes } = createWorkspaceFirestore({
+      owned: [{ isPrimaryWorkspace: true }],
+    })
+
+    await expect(
+      createWorkspace(firestore, { userId: 'owner', name: 'Another workspace' }),
+    ).rejects.toMatchObject({ code: 'permission-denied' })
+    expect(writes).toHaveLength(0)
+  })
+
+  it('allows additional workspaces for an active Pro account', async () => {
+    const { firestore, writes } = createWorkspaceFirestore({
+      owned: [{ isPrimaryWorkspace: true }],
+      subscription: {
+        plan: 'pro',
+        entitlementActive: true,
+        currentPeriodEndsAt: new Date('2099-01-01T00:00:00Z'),
+      },
+    })
+
+    const result = await createWorkspace(firestore, {
+      userId: 'owner',
+      name: 'Another workspace',
+    })
+
+    expect(result.isPrimaryWorkspace).toBe(false)
+    expect(result.entitlement).toMatchObject({ tier: 'pro' })
+    expect(writes).toHaveLength(1)
   })
 })
 

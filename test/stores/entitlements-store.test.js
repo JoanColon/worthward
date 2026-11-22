@@ -17,7 +17,13 @@ describe('entitlements store', () => {
 
   it('starts as Free and applies the server subscription projection', () => {
     subscribeUserSubscription.mockImplementation((_userId, onValue) => {
-      onValue({ plan: 'pro', source: 'google_play', status: 'active', entitlementActive: true })
+      onValue({
+        plan: 'pro',
+        source: 'google_play',
+        status: 'active',
+        entitlementActive: true,
+        currentPeriodEndsAt: '2099-01-01T00:00:00.000Z',
+      })
       return vi.fn()
     })
     const store = useEntitlementsStore()
@@ -27,6 +33,7 @@ describe('entitlements store', () => {
     expect(store.ready).toBe(true)
     expect(store.entitlements.isPro).toBe(true)
     expect(store.entitlements.canUsePlan).toBe(true)
+    expect(store.entitlements.canUseStrategy).toBe(true)
   })
 
   it('returns to Free and stops the listener on reset', () => {
@@ -39,6 +46,7 @@ describe('entitlements store', () => {
 
     expect(stop).toHaveBeenCalledOnce()
     expect(store.entitlements.isPro).toBe(false)
+    expect(store.entitlements.canUseStrategy).toBe(false)
     expect(store.ready).toBe(false)
   })
 })

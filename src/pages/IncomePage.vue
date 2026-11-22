@@ -45,10 +45,20 @@
           :entries="breakdownEntries"
         />
         <section class="category-list" :aria-label="t('income.enabledCategories')">
+          <div class="mobile-table-period">
+            <AppPeriodSwitch
+              v-model="tablePeriod"
+              variant="light"
+              size="small"
+              :options="tablePeriodOptions"
+              :aria-label="t('dashboard.costOfLife.period')"
+            />
+          </div>
           <div class="category-table-heading" aria-hidden="true">
             <span>{{ t('income.overview.category') }}</span>
-            <span>{{ t('income.overview.annualAmount') }}</span>
-            <span>{{ t('income.overview.monthlyAverage') }}</span>
+            <span class="annual-heading">{{ t('income.overview.annualAmount') }}</span>
+            <span class="monthly-heading">{{ t('income.overview.monthlyAverage') }}</span>
+            <span class="mobile-amount-heading">{{ tableAmountHeading }}</span>
           </div>
           <div class="category-rows">
             <div
@@ -69,9 +79,9 @@
                 </span>
               </div>
               <SimpleValueEditor
-                :value="categoryAnnualValue(category.id)"
-                :formatted-value="formatCurrency(categoryAnnualValue(category.id))"
-                :formatted-period="t('dashboard.year')"
+                :value="categoryTableValue(category.id)"
+                :formatted-value="formatCurrency(categoryTableValue(category.id))"
+                :formatted-period="t(tablePeriodKey)"
                 :saving="isCategorySaving(category.id)"
                 :disabled="!canQuickEdit(category.id)"
                 :aria-label="
@@ -178,6 +188,7 @@ import FinancialOverviewCard from '@/components/financial/FinancialOverviewCard.
 import IncomeCategorySetup from '@/components/income/IncomeCategorySetup.vue'
 import AppPageHeader from '@/components/layout/AppPageHeader.vue'
 import AppConfirmDialog from '@/components/ui/AppConfirmDialog.vue'
+import AppPeriodSwitch from '@/components/ui/AppPeriodSwitch.vue'
 import { incomeCategories } from '@/config/income-categories'
 import { CHART_SERIES_COLORS } from '@/config/chart-theme'
 import {
@@ -214,7 +225,22 @@ const confirmDisable = ref(false)
 const confirmCategoryDelete = ref(false)
 const deletingCategory = ref(null)
 const pendingSelection = ref(null)
+const tablePeriod = ref('annual')
 const currentYear = currentFinancialYear()
+const tablePeriodOptions = computed(() => [
+  { label: t('dashboard.costOfLife.annual'), value: 'annual' },
+  { label: t('dashboard.costOfLife.monthly'), value: 'monthly' },
+])
+const compactTable = computed(() => $q.screen.width <= 749)
+const activeTablePeriod = computed(() => (compactTable.value ? tablePeriod.value : 'annual'))
+const tablePeriodKey = computed(() =>
+  activeTablePeriod.value === 'monthly' ? 'dashboard.month' : 'dashboard.year',
+)
+const tableAmountHeading = computed(() =>
+  activeTablePeriod.value === 'monthly'
+    ? t('income.overview.monthlyAverage')
+    : t('income.overview.annualAmount'),
+)
 const workspaceId = computed(() => String(route.params.workspaceId))
 const workspaceHomeRoute = computed(() => ({
   name: 'workspace-dashboard',
@@ -223,7 +249,7 @@ const workspaceHomeRoute = computed(() => ({
 const workspace = computed(
   () => workspaceStore.workspaces.find((candidate) => candidate.id === workspaceId.value) || null,
 )
-const members = computed(() => getWorkspaceMembers(workspace.value, authUser.value))
+const members = computed(() => getWorkspaceMembers(workspace.value))
 const memberIds = computed(() => members.value.map((member) => member.id))
 const selectedMemberId = computed({
   get: () => scopeStore.get(workspaceId.value, memberIds.value, authUser.value?.uid),
@@ -360,7 +386,7 @@ function isCategorySaving(id) {
 async function saveSimpleIncome(category, displayedValue) {
   if (isCategorySaving(category.id) || !canQuickEdit(category.id)) return
 
-  const annualValue = displayedValue
+  const annualValue = activeTablePeriod.value === 'monthly' ? displayedValue * 12 : displayedValue
   const existing = simpleIncome(category.id)
   const payload = {
     ...(existing || {}),
@@ -406,6 +432,10 @@ function simpleCalculation(mode, annualValue) {
 function categoryAnnualValue(id) {
   return financialYearFlowCategoryValue(financialYear.value, 'income', id, selectedMemberId.value)
 }
+function categoryTableValue(id) {
+  const annualValue = categoryAnnualValue(id)
+  return activeTablePeriod.value === 'monthly' ? annualValue / 12 : annualValue
+}
 function openCategory(id) {
   router.push({ name: 'income-category', params: { workspaceId: workspaceId.value, category: id } })
 }
@@ -450,6 +480,11 @@ async function persist(action) {
 
 @include financial-overview-list(minmax(13rem, 1fr) 10rem 9rem 5rem);
 
+.mobile-table-period,
+.mobile-amount-heading {
+  display: none;
+}
+
 .category-icon {
   background: var(--color-green-soft);
   color: var(--color-success-dark);
@@ -481,6 +516,30 @@ async function persist(action) {
 }
 
 @media (max-width: bp.$overview-stack-max) {
+  .mobile-table-period {
+    display: flex;
+    justify-content: flex-end;
+    padding: 0.55rem 0.65rem 0;
+  }
+
+  .mobile-table-period :deep(.app-period-switch) {
+    --app-period-option-min-width: 4.5rem;
+  }
+
+  .category-table-heading {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+  }
+
+  .annual-heading,
+  .monthly-heading {
+    display: none;
+  }
+
+  .mobile-amount-heading {
+    display: inline;
+    grid-column: 2;
+  }
+
   .category-monthly {
     display: none;
   }

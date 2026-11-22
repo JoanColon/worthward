@@ -263,14 +263,14 @@ const perspectives = computed(() => [
     note: t('progress.evolution.wealthCreation.note'),
   },
   {
-    id: 'cost-of-life',
-    icon: 'savings',
-    tone: 'blue',
-    label: t('progress.evolution.costOfLife.label'),
-    question: t('progress.evolution.costOfLife.question'),
-    title: t('progress.evolution.costOfLife.title'),
-    description: t('progress.evolution.costOfLife.description'),
-    note: t('progress.evolution.costOfLife.note'),
+    id: 'composition',
+    icon: 'donut_large',
+    tone: 'warning',
+    label: t('progress.evolution.composition.label'),
+    question: t('progress.evolution.composition.question'),
+    title: t('progress.evolution.composition.title'),
+    description: t('progress.evolution.composition.description'),
+    note: t('progress.evolution.composition.note'),
   },
   {
     id: 'freedom',
@@ -283,14 +283,14 @@ const perspectives = computed(() => [
     note: t('progress.evolution.freedom.note'),
   },
   {
-    id: 'composition',
-    icon: 'donut_large',
-    tone: 'warning',
-    label: t('progress.evolution.composition.label'),
-    question: t('progress.evolution.composition.question'),
-    title: t('progress.evolution.composition.title'),
-    description: t('progress.evolution.composition.description'),
-    note: t('progress.evolution.composition.note'),
+    id: 'cost-of-life',
+    icon: 'savings',
+    tone: 'blue',
+    label: t('progress.evolution.costOfLife.label'),
+    question: t('progress.evolution.costOfLife.question'),
+    title: t('progress.evolution.costOfLife.title'),
+    description: t('progress.evolution.costOfLife.description'),
+    note: t('progress.evolution.costOfLife.note'),
   },
 ])
 
@@ -298,7 +298,7 @@ const workspaceId = computed(() => String(route.params.workspaceId))
 const workspace = computed(
   () => workspaceStore.workspaces.find(({ id }) => id === workspaceId.value) || null,
 )
-const members = computed(() => getWorkspaceMembers(workspace.value, authUser.value))
+const members = computed(() => getWorkspaceMembers(workspace.value))
 const memberIds = computed(() => members.value.map(({ id }) => id))
 const selectedMemberId = computed(() =>
   scopeStore.get(workspaceId.value, memberIds.value, authUser.value?.uid),

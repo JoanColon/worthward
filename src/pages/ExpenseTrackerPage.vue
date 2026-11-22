@@ -210,7 +210,7 @@ const activeWorkspaceId = computed(() => String(route.params.workspaceId))
 const workspace = computed(
   () => workspaceStore.workspaces.find(({ id }) => id === activeWorkspaceId.value) || null,
 )
-const members = computed(() => getWorkspaceMembers(workspace.value, authUser.value))
+const members = computed(() => getWorkspaceMembers(workspace.value))
 const memberIds = computed(() => members.value.map(({ id }) => id))
 const allExpenseItems = computed(() =>
   expensesStore.enabledCategories

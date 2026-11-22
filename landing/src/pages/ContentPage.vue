@@ -12,7 +12,7 @@
           ><router-link to="/learn/">Learn</router-link
           ><router-link to="/pricing/">Pricing</router-link>
         </nav>
-        <a class="pill pill-primary" :href="appUrl + '/register'">Get started</a>
+        <a class="pill pill-primary" :href="registerUrl">Get started</a>
       </div>
     </header>
     <main
@@ -46,7 +46,9 @@
       <div class="wrap footer-inner">
         <router-link class="brand" to="/"
           ><WorthwardMark /><span>{{ BRAND.wordmark }}.</span></router-link
-        ><span>© {{ BRAND.name }}</span>
+        ><span>© {{ BRAND.name }}</span
+        ><router-link to="/privacy/">Privacy</router-link
+        ><router-link to="/delete-account/">Delete account</router-link>
       </div>
     </footer>
   </div>
@@ -58,6 +60,7 @@ import WorthwardMark from '../components/WorthwardMark.vue'
 import { BRAND } from '../config/brand.js'
 const props = defineProps({ section: { type: String, required: true } })
 const appUrl = BRAND.currentAppUrl
+const registerUrl = `${appUrl}/#/?register=1`
 const pages = {
   'how-to': {
     title: `How to use ${BRAND.name}`,

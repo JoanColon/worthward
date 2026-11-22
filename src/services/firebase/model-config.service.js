@@ -7,8 +7,16 @@ const defaults = {
   income: { schemaVersion: 1, setupCompleted: false, categories: {} },
   expenses: { schemaVersion: 1, setupCompleted: false, categories: {} },
   expenseTracking: { schemaVersion: 1, enabledSubcategories: null },
-  whatIf: null,
-  whatIfStrategies: null,
+  whatIf: {
+    schemaVersion: 2,
+    discretionaryReductionPercent: 0,
+    extraMonthlySavings: 0,
+  },
+  whatIfStrategies: {
+    schemaVersion: 2,
+    activeScenarioId: 'default',
+    scenarios: [],
+  },
 }
 
 export function modelConfigRef(workspaceId, model) {

@@ -1,44 +1,46 @@
-import { serverTimestamp, writeBatch } from 'firebase/firestore'
+import { serverTimestamp, setDoc } from 'firebase/firestore'
 import { normalizeWhatIfConfig } from '../../../functions/shared/plan/what-if.js'
-import { db } from '@/firebase/firebase'
-import { currentUserId } from '@/services/firebase/current-user'
+import { auth } from '@/firebase/firebase'
 import { getModelConfig, modelConfigRef } from '@/services/firebase/model-config.service'
 
-export async function getWhatIfConfig(workspaceId) {
-  const [legacyConfig, strategyConfig] = await Promise.all([
+export async function getWhatIfConfig(workspaceId, { includeStrategy = true } = {}) {
+  if (!includeStrategy) {
+    return normalizeWhatIfConfig(await getModelConfig(workspaceId, 'whatIf'))
+  }
+
+  const [simulation, strategy] = await Promise.all([
     getModelConfig(workspaceId, 'whatIf'),
     getModelConfig(workspaceId, 'whatIfStrategies'),
   ])
-  return normalizeWhatIfConfig({ ...(legacyConfig || {}), ...(strategyConfig || {}) })
+  return normalizeWhatIfConfig({ ...strategy, ...simulation })
 }
 
-export async function saveWhatIfConfig(workspaceId, config) {
+export async function saveWhatIfSimulation(workspaceId, config) {
   const normalized = normalizeWhatIfConfig(config)
-  const activeScenario =
-    normalized.scenarios.find(({ id }) => id === normalized.activeScenarioId) ||
-    normalized.scenarios[0]
-  const updatedAt = serverTimestamp()
-  const updatedBy = currentUserId()
-  const batch = writeBatch(db)
-  // Keep this legacy payload within the fixed field allowlist in firestore.rules.
-  // Scenario-only assumptions such as cash return and inflation are stored below.
-  batch.set(modelConfigRef(workspaceId, 'whatIf'), {
-    schemaVersion: 1,
+  await setDoc(modelConfigRef(workspaceId, 'whatIf'), {
+    schemaVersion: 2,
     discretionaryReductionPercent: normalized.discretionaryReductionPercent,
     extraMonthlySavings: normalized.extraMonthlySavings,
-    expectedAnnualReturnPercent: activeScenario.investmentMix.stockMarket?.annualReturnPercent || 7,
-    selectedLiabilityId: activeScenario.selectedLiabilityId,
-    strategy: activeScenario.allocation,
     updatedAt: serverTimestamp(),
-    updatedBy,
+    updatedBy: authenticatedUserId(),
   })
-  batch.set(modelConfigRef(workspaceId, 'whatIfStrategies'), {
-    schemaVersion: 1,
+  return normalized
+}
+
+export async function saveWhatIfStrategy(workspaceId, config) {
+  const normalized = normalizeWhatIfConfig(config)
+  await setDoc(modelConfigRef(workspaceId, 'whatIfStrategies'), {
+    schemaVersion: 2,
     activeScenarioId: normalized.activeScenarioId,
     scenarios: normalized.scenarios,
-    updatedAt,
-    updatedBy,
+    updatedAt: serverTimestamp(),
+    updatedBy: authenticatedUserId(),
   })
-  await batch.commit()
   return normalized
+}
+
+function authenticatedUserId() {
+  const userId = auth.currentUser?.uid
+  if (!userId) throw new Error('Authentication is required')
+  return userId
 }

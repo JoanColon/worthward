@@ -15,27 +15,25 @@ service cloud.firestore {
       return !('deletionPendingAt' in workspace);
     }
 
+    function workspaceById(workspaceId) {
+      return get(
+        /databases/$(database)/documents/workspaces/$(workspaceId)
+      ).data;
+    }
+
     function isWorkspaceMemberById(workspaceId) {
-      return isWorkspaceMember(
-        get(/databases/$(database)/documents/workspaces/$(workspaceId)).data
-      );
+      return isWorkspaceMember(workspaceById(workspaceId));
     }
 
-    function isMilestoneTrackingActive(workspace) {
-      return 'milestoneTracking' in workspace
-        && workspace.milestoneTracking.status == 'active';
+    function canWriteWorkspaceData(workspaceId) {
+      let workspace = workspaceById(workspaceId);
+      return isWorkspaceMember(workspace) && isWorkspaceActive(workspace);
     }
 
-    function isMilestoneActivation(workspaceId) {
-      let before = get(
-        /databases/$(database)/documents/workspaces/$(workspaceId)
-      ).data;
-      let after = getAfter(
-        /databases/$(database)/documents/workspaces/$(workspaceId)
-      ).data;
-      return !isMilestoneTrackingActive(before)
-        && isMilestoneTrackingActive(after)
-        && after.milestoneTracking.activatedAt == request.time;
+    function workspaceIsPro(workspace) {
+      return workspace.entitlement.tier == 'pro'
+        && workspace.entitlement.expiresAt is timestamp
+        && workspace.entitlement.expiresAt > request.time;
     }
 
     function hasValidUserPreferences(data) {
@@ -79,35 +77,15 @@ service cloud.firestore {
     }
 
     match /workspaces/{workspaceId} {
-      allow create: if isSignedIn()
-        && request.resource.data.createdBy == request.auth.uid
-        && request.auth.uid in request.resource.data.memberIds
-        && request.resource.data.members[request.auth.uid].role == 'owner'
-        && isWorkspaceActive(request.resource.data)
-        && (
-          !('milestoneTracking' in request.resource.data)
-          || (
-            request.resource.data.milestoneTracking.keys().hasOnly(['status'])
-            && request.resource.data.milestoneTracking.status == 'setup'
-          )
-        );
+      allow create: if false;
       allow read: if isWorkspaceMember(resource.data);
       allow update: if isWorkspaceMember(resource.data)
         && isWorkspaceActive(resource.data)
-        && isWorkspaceActive(request.resource.data)
-        && !request.resource.data.diff(resource.data).affectedKeys()
-          .hasAny(['memberIds', 'members'])
-        && (
-          !request.resource.data.diff(resource.data).affectedKeys()
-            .hasAny(['milestoneTracking'])
-          || (
-            !isMilestoneTrackingActive(resource.data)
-            && request.resource.data.milestoneTracking.keys()
-              .hasOnly(['status', 'activatedAt'])
-            && request.resource.data.milestoneTracking.status == 'active'
-            && request.resource.data.milestoneTracking.activatedAt == request.time
-          )
-        );
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'milestoneTracking',
+          'updatedAt'
+        ])
+        && request.resource.data.updatedAt == request.time;
       allow delete: if false;
 
       match /financialYears/{year} {
@@ -117,171 +95,15 @@ service cloud.firestore {
 
       match /achievements/{milestoneId} {
         allow read: if isWorkspaceMemberById(workspaceId);
-        allow create: if isWorkspaceMemberById(workspaceId)
-          && isWorkspaceActive(
-            get(/databases/$(database)/documents/workspaces/$(workspaceId)).data
-          )
-          && request.resource.data.milestoneId == milestoneId
-          && request.resource.data.family in ['safety', 'netWorth', 'debt', 'freedom']
-          && (
-            (
-              isMilestoneTrackingActive(
-                get(
-                  /databases/$(database)/documents/workspaces/$(workspaceId)
-                ).data
-              )
-              && request.resource.data.keys().hasOnly([
-                'milestoneId',
-                'family',
-                'status',
-                'qualifiedAt',
-                'qualifiedValue'
-              ])
-              && request.resource.data.status == 'pending'
-              && request.resource.data.qualifiedAt == request.time
-              && request.resource.data.qualifiedValue is number
-            )
-            || (
-              isMilestoneActivation(workspaceId)
-              && request.resource.data.keys().hasOnly([
-                'milestoneId',
-                'family',
-                'status',
-                'achievedAt',
-                'achievedValue'
-              ])
-              && request.resource.data.status == 'achieved'
-              && request.resource.data.achievedAt == request.time
-              && request.resource.data.achievedValue is number
-            )
-          );
-        allow update: if isWorkspaceMemberById(workspaceId)
-          && isWorkspaceActive(
-            get(/databases/$(database)/documents/workspaces/$(workspaceId)).data
-          )
-          && (
-            (
-              isMilestoneTrackingActive(
-                get(
-                  /databases/$(database)/documents/workspaces/$(workspaceId)
-                ).data
-              )
-              && resource.data.status == 'pending'
-              && request.resource.data.keys().hasOnly([
-                'milestoneId',
-                'family',
-                'status',
-                'qualifiedAt',
-                'qualifiedValue',
-                'achievedAt',
-                'achievedValue'
-              ])
-              && request.resource.data.diff(resource.data).affectedKeys()
-                .hasOnly(['status', 'achievedAt', 'achievedValue'])
-              && request.resource.data.status == 'achieved'
-              && request.resource.data.achievedAt == request.time
-              && request.resource.data.achievedValue is number
-              && resource.data.qualifiedAt <= request.time - duration.value(24, 'h')
-            )
-            || (
-              isMilestoneActivation(workspaceId)
-              && request.resource.data.keys().hasOnly([
-                'milestoneId',
-                'family',
-                'status',
-                'achievedAt',
-                'achievedValue'
-              ])
-              && request.resource.data.milestoneId == milestoneId
-              && request.resource.data.family in ['safety', 'netWorth', 'debt', 'freedom']
-              && request.resource.data.status == 'achieved'
-              && request.resource.data.achievedAt == request.time
-              && request.resource.data.achievedValue is number
-            )
-          );
-        allow delete: if isWorkspaceMemberById(workspaceId)
-          && (
-            (
-              resource.data.status == 'pending'
-              && isMilestoneTrackingActive(
-                get(
-                  /databases/$(database)/documents/workspaces/$(workspaceId)
-                ).data
-              )
-            )
-            || isMilestoneActivation(workspaceId)
-          );
+        allow write: if canWriteWorkspaceData(workspaceId);
       }
 
       match /modelConfig/{configId} {
         allow read: if isWorkspaceMemberById(workspaceId);
-        allow write: if isWorkspaceMemberById(workspaceId)
-          && isWorkspaceActive(
-            get(/databases/$(database)/documents/workspaces/$(workspaceId)).data
-          )
+        allow write: if canWriteWorkspaceData(workspaceId)
           && (
-            (configId != 'whatIf' && configId != 'whatIfStrategies')
-            || (configId == 'whatIf' && (
-              request.resource.data.keys().hasOnly([
-                'schemaVersion',
-                'discretionaryReductionPercent',
-                'extraMonthlySavings',
-                'expectedAnnualReturnPercent',
-                'selectedLiabilityId',
-                'strategy',
-                'updatedAt',
-                'updatedBy'
-              ])
-              && request.resource.data.schemaVersion == 1
-              && request.resource.data.discretionaryReductionPercent is number
-              && request.resource.data.discretionaryReductionPercent >= 0
-              && request.resource.data.discretionaryReductionPercent <= 100
-              && (
-                !('extraMonthlySavings' in request.resource.data)
-                || (
-                  request.resource.data.extraMonthlySavings is number
-                  && request.resource.data.extraMonthlySavings >= 0
-                  && request.resource.data.extraMonthlySavings <= 100000
-                )
-              )
-              && request.resource.data.expectedAnnualReturnPercent is number
-              && request.resource.data.expectedAnnualReturnPercent >= 0
-              && request.resource.data.expectedAnnualReturnPercent <= 100
-              && (
-                request.resource.data.selectedLiabilityId == null
-                || request.resource.data.selectedLiabilityId is string
-              )
-              && request.resource.data.strategy.keys().hasOnly(['cash', 'invest', 'debt'])
-              && request.resource.data.strategy.cash is number
-              && request.resource.data.strategy.invest is number
-              && request.resource.data.strategy.debt is number
-              && request.resource.data.strategy.cash >= 0
-              && request.resource.data.strategy.invest >= 0
-              && request.resource.data.strategy.debt >= 0
-              && request.resource.data.strategy.cash
-                + request.resource.data.strategy.invest
-                + request.resource.data.strategy.debt == 100
-              && request.resource.data.updatedAt == request.time
-              && request.resource.data.updatedBy == request.auth.uid
-            ))
-            || (configId == 'whatIfStrategies' && (
-              request.resource.data.keys().hasOnly([
-                'schemaVersion',
-                'activeScenarioId',
-                'scenarios',
-                'updatedAt',
-                'updatedBy'
-              ])
-              && request.resource.data.schemaVersion == 1
-              && request.resource.data.activeScenarioId is string
-              && request.resource.data.activeScenarioId.size() > 0
-              && request.resource.data.activeScenarioId.size() <= 80
-              && request.resource.data.scenarios is list
-              && request.resource.data.scenarios.size() > 0
-              && request.resource.data.scenarios.size() <= 10
-              && request.resource.data.updatedAt == request.time
-              && request.resource.data.updatedBy == request.auth.uid
-            ))
+            configId != 'whatIfStrategies'
+            || workspaceIsPro(workspaceById(workspaceId))
           );
       }
 
@@ -299,10 +121,7 @@ service cloud.firestore {
         allow write: if (
           collectionId == 'expenseTracking'
         )
-          && isWorkspaceMemberById(workspaceId)
-          && isWorkspaceActive(
-            get(/databases/$(database)/documents/workspaces/$(workspaceId)).data
-          );
+          && canWriteWorkspaceData(workspaceId);
       }
     }
 

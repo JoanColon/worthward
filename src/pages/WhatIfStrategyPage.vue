@@ -1172,7 +1172,7 @@ const workspaceId = computed(() => String(route.params.workspaceId))
 const workspace = computed(
   () => workspaceStore.workspaces.find(({ id }) => id === workspaceId.value) || null,
 )
-const members = computed(() => getWorkspaceMembers(workspace.value, authUser.value))
+const members = computed(() => getWorkspaceMembers(workspace.value))
 const memberIds = computed(() => members.value.map(({ id }) => id))
 const selectedMemberId = computed(() =>
   scopeStore.get(workspaceId.value, memberIds.value, authUser.value?.uid),
@@ -1767,7 +1767,7 @@ async function prepare(force = false) {
 
 async function persist(nextConfig) {
   try {
-    await whatIfStore.save(workspaceId.value, nextConfig)
+    await whatIfStore.saveStrategy(workspaceId.value, nextConfig)
     return true
   } catch {
     $q.notify({ type: 'negative', message: t('whatIf.errors.save'), position: 'top' })

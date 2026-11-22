@@ -132,16 +132,23 @@ describe('What If calculations', () => {
     ).toEqual({ cash: 0, invest: 80, debt: 20 })
   })
 
-  it('migrates the original single strategy into a saved scenario configuration', () => {
+  it('normalizes a saved scenario configuration', () => {
     const config = normalizeWhatIfConfig({
       discretionaryReductionPercent: 25,
-      expectedAnnualReturnPercent: 6,
-      selectedLiabilityId: 'mortgage-a',
-      strategy: { cash: 10, invest: 70, debt: 20 },
+      activeScenarioId: 'custom',
+      scenarios: [
+        {
+          id: 'custom',
+          name: 'Custom',
+          allocation: { cash: 10, invest: 70, debt: 20 },
+          investmentMix: { stockMarket: { allocation: 100, annualReturnPercent: 6 } },
+          selectedLiabilityId: 'mortgage-a',
+        },
+      ],
     })
 
     expect(config).toMatchObject({
-      activeScenarioId: 'default',
+      activeScenarioId: 'custom',
       scenarios: [
         {
           allocation: { cash: 10, invest: 70, debt: 20 },
@@ -167,12 +174,7 @@ describe('What If calculations', () => {
         },
       ],
     })
-    const legacy = normalizeWhatIfConfig({
-      strategy: { cash: 100, invest: 0, debt: 0 },
-    })
-
     expect(configured.scenarios[0].cashAnnualReturnPercent).toBe(2.5)
-    expect(legacy.scenarios[0]).not.toHaveProperty('cashAnnualReturnPercent')
   })
 
   it('updates automatic Cash returns while preserving manual overrides', () => {

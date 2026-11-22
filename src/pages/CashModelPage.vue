@@ -120,7 +120,6 @@ import CashProjectionChart from '@/components/assets/CashProjectionChart.vue'
 import AppPageHeader from '@/components/layout/AppPageHeader.vue'
 import { projectCashValue } from '../../functions/shared/assets/cash.js'
 import { normalizeAnnualReturnPercent } from '../../functions/shared/core/rates.js'
-import { authUser } from '@/services/auth'
 import { useAssetsStore } from '@/stores/assets-store'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import { formatCurrency } from '@/utils/formatters'
@@ -147,9 +146,7 @@ const asset = computed(
 const workspace = computed(
   () => workspaceStore.workspaces.find(({ id }) => id === workspaceId.value) || null,
 )
-const memberIds = computed(() =>
-  getWorkspaceMembers(workspace.value, authUser.value).map(({ id }) => id),
-)
+const memberIds = computed(() => getWorkspaceMembers(workspace.value).map(({ id }) => id))
 const cashRoute = computed(() => ({
   name: 'asset-category',
   params: { workspaceId: workspaceId.value, category: 'cash' },

@@ -513,7 +513,6 @@ import {
   roundMoneyOrZero,
 } from '../../functions/shared/core/money.js'
 import { currentFinancialYear } from '../../functions/shared/positions/annual-projection.js'
-import { authUser } from '@/services/auth'
 import { useAssetsStore } from '@/stores/assets-store'
 import { useLiabilitiesStore } from '@/stores/liabilities-store'
 import { useExpensesStore } from '@/stores/expenses-store'
@@ -590,9 +589,7 @@ const expenseOptions = computed(() =>
 const workspace = computed(
   () => workspaceStore.workspaces.find(({ id }) => id === workspaceId.value) || null,
 )
-const memberIds = computed(() =>
-  getWorkspaceMembers(workspace.value, authUser.value).map(({ id }) => id),
-)
+const memberIds = computed(() => getWorkspaceMembers(workspace.value).map(({ id }) => id))
 const projection = computed(() => {
   if (!mortgageModel.value) return null
   try {

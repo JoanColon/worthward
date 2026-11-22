@@ -1,60 +1,96 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 
-const { getWhatIfConfig, saveWhatIfConfig } = vi.hoisted(() => ({
+const { getWhatIfConfig, saveWhatIfSimulation, saveWhatIfStrategy } = vi.hoisted(() => ({
   getWhatIfConfig: vi.fn(),
-  saveWhatIfConfig: vi.fn(),
+  saveWhatIfSimulation: vi.fn(),
+  saveWhatIfStrategy: vi.fn(),
 }))
 
 vi.mock('@/services/firebase/what-if.service', () => ({
   getWhatIfConfig,
-  saveWhatIfConfig,
+  saveWhatIfSimulation,
+  saveWhatIfStrategy,
 }))
 
 import { useWhatIfStore } from '../../src/stores/what-if-store'
 
+const config = {
+  discretionaryReductionPercent: 25,
+  extraMonthlySavings: 0,
+  activeScenarioId: 'custom',
+  scenarios: [
+    {
+      id: 'custom',
+      name: 'Custom strategy',
+      allocation: { cash: 20, invest: 60, debt: 20 },
+      investmentMix: { stockMarket: { allocation: 100, annualReturnPercent: 7 } },
+      horizonYears: 20,
+      cashTargetMonths: 12,
+      selectedLiabilityId: null,
+    },
+  ],
+}
+
 describe('What If store', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
-    getWhatIfConfig.mockReset().mockResolvedValue({
-      discretionaryReductionPercent: 25,
-      activeScenarioId: 'default',
-      scenarios: [
-        {
-          id: 'default',
-          name: 'Balanced strategy',
-          allocation: { cash: 20, invest: 60, debt: 20 },
-          investmentMix: {
-            stockMarket: { allocation: 100, annualReturnPercent: 7 },
-          },
-          horizonYears: 20,
-          cashTargetMonths: 12,
-          selectedLiabilityId: null,
-        },
-      ],
-    })
-    saveWhatIfConfig.mockReset().mockImplementation(async (_workspaceId, config) => config)
+    getWhatIfConfig.mockReset().mockResolvedValue(config)
+    saveWhatIfSimulation.mockReset().mockImplementation(async (_workspaceId, value) => value)
+    saveWhatIfStrategy.mockReset().mockImplementation(async (_workspaceId, value) => value)
   })
 
-  it('caches configuration per active workspace', async () => {
+  it('caches the requested configuration per workspace', async () => {
     const store = useWhatIfStore()
     await store.load('workspace-a')
     await store.load('workspace-a')
+
     expect(getWhatIfConfig).toHaveBeenCalledTimes(1)
     expect(store.config.discretionaryReductionPercent).toBe(25)
   })
 
-  it('persists assumptions but not calculated results', async () => {
+  it('loads only Free inputs for the What If simulation page', async () => {
+    const store = useWhatIfStore()
+    await store.load('workspace-a', false, { includeStrategy: false })
+
+    expect(getWhatIfConfig).toHaveBeenCalledWith('workspace-a', { includeStrategy: false })
+  })
+
+  it('persists Free inputs without writing the Pro strategy', async () => {
+    const store = useWhatIfStore()
+    await store.load('workspace-a', false, { includeStrategy: false })
+    await store.saveSimulation('workspace-a', { discretionaryReductionPercent: 50 })
+
+    expect(saveWhatIfSimulation).toHaveBeenCalledWith(
+      'workspace-a',
+      expect.objectContaining({ discretionaryReductionPercent: 50 }),
+    )
+    expect(saveWhatIfStrategy).not.toHaveBeenCalled()
+  })
+
+  it('loads the Pro strategy later if only Free inputs were cached', async () => {
+    const store = useWhatIfStore()
+    await store.load('workspace-a', false, { includeStrategy: false })
+    await store.load('workspace-a')
+
+    expect(getWhatIfConfig).toHaveBeenNthCalledWith(1, 'workspace-a', {
+      includeStrategy: false,
+    })
+    expect(getWhatIfConfig).toHaveBeenNthCalledWith(2, 'workspace-a', {
+      includeStrategy: true,
+    })
+  })
+
+  it('persists strategy inputs but not calculated results', async () => {
     const store = useWhatIfStore()
     await store.load('workspace-a')
     const scenarios = JSON.parse(JSON.stringify(store.config.scenarios))
     scenarios[0].investmentMix.stockMarket.annualReturnPercent = 6
-    await store.save('workspace-a', { scenarios })
+    await store.saveStrategy('workspace-a', { scenarios })
 
-    expect(saveWhatIfConfig).toHaveBeenCalledWith(
+    expect(saveWhatIfStrategy).toHaveBeenCalledWith(
       'workspace-a',
       expect.objectContaining({
-        discretionaryReductionPercent: 25,
         scenarios: expect.arrayContaining([
           expect.objectContaining({
             investmentMix: expect.objectContaining({
@@ -64,6 +100,6 @@ describe('What If store', () => {
         ]),
       }),
     )
-    expect(saveWhatIfConfig.mock.calls[0][1]).not.toHaveProperty('results')
+    expect(saveWhatIfStrategy.mock.calls[0][1]).not.toHaveProperty('results')
   })
 })

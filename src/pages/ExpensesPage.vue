@@ -34,13 +34,9 @@
         >
           <template #actions>
             <nav class="context-actions header-actions" :aria-label="t('expenses.overview.tools')">
-              <router-link :to="trackerRoute">
+              <router-link :to="trackerRoute" class="tracker-chip">
                 <q-icon name="receipt_long" />
-                <span
-                  ><strong>{{ t('expenses.overview.tracker') }}</strong
-                  ><small>{{ t('expenses.overview.trackerDescription') }}</small></span
-                >
-                <q-icon name="chevron_right" />
+                <strong>{{ t('expenses.overview.tracker') }}</strong>
               </router-link>
             </nav>
           </template>
@@ -61,10 +57,20 @@
         />
 
         <section class="category-list" :aria-label="t('expenses.enabledCategories')">
+          <div class="mobile-table-period">
+            <AppPeriodSwitch
+              v-model="tablePeriod"
+              variant="light"
+              size="small"
+              :options="tablePeriodOptions"
+              :aria-label="t('dashboard.costOfLife.period')"
+            />
+          </div>
           <div class="category-table-heading" aria-hidden="true">
             <span>{{ t('expenses.overview.category') }}</span>
-            <span>{{ t('expenses.overview.annualAmount') }}</span>
-            <span>{{ t('expenses.overview.monthlyAmount') }}</span>
+            <span class="annual-heading">{{ t('expenses.overview.annualAmount') }}</span>
+            <span class="monthly-heading">{{ t('expenses.overview.monthlyAmount') }}</span>
+            <span class="mobile-amount-heading">{{ tableAmountHeading }}</span>
           </div>
           <div class="category-rows">
             <div
@@ -86,9 +92,9 @@
               </div>
 
               <SimpleValueEditor
-                :value="categoryAnnualValue(category.id)"
-                :formatted-value="formatCurrency(categoryAnnualValue(category.id))"
-                :formatted-period="t('dashboard.year')"
+                :value="categoryTableValue(category.id)"
+                :formatted-value="formatCurrency(categoryTableValue(category.id))"
+                :formatted-period="t(tablePeriodKey)"
                 :saving="isCategorySaving(category.id)"
                 :disabled="!canQuickEdit(category.id)"
                 :aria-label="
@@ -206,6 +212,7 @@ import FinancialOverviewCard from '@/components/financial/FinancialOverviewCard.
 import SimpleValueEditor from '@/components/financial/SimpleValueEditor.vue'
 import AppPageHeader from '@/components/layout/AppPageHeader.vue'
 import AppConfirmDialog from '@/components/ui/AppConfirmDialog.vue'
+import AppPeriodSwitch from '@/components/ui/AppPeriodSwitch.vue'
 import { expenseCategories } from '@/config/expense-categories'
 import { CHART_COLORS, CHART_SERIES_COLORS } from '@/config/chart-theme'
 import {
@@ -242,7 +249,22 @@ const confirmDisable = ref(false)
 const pendingSelection = ref(null)
 const deleteDialog = ref(false)
 const deletingCategory = ref(null)
+const tablePeriod = ref('annual')
 const currentYear = currentFinancialYear()
+const tablePeriodOptions = computed(() => [
+  { label: t('dashboard.costOfLife.annual'), value: 'annual' },
+  { label: t('dashboard.costOfLife.monthly'), value: 'monthly' },
+])
+const compactTable = computed(() => $q.screen.width <= 749)
+const activeTablePeriod = computed(() => (compactTable.value ? tablePeriod.value : 'annual'))
+const tablePeriodKey = computed(() =>
+  activeTablePeriod.value === 'monthly' ? 'dashboard.month' : 'dashboard.year',
+)
+const tableAmountHeading = computed(() =>
+  activeTablePeriod.value === 'monthly'
+    ? t('expenses.overview.monthlyAmount')
+    : t('expenses.overview.annualAmount'),
+)
 
 const workspaceId = computed(() => String(route.params.workspaceId))
 const workspaceHomeRoute = computed(() => ({
@@ -257,7 +279,7 @@ const trackerRoute = computed(() => ({
 const workspace = computed(
   () => workspaceStore.workspaces.find((item) => item.id === workspaceId.value) || null,
 )
-const members = computed(() => getWorkspaceMembers(workspace.value, authUser.value))
+const members = computed(() => getWorkspaceMembers(workspace.value))
 const memberIds = computed(() => members.value.map((member) => member.id))
 const selectedMemberId = computed({
   get: () => scopeStore.get(workspaceId.value, memberIds.value, authUser.value?.uid),
@@ -365,6 +387,11 @@ function categoryAnnualValue(categoryId) {
   )
 }
 
+function categoryTableValue(categoryId) {
+  const annualValue = categoryAnnualValue(categoryId)
+  return activeTablePeriod.value === 'monthly' ? annualValue / 12 : annualValue
+}
+
 function categoryStatus(categoryId) {
   if (simpleExpense(categoryId)) return t('expenses.simpleTotal')
   const subcategories =
@@ -399,7 +426,7 @@ function isCategorySaving(categoryId) {
 async function saveSimpleExpense(category, displayedValue) {
   if (isCategorySaving(category.id) || !canQuickEdit(category.id)) return
 
-  const annualValue = displayedValue
+  const annualValue = activeTablePeriod.value === 'monthly' ? displayedValue * 12 : displayedValue
   const existing = simpleExpense(category.id)
   const defaultSubcategory = category.suggestions[0]
   const payload = {
@@ -597,6 +624,11 @@ async function runSaving(operation) {
 @include financial-context-actions;
 @include financial-overview-list(minmax(13rem, 1fr) 10rem 9rem 5rem);
 
+.mobile-table-period,
+.mobile-amount-heading {
+  display: none;
+}
+
 .category-monthly {
   display: grid;
   justify-items: end;
@@ -628,8 +660,28 @@ async function runSaving(operation) {
 }
 
 @media (max-width: bp.$overview-stack-max) {
-  .header-actions {
+  .mobile-table-period {
+    display: flex;
+    justify-content: flex-end;
+    padding: 0.55rem 0.65rem 0;
+  }
+
+  .mobile-table-period :deep(.app-period-switch) {
+    --app-period-option-min-width: 4.5rem;
+  }
+
+  .category-table-heading {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+  }
+
+  .annual-heading,
+  .monthly-heading {
     display: none;
+  }
+
+  .mobile-amount-heading {
+    display: inline;
+    grid-column: 2;
   }
 
   .category-monthly {

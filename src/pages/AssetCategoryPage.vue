@@ -211,7 +211,7 @@ const categoryConfig = computed(() => assetsStore.config?.categories?.[categoryI
 const workspace = computed(
   () => workspaceStore.workspaces.find((candidate) => candidate.id === workspaceId.value) || null,
 )
-const members = computed(() => getWorkspaceMembers(workspace.value, authUser.value))
+const members = computed(() => getWorkspaceMembers(workspace.value))
 const memberIds = computed(() => members.value.map((member) => member.id))
 const selectedMemberId = computed({
   get: () => scopeStore.get(workspaceId.value, memberIds.value, authUser.value?.uid),

@@ -1,80 +1,208 @@
 <template>
   <DashboardCard
     class="plan-summary-card"
-    :title="t('dashboard.planSummary.title')"
-    :subtitle="t('dashboard.planSummary.subtitle')"
-    icon="track_changes"
-    icon-tone="blue"
+    :title="activeCard.title"
+    :subtitle="activeCard.subtitle"
+    :icon="activeCard.icon"
+    :icon-tone="activeCard.iconTone"
   >
-    <div v-if="data.state === 'strategy'" class="plan-result strategy-plan-result">
-      <div class="strategy-context">
-        <div class="strategy-summary">
-          <strong>{{ data.name }}</strong>
-          <span>
-            {{
-              t('dashboard.planSummary.allocatedMonthly', {
-                amount: formatCurrency(data.monthlyAmount),
-              })
-            }}
+    <template #action>
+      <div
+        class="summary-switch"
+        role="group"
+        :aria-label="t('dashboard.summaryCarousel.navigationLabel')"
+      >
+        <button
+          v-for="item in slides"
+          :key="item.name"
+          type="button"
+          :class="{ active: activeSlide === item.name }"
+          :aria-pressed="activeSlide === item.name"
+          @click="activeSlide = item.name"
+        >
+          {{ item.label }}
+        </button>
+      </div>
+    </template>
+
+    <q-carousel
+      v-model="activeSlide"
+      class="summary-carousel"
+      animated
+      swipeable
+      transition-prev="slide-right"
+      transition-next="slide-left"
+    >
+      <q-carousel-slide name="plan" class="summary-slide">
+        <div v-if="data.state === 'strategy'" class="plan-result strategy-plan-result">
+          <div class="strategy-context">
+            <div class="strategy-summary">
+              <strong>{{ data.name }}</strong>
+              <span>
+                {{
+                  t('dashboard.planSummary.allocatedMonthly', {
+                    amount: formatCurrency(data.monthlyAmount),
+                  })
+                }}
+              </span>
+            </div>
+          </div>
+          <ul class="strategy-outcomes" :aria-label="t('plan.outcomes.label')">
+            <li v-for="outcome in data.outcomes" :key="outcome.id" :class="outcome.id">
+              <span><i aria-hidden="true" />{{ outcome.label }}</span>
+              <strong>{{ outcome.result }}</strong>
+            </li>
+          </ul>
+        </div>
+
+        <div v-else-if="data.state === 'what-if'" class="plan-result">
+          <span class="result-label">{{ t('dashboard.planSummary.whatIfLabel') }}</span>
+          <strong class="result-value">{{ formatCurrency(data.monthlyAmount) }}</strong>
+          <span class="primary-result">
+            {{ t('dashboard.planSummary.extraSavingsGenerated') }}
+          </span>
+          <span class="secondary-result positive">
+            {{ t('dashboard.planSummary.comparedWithToday') }}
           </span>
         </div>
-      </div>
-      <ul class="strategy-outcomes" :aria-label="t('plan.outcomes.label')">
-        <li v-for="outcome in data.outcomes" :key="outcome.id" :class="outcome.id">
-          <span><i aria-hidden="true" />{{ outcome.label }}</span>
-          <strong>{{ outcome.result }}</strong>
-        </li>
-      </ul>
-    </div>
 
-    <div v-else-if="data.state === 'what-if'" class="plan-result">
-      <span class="result-label">{{ t('dashboard.planSummary.whatIfLabel') }}</span>
-      <strong class="result-value">{{ formatCurrency(data.monthlyAmount) }}</strong>
-      <span class="primary-result">
-        {{ t('dashboard.planSummary.extraSavingsGenerated') }}
-      </span>
-      <span class="secondary-result positive">
-        {{ t('dashboard.planSummary.comparedWithToday') }}
-      </span>
-    </div>
+        <div v-else class="plan-empty">
+          <span class="empty-icon"><q-icon name="insights" /></span>
+          <strong>{{ t('dashboard.planSummary.emptyTitle') }}</strong>
+          <p>{{ t('dashboard.planSummary.emptyDescription') }}</p>
+        </div>
 
-    <div v-else class="plan-empty">
-      <span class="empty-icon"><q-icon name="insights" /></span>
-      <strong>{{ t('dashboard.planSummary.emptyTitle') }}</strong>
-      <p>{{ t('dashboard.planSummary.emptyDescription') }}</p>
-    </div>
+        <router-link class="summary-action" :to="data.state === 'empty' ? setupRoute : planRoute">
+          <span>
+            {{
+              data.state === 'empty'
+                ? t('dashboard.planSummary.addData')
+                : t('dashboard.planSummary.action')
+            }}
+          </span>
+          <q-icon name="arrow_forward" />
+        </router-link>
+      </q-carousel-slide>
 
-    <router-link class="plan-action" :to="data.state === 'empty' ? setupRoute : planRoute">
-      <span>
-        {{
-          data.state === 'empty'
-            ? t('dashboard.planSummary.addData')
-            : t('dashboard.planSummary.action')
-        }}
-      </span>
-      <q-icon name="arrow_forward" />
-    </router-link>
+      <q-carousel-slide name="progress" class="summary-slide">
+        <div class="progress-metrics">
+          <article
+            v-for="metric in progressData"
+            :key="metric.id"
+            class="progress-metric"
+            :class="metric.tone"
+          >
+            <span class="progress-metric-icon"><q-icon :name="metric.icon" /></span>
+            <span class="progress-metric-copy">
+              <small>{{ metric.label }}</small>
+              <strong :class="{ negative: metric.negative }">{{ metric.value }}</strong>
+            </span>
+          </article>
+        </div>
+
+        <router-link class="summary-action" :to="progressRoute">
+          <span>{{ t('dashboard.progressSummary.action') }}</span>
+          <q-icon name="arrow_forward" />
+        </router-link>
+      </q-carousel-slide>
+    </q-carousel>
   </DashboardCard>
 </template>
 
 <script setup>
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import DashboardCard from './DashboardCard.vue'
 import { formatCurrency } from '@/utils/formatters'
 
 defineProps({
   data: { type: Object, required: true },
+  progressData: { type: Array, required: true },
   planRoute: { type: Object, required: true },
+  progressRoute: { type: Object, required: true },
   setupRoute: { type: Object, required: true },
 })
 
 const { t } = useI18n()
+const activeSlide = ref('plan')
+const slides = computed(() => [
+  { name: 'plan', label: t('dashboard.planSummary.title') },
+  { name: 'progress', label: t('progress.title') },
+])
+const activeCard = computed(() =>
+  activeSlide.value === 'progress'
+    ? {
+        title: t('progress.title'),
+        subtitle: t('dashboard.progressSummary.subtitle'),
+        icon: 'trending_up',
+        iconTone: 'purple',
+      }
+    : {
+        title: t('dashboard.planSummary.title'),
+        subtitle: t('dashboard.planSummary.subtitle'),
+        icon: 'track_changes',
+        iconTone: 'blue',
+      },
+)
 </script>
 
 <style lang="scss">
 .plan-summary-card {
   display: flex;
   flex-direction: column;
+
+  .summary-switch {
+    display: inline-flex;
+    padding: 0.18rem;
+    border: 1px solid var(--color-line-strong);
+    border-radius: 999px;
+    background: var(--color-surface-soft);
+  }
+
+  .summary-switch button {
+    appearance: none;
+    min-height: 1.85rem;
+    padding: 0.25rem 0.65rem;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--color-copy);
+    font: inherit;
+    font-size: 0.72rem;
+    font-weight: var(--font-weight-semibold);
+    cursor: pointer;
+  }
+
+  .summary-switch button.active {
+    background: var(--color-ink);
+    color: var(--color-inverse);
+    box-shadow: var(--shadow-control);
+  }
+
+  .summary-switch button:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+
+  .card-icon .q-icon {
+    display: grid;
+    place-items: center;
+    width: 100%;
+    height: 100%;
+    line-height: 1;
+  }
+
+  .summary-carousel {
+    flex: 1;
+    height: 15rem;
+    background: transparent;
+  }
+
+  .summary-slide {
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+  }
 
   .plan-result,
   .plan-empty {
@@ -241,7 +369,7 @@ const { t } = useI18n()
     font-size: 0.85rem;
   }
 
-  .plan-action {
+  .summary-action {
     display: inline-flex;
     align-items: center;
     align-self: flex-end;
@@ -254,18 +382,109 @@ const { t } = useI18n()
     text-decoration: none;
   }
 
-  .plan-action:hover {
+  .summary-action:hover {
     text-decoration: underline;
   }
 
-  .plan-action:focus-visible {
+  .summary-action:focus-visible {
     border-radius: 0.2rem;
     outline: 2px solid var(--color-primary);
     outline-offset: 3px;
   }
 
+  .progress-metrics {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    flex: 1;
+    gap: 0.55rem;
+  }
+
+  .progress-metric {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    min-width: 0;
+    min-height: 5rem;
+    padding: 0.65rem;
+    border-radius: var(--radius-sm);
+    background: var(--color-surface-soft);
+  }
+
+  .progress-metric.green {
+    background: color-mix(in srgb, var(--color-green-soft) 72%, var(--color-surface));
+  }
+
+  .progress-metric.warning {
+    background: color-mix(in srgb, var(--color-warning-soft) 68%, var(--color-surface));
+  }
+
+  .progress-metric.purple {
+    background: color-mix(in srgb, var(--color-purple-soft) 68%, var(--color-surface));
+  }
+
+  .progress-metric.blue {
+    background: color-mix(in srgb, var(--color-blue-soft) 72%, var(--color-surface));
+  }
+
+  .progress-metric-icon {
+    display: grid;
+    place-items: center;
+    flex: 0 0 2rem;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    background: var(--color-surface-raised);
+    color: var(--color-primary);
+    font-size: 1rem;
+  }
+
+  .progress-metric.green .progress-metric-icon {
+    color: var(--color-success-dark);
+  }
+
+  .progress-metric.warning .progress-metric-icon {
+    color: var(--color-warning-dark);
+  }
+
+  .progress-metric.purple .progress-metric-icon {
+    color: var(--color-purple);
+  }
+
+  .progress-metric-copy {
+    display: grid;
+    min-width: 0;
+  }
+
+  .progress-metric-copy small {
+    color: var(--color-copy);
+    font-size: 0.7rem;
+    line-height: 1.2;
+  }
+
+  .progress-metric-copy strong {
+    overflow: hidden;
+    margin-top: 0.15rem;
+    color: var(--color-ink);
+    font-size: clamp(0.95rem, 2.2vw, 1.2rem);
+    line-height: 1.1;
+    letter-spacing: -0.025em;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .progress-metric-copy strong.negative {
+    color: var(--color-danger);
+  }
+
   @media (min-width: 1024px) {
+    box-sizing: border-box;
+    height: 24rem;
     padding-bottom: 0.75rem;
+
+    .summary-carousel {
+      min-height: 0;
+      height: auto;
+    }
 
     .card-header {
       margin-bottom: 0.65rem;
@@ -359,7 +578,7 @@ const { t } = useI18n()
       font-size: 1.25rem;
     }
 
-    .plan-action {
+    .summary-action {
       margin-top: auto;
       min-height: 1.25rem;
       padding-top: 0.45rem;

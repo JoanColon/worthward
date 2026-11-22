@@ -59,6 +59,19 @@
         <q-item
           v-ripple
           clickable
+          :to="{ name: 'account' }"
+          exact
+          active-class="active-nav-item"
+          @click="closeMobileDrawer"
+        >
+          <q-item-section avatar><q-icon name="manage_accounts" /></q-item-section>
+          <q-item-section>{{ t('navigation.account') }}</q-item-section>
+        </q-item>
+
+        <q-item
+          v-if="canCreateWorkspace"
+          v-ripple
+          clickable
           :to="{ name: 'create-workspace' }"
           exact
           active-class="active-nav-item"
@@ -145,10 +158,9 @@
           @click="loadWorkspaces(true)"
         />
       </div>
-      <router-view
-        v-else-if="workspaceStore.ready"
-        :key="`${route.fullPath}:${financialPeriodKey}`"
-      />
+      <ProFeatureGate v-else-if="workspaceStore.ready" :locked="proFeatureLocked">
+        <router-view :key="`${route.fullPath}:${financialPeriodKey}`" />
+      </ProFeatureGate>
     </q-page-container>
 
     <q-footer v-if="showMobileNavigation" class="mobile-footer">
@@ -164,13 +176,16 @@ import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import MemberScopeSelector from '@/components/dashboard/MemberScopeSelector.vue'
 import MobileBottomNav from '@/components/dashboard/MobileBottomNav.vue'
+import ProFeatureGate from '@/components/layout/ProFeatureGate.vue'
 import { BRAND } from '@/config/brand'
 import {
   currentFinancialDate,
   currentFinancialYear,
 } from '../../functions/shared/positions/annual-projection.js'
 import { authUser, signOut } from '@/services/auth'
+import { resolveWorkspaceHasPro } from '@/domain/access/workspace-entitlements'
 import { hideNativeSplashWhenReady } from '@/services/splash-screen'
+import { restoreAnnualSubscription } from '@/services/google-play-subscriptions'
 import { syncWorkspaceInvestmentPortfolios } from '@/services/firebase/investment-portfolios.service'
 import { useAssetsStore } from '@/stores/assets-store'
 import { useExpensesStore } from '@/stores/expenses-store'
@@ -209,10 +224,20 @@ const loggingOut = ref(false)
 const financialPeriodKey = ref(currentPeriodKey())
 const expandedNavigationNodes = ref(['your-money'])
 let periodTimer = null
+let workspaceSyncId = 0
 const portfolioSyncStarted = new Set()
 const activeWorkspaceId = computed(() => workspaceStore.activeWorkspaceId)
 const activeWorkspace = computed(() => workspaceStore.activeWorkspace)
-const members = computed(() => getWorkspaceMembers(activeWorkspace.value, authUser.value))
+const ownedWorkspaceCount = computed(
+  () =>
+    workspaceStore.workspaces.filter(
+      (workspace) => workspace.members?.[authUser.value?.uid]?.role === 'owner',
+    ).length,
+)
+const canCreateWorkspace = computed(
+  () => entitlementsStore.entitlements.isPro || ownedWorkspaceCount.value === 0,
+)
+const members = computed(() => getWorkspaceMembers(activeWorkspace.value))
 const memberIds = computed(() => members.value.map(({ id }) => id))
 const selectedMemberId = computed({
   get: () => scopeStore.get(activeWorkspaceId.value, memberIds.value, authUser.value?.uid),
@@ -226,6 +251,10 @@ const routeWorkspaceId = computed(() => {
     ? workspaceId
     : null
 })
+const workspaceHasPro = computed(() => resolveWorkspaceHasPro(activeWorkspace.value))
+const proFeatureLocked = computed(() =>
+  Boolean(route.meta.requiresPro && routeWorkspaceId.value && !workspaceHasPro.value),
+)
 const showMobileNavigation = computed(() => $q.screen.lt.md && Boolean(routeWorkspaceId.value))
 const activeNavigationNode = computed(() => {
   const routeNodes = {
@@ -283,6 +312,7 @@ onMounted(async () => {
   }
 
   entitlementsStore.start(authUser.value.uid)
+  void revalidateNativeSubscription()
   await loadWorkspaces()
   await finishNativeStartup()
 })
@@ -318,6 +348,7 @@ async function handleAuthChange(user, previousUser) {
   if (previousUser?.uid !== user.uid) {
     if (previousUser?.uid) resetApplicationState()
     entitlementsStore.start(user.uid)
+    void revalidateNativeSubscription()
     await loadWorkspaces()
   }
 }
@@ -417,21 +448,37 @@ function refreshFinancialPeriod() {
 }
 
 async function synchronizeWorkspace(workspaceId) {
-  if (!workspaceId || !authUser.value) return
-  const portfolioSync = syncPortfoliosOnOpen(workspaceId)
+  if (!workspaceId || !authUser.value) {
+    return
+  }
+  const syncId = ++workspaceSyncId
+  const portfolioSync = workspaceHasPro.value ? syncPortfoliosOnOpen(workspaceId) : null
+
   try {
     await financialYearsStore.load(workspaceId, currentFinancialYear())
-    const result = await portfolioSync
-    for (const portfolio of result?.results || []) {
-      assetsStore.applyInvestmentPortfolioSync(portfolio.assetId, portfolio)
-    }
+    if (!workspaceSyncIsCurrent(workspaceId, syncId)) return
     await Promise.all([
       assetsStore.refreshLoadedCategories(workspaceId),
       liabilitiesStore.refreshLoadedCategories(workspaceId),
     ])
+    if (!workspaceSyncIsCurrent(workspaceId, syncId)) return
+    if (portfolioSync) void applyPortfolioSync(workspaceId, syncId, portfolioSync)
   } catch {
     // The destination page exposes the financial-year error and retry action.
   }
+}
+
+async function applyPortfolioSync(workspaceId, syncId, portfolioSync) {
+  const result = await portfolioSync
+  if (!workspaceSyncIsCurrent(workspaceId, syncId)) return
+  for (const portfolio of result?.results || []) {
+    assetsStore.applyInvestmentPortfolioSync(portfolio.assetId, portfolio)
+  }
+  await assetsStore.refreshLoadedCategories(workspaceId)
+}
+
+function workspaceSyncIsCurrent(workspaceId, syncId) {
+  return syncId === workspaceSyncId && activeWorkspaceId.value === workspaceId
 }
 
 async function syncPortfoliosOnOpen(workspaceId) {
@@ -450,6 +497,15 @@ async function syncPortfoliosOnOpen(workspaceId) {
 function revalidateMilestonesOnResume() {
   if (document.visibilityState !== 'visible' || !authUser.value) return
   milestonesStore.revalidateAchievements()
+}
+
+async function revalidateNativeSubscription() {
+  if (!$q.platform.is.capacitor || !$q.platform.is.android) return
+  try {
+    await restoreAnnualSubscription()
+  } catch {
+    // Scheduled server reconciliation remains authoritative if Google Play is unavailable.
+  }
 }
 
 function currentPeriodKey() {

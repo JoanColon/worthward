@@ -8,6 +8,7 @@ import { calculateAnniversaryRealEstateValuation } from '../../shared/assets/rea
 import { normalizeAnnualReturnPercent } from '../../shared/core/rates.js'
 import { roundMoneyOrZero } from '../../shared/core/money.js'
 import { calculateFrenchMortgagePaymentStep } from '../../shared/liabilities/mortgage.js'
+import { workspaceEntitlementIsPro } from '../../shared/billing/entitlements.js'
 import { currentMonth, currentYear, positionStartMonth } from '../financial-years/service.js'
 
 const MONTHS = [
@@ -177,6 +178,7 @@ async function mutateFinancialModel(
     const existingItems = documents(itemsSnapshot)
     const relatedLiabilities = documents(relatedLiabilitiesSnapshot)
     const existingItem = itemId ? existingItems.find(({ id }) => id === itemId) : null
+    assertAdvancedModelAccess(workspace, { item, relations })
     let nextItems = existingItems
     let syncedExpenses = null
     let pendingItemData = null
@@ -725,8 +727,7 @@ function assertMortgageManagedRelationship(section, previous, candidate) {
   if (!previous && candidate?.[linkField] != null) {
     throw new Error('Mortgage relationships must be managed from the mortgage model')
   }
-  // Legacy unlinked items may not have the relationship field at all. Treat a
-  // missing field and an explicit null as the same unlinked state.
+  // Missing and explicit null both represent an unlinked optional relationship.
   if (previous && (previous[linkField] ?? null) !== (candidate?.[linkField] ?? null)) {
     throw new Error('Mortgage relationships must be managed from the mortgage model')
   }
@@ -1067,6 +1068,19 @@ function assertWorkspaceAccess(snapshot, userId) {
     throw new Error('Workspace membership is required')
   }
   return workspace
+}
+
+/** Keeps premium model authorization inside the transaction that applies the mutation. */
+function assertAdvancedModelAccess(workspace, { item, relations }) {
+  const detail = item?.detail
+  const hasModelDetail =
+    detail &&
+    typeof detail === 'object' &&
+    !Array.isArray(detail) &&
+    Object.values(detail).some((value) => value != null)
+  if ((hasModelDetail || relations != null) && !workspaceEntitlementIsPro(workspace.entitlement)) {
+    throw new Error('Your plan does not allow this workspace operation')
+  }
 }
 
 /**

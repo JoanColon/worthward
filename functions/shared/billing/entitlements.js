@@ -60,17 +60,23 @@ export function normalizeSubscription(value) {
 }
 
 /** Resolves account-level capabilities without depending on a billing provider. */
-export function resolveUserEntitlements(value, { ownedWorkspaceCount = 0 } = {}) {
+export function resolveUserEntitlements(
+  value,
+  { ownedWorkspaceCount = 0, now = Date.now() } = {},
+) {
   const subscription = normalizeSubscription(value)
   const isPro =
-    subscription.plan === SUBSCRIPTION_PLANS.PRO && subscription.entitlementActive === true
+    subscription.plan === SUBSCRIPTION_PLANS.PRO &&
+    subscription.entitlementActive === true &&
+    timestampMillis(subscription.currentPeriodEndsAt) > Number(now)
   const normalizedWorkspaceCount = Math.max(0, Number(ownedWorkspaceCount) || 0)
 
   return {
     tier: isPro ? SUBSCRIPTION_PLANS.PRO : SUBSCRIPTION_PLANS.FREE,
     isPro,
-    canUsePlan: isPro,
-    canUseWhatIf: isPro,
+    canUsePlan: true,
+    canUseWhatIf: true,
+    canUseStrategy: isPro,
     canUseAdvancedModels: isPro,
     canCreateWorkspace: isPro || normalizedWorkspaceCount < 1,
     canCreateAdditionalWorkspace: isPro,
@@ -80,26 +86,49 @@ export function resolveUserEntitlements(value, { ownedWorkspaceCount = 0 } = {})
   }
 }
 
-/** Guests inherit the owner's effective tier inside a workspace. */
+function timestampMillis(value) {
+  if (value?.toMillis) return value.toMillis()
+  if (value instanceof Date) return value.getTime()
+  const timestamp = new Date(value || 0).getTime()
+  return Number.isFinite(timestamp) ? timestamp : 0
+}
+
+/** Creates the minimal owner-entitlement projection stored on each workspace. */
+export function workspaceEntitlementProjection(value, { now = Date.now() } = {}) {
+  const subscription = normalizeSubscription(value)
+  const isPro = resolveUserEntitlements(subscription, { now }).isPro
+  return {
+    tier: isPro ? SUBSCRIPTION_PLANS.PRO : SUBSCRIPTION_PLANS.FREE,
+    expiresAt: isPro ? subscription.currentPeriodEndsAt : null,
+  }
+}
+
+/** Resolves whether a stored workspace entitlement is still active. */
+export function workspaceEntitlementIsPro(value, { now = Date.now() } = {}) {
+  return (
+    value?.tier === SUBSCRIPTION_PLANS.PRO && timestampMillis(value.expiresAt) > Number(now)
+  )
+}
+
+/** Guests inherit the owner's effective tier stored on the workspace. */
 export function resolveWorkspaceEntitlements({
-  ownerSubscription,
+  workspaceEntitlement,
   isMember = false,
   isOwner = false,
-  isPrimaryWorkspace = false,
-  isSharedWorkspace = false,
+  now = Date.now(),
 } = {}) {
-  const ownerEntitlements = resolveUserEntitlements(ownerSubscription)
-  const workspaceIsPro = ownerEntitlements.isPro
-  const freeWorkspaceIsEditable = isOwner && isPrimaryWorkspace && !isSharedWorkspace
+  const workspaceIsPro = workspaceEntitlementIsPro(workspaceEntitlement, { now })
 
   return {
     tier: workspaceIsPro ? SUBSCRIPTION_PLANS.PRO : SUBSCRIPTION_PLANS.FREE,
+    isPro: workspaceIsPro,
     isMember,
     isOwner,
     canRead: isMember,
-    canWrite: isMember && (workspaceIsPro || freeWorkspaceIsEditable),
-    canUsePlan: isMember && workspaceIsPro,
-    canUseWhatIf: isMember && workspaceIsPro,
+    canWrite: isMember,
+    canUsePlan: isMember,
+    canUseWhatIf: isMember,
+    canUseStrategy: isMember && workspaceIsPro,
     canUseAdvancedModels: isMember && workspaceIsPro,
     canInviteMembers: isOwner && workspaceIsPro,
     maximumWorkspaceMembers: workspaceIsPro ? 5 : 1,

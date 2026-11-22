@@ -2,10 +2,8 @@
 import { getFirestore } from 'firebase-admin/firestore'
 import { HttpsError, onCall } from 'firebase-functions/https'
 import * as logger from 'firebase-functions/logger'
-import { google } from 'googleapis'
 import { verifyGooglePlaySubscription as verifyGooglePlaySubscriptionData } from './service.js'
-
-let publisherPromise = null
+import { getAndroidPublisher } from './publisher.js'
 
 const verifyGooglePlaySubscription = onCall({ region: 'europe-west1' }, async (request) => {
   if (!request.auth) throw new HttpsError('unauthenticated', 'Authentication is required')
@@ -29,18 +27,6 @@ const verifyGooglePlaySubscription = onCall({ region: 'europe-west1' }, async (r
     )
   }
 })
-
-async function getAndroidPublisher() {
-  publisherPromise ||= createAndroidPublisher()
-  return publisherPromise
-}
-
-async function createAndroidPublisher() {
-  const auth = new google.auth.GoogleAuth({
-    scopes: ['https://www.googleapis.com/auth/androidpublisher'],
-  })
-  return google.androidpublisher({ version: 'v3', auth: await auth.getClient() })
-}
 
 function callableErrorCode(code) {
   const supportedCodes = new Set([

@@ -1,4 +1,4 @@
-import { collection, doc, getDocs, query, serverTimestamp, where, setDoc } from 'firebase/firestore'
+import { collection, getDocs, query, where } from 'firebase/firestore'
 import { httpsCallable } from 'firebase/functions'
 import { auth, db, functions } from '@/firebase/firebase'
 
@@ -18,48 +18,8 @@ export async function getUserWorkspaces() {
 }
 
 export async function createWorkspace({ name }) {
-  const user = auth.currentUser
-  if (!user) throw new Error('Authentication is required')
-  const workspaceRef = doc(collection(db, 'workspaces'))
-  const displayName = user.displayName || user.email || ''
-
-  await setDoc(workspaceRef, {
-    name: name.trim(),
-    type: 'personal',
-    createdBy: user.uid,
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp(),
-    milestoneTracking: {
-      status: 'setup',
-    },
-    currency: 'EUR',
-    memberIds: [user.uid],
-    members: {
-      [user.uid]: {
-        displayName,
-        role: 'owner',
-        joinedAt: serverTimestamp(),
-      },
-    },
-  })
-
-  return {
-    id: workspaceRef.id,
-    name: name.trim(),
-    type: 'personal',
-    createdBy: user.uid,
-    milestoneTracking: {
-      status: 'setup',
-    },
-    currency: 'EUR',
-    memberIds: [user.uid],
-    members: {
-      [user.uid]: {
-        displayName,
-        role: 'owner',
-      },
-    },
-  }
+  const result = await httpsCallable(functions, 'createWorkspace')({ name })
+  return result.data
 }
 
 export async function deleteWorkspace(workspaceId) {

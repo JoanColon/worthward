@@ -35,13 +35,9 @@
           </template>
           <template #actions>
             <nav class="context-actions header-actions" :aria-label="t('expenses.overview.tools')">
-              <router-link :to="trackerRoute">
+              <router-link :to="trackerRoute" class="tracker-chip">
                 <q-icon name="receipt_long" />
-                <span
-                  ><strong>{{ t('expenses.overview.tracker') }}</strong
-                  ><small>{{ t('expenses.overview.trackerDescription') }}</small></span
-                >
-                <q-icon name="chevron_right" />
+                <strong>{{ t('expenses.overview.tracker') }}</strong>
               </router-link>
             </nav>
           </template>
@@ -424,7 +420,7 @@ const categoryConfig = computed(() => expensesStore.config?.categories?.[categor
 const workspace = computed(
   () => workspaceStore.workspaces.find((item) => item.id === workspaceId.value) || null,
 )
-const members = computed(() => getWorkspaceMembers(workspace.value, authUser.value))
+const members = computed(() => getWorkspaceMembers(workspace.value))
 const memberIds = computed(() => members.value.map((member) => member.id))
 const selectedMemberId = computed({
   get: () => scopeStore.get(workspaceId.value, memberIds.value, authUser.value?.uid),
@@ -1139,6 +1135,16 @@ async function persist(operation) {
     gap: 0.45rem;
     min-height: 4rem;
     padding: 0.5rem 0.55rem;
+  }
+
+  .detail-table-heading {
+    grid-template-columns: minmax(0, 1fr) auto auto auto;
+    gap: 0.45rem;
+    padding: 0.55rem;
+  }
+
+  .detail-table-heading span:nth-child(3) {
+    display: none;
   }
 
   .subcategory-monthly,
