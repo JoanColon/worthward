@@ -23,33 +23,24 @@
       <template v-else>
         <ExpensesSectionNav :workspace-id="activeWorkspaceId" :active="tab">
           <template #header="{ openInfo }">
-            <header class="tracker-header">
-              <div class="tracker-heading">
+            <AppPageHeader
+              :title="t('expenseTracker.title')"
+              :back-label="t('expenseTracker.backToExpenses')"
+              :back-to="expensesRoute"
+            >
+              <template #title-action>
                 <q-btn
                   flat
+                  round
                   dense
-                  no-caps
-                  color="grey-7"
-                  icon="arrow_back"
-                  :label="t('expenseTracker.backToExpenses')"
-                  :to="expensesRoute"
-                  class="back-button"
+                  icon="info_outline"
+                  color="primary"
+                  class="expenses-title-info"
+                  :aria-label="t('expenses.views.info.action')"
+                  @click="openInfo"
                 />
-                <div class="tracker-title-row">
-                  <h1>{{ t('expenseTracker.title') }}</h1>
-                  <q-btn
-                    flat
-                    round
-                    dense
-                    icon="info_outline"
-                    color="primary"
-                    class="expenses-title-info"
-                    :aria-label="t('expenses.views.info.action')"
-                    @click="openInfo"
-                  />
-                </div>
-              </div>
-            </header>
+              </template>
+            </AppPageHeader>
           </template>
         </ExpensesSectionNav>
 
@@ -164,6 +155,7 @@ import ExpenseTrackingEntryDialog from '@/components/expenses/ExpenseTrackingEnt
 import ExpenseTrackingPanel from '@/components/expenses/ExpenseTrackingPanel.vue'
 import ExpenseReviewPanel from '@/components/expenses/ExpenseReviewPanel.vue'
 import ExpensesSectionNav from '@/components/expenses/ExpensesSectionNav.vue'
+import AppPageHeader from '@/components/layout/AppPageHeader.vue'
 import AppConfirmDialog from '@/components/ui/AppConfirmDialog.vue'
 import {
   expenseTrackingCategories,
@@ -544,32 +536,6 @@ function currentPeriod() {
   @include financial-shell(wide);
 }
 
-.tracker-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-}
-
-.tracker-header {
-  @include financial-header;
-  align-items: center;
-}
-
-.tracker-title-row {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-}
-
-.back-button {
-  @include financial-back-button;
-}
-
-h1 {
-  @include financial-title;
-}
-
 .state {
   display: grid;
   min-height: 18rem;
@@ -767,11 +733,6 @@ h1 {
   .monthly-overview .month-metric :deep(.metric-value strong) {
     font-size: 1.4rem;
     letter-spacing: -0.025em;
-  }
-
-  .tracker-header {
-    align-items: flex-end;
-    gap: 0.75rem;
   }
 }
 </style>

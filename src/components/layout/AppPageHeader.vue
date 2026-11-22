@@ -1,5 +1,14 @@
 <template>
-  <header class="app-page-header" :class="`app-page-header--${size}`">
+  <header
+    class="app-page-header"
+    :class="[
+      `app-page-header--${size}`,
+      {
+        'app-page-header--has-actions': $slots.actions,
+        'app-page-header--has-learn': learnContext,
+      },
+    ]"
+  >
     <div class="app-page-header__content">
       <q-btn
         v-if="backLabel && backTo"
@@ -24,10 +33,29 @@
     <div v-if="$slots.actions" class="app-page-header__actions">
       <slot name="actions" />
     </div>
+
+    <q-btn
+      v-if="learnContext"
+      flat
+      round
+      icon="menu_book"
+      color="grey-7"
+      class="app-page-header__learn"
+      :aria-label="t('learn.open')"
+      @click="openLearn"
+    >
+      <q-tooltip>{{ t('learn.open') }}</q-tooltip>
+    </q-btn>
   </header>
 </template>
 
 <script setup>
+import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { useRoute } from 'vue-router'
+import { useLearn } from '@/composables/useLearn'
+import { resolveLearnContext } from '@/learn/registry'
+
 defineProps({
   title: { type: String, required: true },
   subtitle: { type: String, default: '' },
@@ -39,6 +67,11 @@ defineProps({
     validator: (value) => ['default', 'hero'].includes(value),
   },
 })
+
+const { t } = useI18n()
+const route = useRoute()
+const { openLearn } = useLearn()
+const learnContext = computed(() => resolveLearnContext(route))
 </script>
 
 <style scoped lang="scss">
@@ -96,6 +129,13 @@ p {
   gap: 0.75rem;
 }
 
+.app-page-header__learn {
+  flex: 0 0 auto;
+  align-self: center;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+}
+
 @media (max-width: 760px) {
   .app-page-header {
     align-items: flex-end;
@@ -131,13 +171,24 @@ p {
 }
 
 @media (max-width: 599px) {
-  .app-page-header:has(.app-page-header__actions) {
+  .app-page-header--has-actions {
     align-items: stretch;
     flex-direction: column;
   }
 
   .app-page-header__actions {
     align-self: flex-start;
+  }
+
+  .app-page-header--has-learn {
+    position: relative;
+    padding-right: 3.25rem;
+  }
+
+  .app-page-header--has-learn .app-page-header__learn {
+    position: absolute;
+    top: 0;
+    right: 0;
   }
 }
 </style>

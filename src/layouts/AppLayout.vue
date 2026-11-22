@@ -166,6 +166,8 @@
     <q-footer v-if="showMobileNavigation" class="mobile-footer">
       <MobileBottomNav />
     </q-footer>
+
+    <LearnPanel />
   </q-layout>
 </template>
 
@@ -175,8 +177,10 @@ import { useQuasar } from 'quasar'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import MemberScopeSelector from '@/components/dashboard/MemberScopeSelector.vue'
+import LearnPanel from '@/components/learn/LearnPanel.vue'
 import MobileBottomNav from '@/components/dashboard/MobileBottomNav.vue'
 import ProFeatureGate from '@/components/layout/ProFeatureGate.vue'
+import { useLearn } from '@/composables/useLearn'
 import { BRAND } from '@/config/brand'
 import {
   currentFinancialDate,
@@ -218,6 +222,7 @@ const scopeStore = useFinancialScopeStore()
 const financialYearsStore = useFinancialYearsStore()
 const workspaceStore = useWorkspaceStore()
 const whatIfStore = useWhatIfStore()
+const { closeLearn } = useLearn()
 
 const drawerOpen = ref($q.screen.gt.sm)
 const loggingOut = ref(false)
@@ -318,6 +323,7 @@ onMounted(async () => {
 })
 
 onBeforeUnmount(() => {
+  closeLearn()
   clearInterval(periodTimer)
   document.removeEventListener('visibilitychange', revalidateMilestonesOnResume)
   window.removeEventListener('focus', revalidateMilestonesOnResume)
