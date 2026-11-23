@@ -4,6 +4,8 @@ import {
   financialYearMonthAvailableIncomeValue,
   financialYearMonthCategoryValue,
   financialYearMonthValue,
+  financialYearValue,
+  currentFinancialYear,
 } from '../../../functions/shared/positions/annual-projection.js'
 import {
   calculateFundedYears,
@@ -139,6 +141,39 @@ export function buildMonthlyFlowSeries(
   })
 }
 
+export function buildAnnualFlowSeries(
+  financialYears = [],
+  { memberId = 'all', throughYear = currentFinancialYear() } = {},
+) {
+  const lastYear = Number(throughYear)
+
+  return financialYears
+    .map((financialYear) => {
+      const year = Number(financialYear?.year || financialYear?.id)
+      if (!Number.isInteger(year) || year > lastYear || !hasFlowData(financialYear)) return null
+
+      const income = financialYearAvailableIncomeValue(financialYear, memberId)
+      const costOfLife = financialYearFlowValue(financialYear, 'expenses', memberId)
+      return {
+        period: String(year),
+        year,
+        income,
+        costOfLife,
+        savingsCapacity: financialYearValue(financialYear, 'savings', memberId),
+        coverage: annualExpenseCoverage(financialYear),
+        projected: year === lastYear,
+      }
+    })
+    .filter(Boolean)
+    .sort((first, second) => first.year - second.year)
+}
+
+export function filterAnnualFlowSeries(points = [], period = 'all') {
+  if (period === 'all') return points
+  const years = Number(period)
+  return Number.isInteger(years) && years > 0 ? points.slice(-years) : points
+}
+
 export function buildNetWorthBridge(startPoint, endPoint) {
   if (!startPoint || !endPoint) return []
   return [
@@ -220,14 +255,36 @@ function categoryValues(history, month, projection, section, memberId, multiplie
 }
 
 function expenseCoverage(expenses) {
-  const sources = new Set(
+  return coverageFromSources(
     Object.values(expenses?.categories || {}).flatMap((category) =>
       Object.values(category?.subcategories || {}).map(({ source }) => source || 'model'),
     ),
   )
+}
+
+function annualExpenseCoverage(financialYear) {
+  return coverageFromSources(
+    Object.values(financialYear?.months || {}).flatMap((month) =>
+      Object.values(month?.expenses?.categories || {}).flatMap((category) =>
+        Object.values(category?.subcategories || {}).map(({ source }) => source || 'model'),
+      ),
+    ),
+  )
+}
+
+function coverageFromSources(values) {
+  const sources = new Set(values)
   if (!sources.size || (sources.size === 1 && sources.has('model'))) return 'model'
   if (sources.size === 1 && sources.has('tracked')) return 'tracked'
   return 'mixed'
+}
+
+function hasFlowData(financialYear) {
+  return Object.values(financialYear?.months || {}).some((month) =>
+    ['income', 'expenses'].some(
+      (section) => Object.keys(month?.[section]?.categories || {}).length > 0,
+    ),
+  )
 }
 
 function sectionBridge(start = {}, end = {}, section) {

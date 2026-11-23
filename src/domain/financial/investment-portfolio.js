@@ -2,6 +2,49 @@ const NUMBER_LOCALE = 'en-IE'
 const ALLOCATION_DIMENSIONS = new Set(['ticker', 'country', 'currency', 'sector', 'industry'])
 const ALLOCATION_VALUES = new Set(['marketValueBase', 'annualDividendBase'])
 
+export function annualDividendTotals(dividends) {
+  if (!Array.isArray(dividends)) return []
+  const totals = new Map()
+  for (const dividend of dividends) {
+    const year = String(dividend?.date || '').match(/^(\d{4})-/)?.[1]
+    const amount = numericValue(dividend?.grossBase)
+    if (!year || amount === null) continue
+    totals.set(year, (totals.get(year) || 0) + amount)
+  }
+  return [...totals.entries()]
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([year, value]) => ({ year, value: Math.round((value + Number.EPSILON) * 100) / 100 }))
+}
+
+export function dividendYears(dividends) {
+  if (!Array.isArray(dividends)) return []
+  return [
+    ...new Set(
+      dividends
+        .map((dividend) => String(dividend?.date || '').match(/^(\d{4})-/)?.[1])
+        .filter(Boolean),
+    ),
+  ].sort((left, right) => right.localeCompare(left))
+}
+
+export function dividendCompositionByYear(dividends, year, unknownLabel = 'Unknown') {
+  if (!Array.isArray(dividends) || !/^\d{4}$/.test(String(year || ''))) return []
+  const totals = new Map()
+  for (const dividend of dividends) {
+    if (!String(dividend?.date || '').startsWith(`${year}-`)) continue
+    const value = numericValue(dividend?.grossBase)
+    if (value === null || value <= 0) continue
+    const ticker = textValue(dividend?.ticker) || unknownLabel
+    totals.set(ticker, (totals.get(ticker) || 0) + value)
+  }
+  return [...totals.entries()]
+    .map(([name, value]) => ({
+      name,
+      value: Math.round((value + Number.EPSILON) * 100) / 100,
+    }))
+    .sort((left, right) => right.value - left.value || left.name.localeCompare(right.name))
+}
+
 export function portfolioAllocationGroups(
   holdings,
   dimension,

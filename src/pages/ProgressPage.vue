@@ -53,7 +53,7 @@
             @click="load(true)"
           />
         </section>
-        <section v-else-if="!hasComparison" class="empty-state">
+        <section v-else-if="!hasEvolutionData" class="empty-state">
           <span class="empty-state__icon"><q-icon name="timeline" /></span>
           <div>
             <h2>{{ t('progress.empty.title') }}</h2>
@@ -108,7 +108,9 @@
               >
                 <span>{{ metric.label }}</span>
                 <strong>{{ metric.value }}</strong>
-                <small :class="{ negative: metric.negative }">{{ metric.change }}</small>
+                <small v-if="metric.change" :class="{ negative: metric.negative }">
+                  {{ metric.change }}
+                </small>
               </div>
             </header>
 
@@ -128,8 +130,10 @@
                 <EvolutionChart
                   v-else-if="activePerspective === 'cost-of-life'"
                   mode="trend"
-                  :points="filteredFlowPoints"
+                  period-type="year"
+                  :points="filteredAnnualFlowPoints"
                   :series="flowSeries"
+                  :projected-label="t('progress.evolution.projected')"
                   :aria-label="t('progress.evolution.costOfLife.chartAria')"
                   :empty-label="t('progress.historyEmpty')"
                 />
@@ -160,7 +164,9 @@
                 >
                   <span>{{ metric.label }}</span>
                   <strong>{{ metric.value }}</strong>
-                  <small :class="{ negative: metric.negative }">{{ metric.change }}</small>
+                  <small v-if="metric.change" :class="{ negative: metric.negative }">
+                    {{ metric.change }}
+                  </small>
                 </div>
 
                 <section class="breakdown-card">
@@ -210,10 +216,11 @@ import { assetCategories } from '@/config/asset-categories'
 import { CHART_COLORS, CHART_SERIES_COLORS } from '@/config/chart-theme'
 import { liabilityCategories } from '@/config/liability-categories'
 import {
-  buildMonthlyFlowSeries,
+  buildAnnualFlowSeries,
   buildNetWorthBreakdownSeries,
   buildNetWorthBridge,
   buildProgressSeries,
+  filterAnnualFlowSeries,
 } from '@/domain/financial/history'
 import { authUser } from '@/services/auth'
 import { useFinancialScopeStore } from '@/stores/financial-scope-store'
@@ -338,8 +345,11 @@ const progressPoints = computed(() =>
 const breakdownPoints = computed(() =>
   buildNetWorthBreakdownSeries(progressDocuments.value, historyOptions.value),
 )
-const flowPoints = computed(() =>
-  buildMonthlyFlowSeries(progressDocuments.value, historyOptions.value),
+const annualFlowPoints = computed(() =>
+  buildAnnualFlowSeries(progressDocuments.value, {
+    memberId: selectedMemberId.value,
+    throughYear: currentYear.value,
+  }),
 )
 const endPoint = computed(() => progressPoints.value.at(-1) || null)
 const startPoint = computed(() => {
@@ -354,6 +364,11 @@ const startPoint = computed(() => {
 const hasComparison = computed(() =>
   Boolean(startPoint.value && endPoint.value && startPoint.value.period !== endPoint.value.period),
 )
+const hasEvolutionData = computed(() =>
+  activePerspective.value === 'cost-of-life'
+    ? annualFlowPoints.value.length > 0
+    : hasComparison.value,
+)
 const filteredProgressPoints = computed(() =>
   startPoint.value
     ? progressPoints.value.filter(({ period }) => period >= startPoint.value.period)
@@ -364,10 +379,8 @@ const filteredBreakdownPoints = computed(() =>
     ? breakdownPoints.value.filter(({ period }) => period >= startPoint.value.period)
     : [],
 )
-const filteredFlowPoints = computed(() =>
-  startPoint.value
-    ? flowPoints.value.filter(({ period }) => period >= startPoint.value.period)
-    : [],
+const filteredAnnualFlowPoints = computed(() =>
+  filterAnnualFlowSeries(annualFlowPoints.value, selectedPeriod.value),
 )
 const startBreakdown = computed(() => filteredBreakdownPoints.value[0] || null)
 const endBreakdown = computed(() => filteredBreakdownPoints.value.at(-1) || null)
@@ -448,14 +461,14 @@ const compositionPoints = computed(() =>
 )
 
 const metric = computed(() => {
-  if (!startPoint.value || !endPoint.value) return { label: '', value: '', change: '' }
   if (activePerspective.value === 'cost-of-life') {
-    const current = filteredFlowPoints.value.at(-1)
-    const first = filteredFlowPoints.value[0]
+    const current = filteredAnnualFlowPoints.value.at(-1)
+    const first = filteredAnnualFlowPoints.value[0]
     const value = current?.savingsCapacity || 0
-    const delta = value - (first?.savingsCapacity || 0)
-    return metricValue(t('progress.evolution.metrics.monthlySavingsCapacity'), value, delta)
+    const delta = current && first && current !== first ? value - first.savingsCapacity : null
+    return metricValue(t('progress.evolution.metrics.annualSavingsCapacity'), value, delta)
   }
+  if (!startPoint.value || !endPoint.value) return { label: '', value: '', change: '' }
   if (activePerspective.value === 'freedom') {
     const delta = endPoint.value.yearsFunded - startPoint.value.yearsFunded
     return {
@@ -501,7 +514,7 @@ const breakdownItems = computed(() => {
     }))
   }
   if (activePerspective.value === 'cost-of-life') {
-    const current = filteredFlowPoints.value.at(-1) || {}
+    const current = filteredAnnualFlowPoints.value.at(-1) || {}
     return [
       valueItem(
         'income',
@@ -560,7 +573,7 @@ const breakdownItems = computed(() => {
 })
 
 const coverageDescription = computed(() => {
-  const coverage = filteredFlowPoints.value.at(-1)?.coverage || 'model'
+  const coverage = filteredAnnualFlowPoints.value.at(-1)?.coverage || 'model'
   return t(`progress.evolution.coverage.${coverage}`)
 })
 
@@ -589,6 +602,13 @@ function valueItem(key, label, value, color, icon) {
 }
 
 function metricValue(label, value, change, valueIsDelta = false) {
+  if (change == null) {
+    return {
+      label,
+      value: valueIsDelta ? signedCurrency(value) : formatCurrency(value),
+      change: '',
+    }
+  }
   const changeIsPercent = typeof change === 'string'
   return {
     label,

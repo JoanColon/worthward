@@ -5,10 +5,11 @@ import { roundMoneyOrZero } from '../../shared/core/money.js'
 
 // Canonical contract for parsing and validating the linked Google Sheets portfolio.
 const PORTFOLIO_SCHEMA = {
-  version: 2,
+  version: 3,
   sheets: {
     portfolio: 'Portfolio',
     summary: 'Summary',
+    dividends: 'Dividends',
   },
   summary: {
     baseCurrency: ['base currency', 'currency'],
@@ -55,20 +56,106 @@ const PORTFOLIO_SCHEMA = {
       type: 'number',
     },
   ],
+  dividends: [
+    { name: 'date', aliases: ['date'], type: 'date' },
+    { name: 'ticker', aliases: ['ticker'], type: 'text' },
+    { name: 'grossLocal', aliases: ['gross local'], type: 'number' },
+    { name: 'currency', aliases: ['currency'], type: 'text' },
+    { name: 'fxToBase', aliases: ['fx to base'], type: 'number' },
+    { name: 'grossBase', aliases: ['gross base'], type: 'number' },
+  ],
 }
 
 /**
  * Combines portfolio and summary sheets into the canonical imported model.
  */
-function normalizeInvestmentPortfolio(portfolioRows, summaryRows) {
+function normalizeInvestmentPortfolio(portfolioRows, summaryRows, dividendRows = []) {
   const normalizedSummary = normalizeSummary(summaryRows, { allowPartial: true })
   const normalizedHoldings = normalizeHoldings(portfolioRows, { collectWarnings: true })
+  const normalizedDividends = normalizeDividends(dividendRows, { collectWarnings: true })
   return {
     schemaVersion: PORTFOLIO_SCHEMA.version,
     summary: normalizedSummary.summary,
     holdings: normalizedHoldings.holdings,
-    warnings: [...normalizedSummary.warnings, ...normalizedHoldings.warnings],
+    dividends: normalizedDividends.dividends,
+    warnings: [
+      ...normalizedSummary.warnings,
+      ...normalizedHoldings.warnings,
+      ...normalizedDividends.warnings,
+    ],
   }
+}
+
+/**
+ * Maps the Dividends table into canonical historical payments. The supplied rows must start at
+ * row 3, where the template stores its headers.
+ */
+function normalizeDividends(rows, { collectWarnings = false } = {}) {
+  if (!Array.isArray(rows) || !rows.length) {
+    return collectWarnings ? { dividends: [], warnings: [] } : []
+  }
+  const headers = rows[0].map(normalizeLabel)
+  const indexes = {}
+  const missingColumns = []
+  for (const field of PORTFOLIO_SCHEMA.dividends) {
+    const index = headers.findIndex((header) => field.aliases.includes(header))
+    if (index < 0) missingColumns.push(field.aliases[0])
+    indexes[field.name] = index
+  }
+  if (missingColumns.length) {
+    throw new Error(`The Google Sheet Dividends is missing columns: ${missingColumns.join(', ')}`)
+  }
+
+  const warnings = []
+  const dividends = rows.slice(1).reduce((result, row, rowIndex) => {
+    if (!Array.isArray(row) || row.every((value) => !String(value ?? '').trim())) return result
+    const date = parseDividendDate(row[indexes.date])
+    const grossBase = parseLocalizedNumber(row[indexes.grossBase])
+    if (!date || grossBase === null) {
+      const invalidField = !date ? 'date' : 'grossBase'
+      const sourceValue = row[indexes[invalidField]]
+      warnings.push({
+        scope: 'dividend',
+        row: rowIndex + 4,
+        field: invalidField,
+        code: spreadsheetError(sourceValue) ? 'formula_error' : 'invalid_value',
+      })
+      return result
+    }
+    result.push({
+      id: `dividend-${rowIndex}`,
+      date,
+      ticker: String(row[indexes.ticker] ?? '').trim(),
+      grossLocal: parseLocalizedNumber(row[indexes.grossLocal]),
+      currency: String(row[indexes.currency] ?? '').trim().toUpperCase(),
+      fxToBase: parseLocalizedNumber(row[indexes.fxToBase]),
+      grossBase,
+    })
+    return result
+  }, [])
+  return collectWarnings ? { dividends, warnings } : dividends
+}
+
+/** Normalizes supported Sheet date values to ISO calendar dates. */
+function parseDividendDate(value) {
+  const input = String(value ?? '').trim()
+  let match = input.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/)
+  if (match) return validIsoDate(Number(match[3]), Number(match[2]), Number(match[1]))
+  match = input.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/)
+  if (match) return validIsoDate(Number(match[1]), Number(match[2]), Number(match[3]))
+  return null
+}
+
+function validIsoDate(year, month, day) {
+  const date = new Date(Date.UTC(year, month - 1, day))
+  if (
+    date.getUTCFullYear() !== year ||
+    date.getUTCMonth() !== month - 1 ||
+    date.getUTCDate() !== day
+  ) {
+    return null
+  }
+  return `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
 }
 
 /**
@@ -332,6 +419,7 @@ function isNonNegativeNumber(value) {
 export {
   PORTFOLIO_SCHEMA,
   normalizeInvestmentPortfolio,
+  normalizeDividends,
   normalizeSummary,
   normalizeHoldings,
   parseCsv,

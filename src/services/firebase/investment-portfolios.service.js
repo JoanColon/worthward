@@ -5,7 +5,7 @@ const updatePortfolio = httpsCallable(functions, 'updateInvestmentPortfolio')
 const syncPortfolioSheet = httpsCallable(functions, 'readInvestmentPortfolioSheet')
 const syncWorkspacePortfolios = httpsCallable(functions, 'syncWorkspaceInvestmentPortfolios')
 const spreadsheetPath = /^\/spreadsheets(?:\/u\/\d+)?\/d\/[A-Za-z0-9_-]+(?:\/|$)/
-const PORTFOLIO_SCHEMA_VERSION = 2
+const PORTFOLIO_SCHEMA_VERSION = 3
 
 export function isGoogleSheetsUrl(value) {
   try {
@@ -51,7 +51,9 @@ export function investmentPortfolioCache(portfolio) {
   ) {
     return null
   }
-  if (!Array.isArray(cache.holdings) || !portfolio?.summary) return null
+  if (!Array.isArray(cache.holdings) || !Array.isArray(cache.dividends) || !portfolio?.summary) {
+    return null
+  }
   return { summary: portfolio.summary, ...cache }
 }
 

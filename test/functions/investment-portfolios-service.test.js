@@ -51,6 +51,7 @@ describe('investment portfolio synchronization', () => {
         annualDividendIncome: 682.47,
       },
       holdings: [expect.objectContaining({ ticker: 'IBE.MC', marketValueBase: 21900 })],
+      dividends: [expect.objectContaining({ ticker: 'ENG.MC', grossBase: 26 })],
       cacheStatus: 'refreshed',
       financialSections: ['assets'],
     })
@@ -64,7 +65,7 @@ describe('investment portfolio synchronization', () => {
         data: expect.objectContaining({
           currentValue: 27693.16,
           'detail.portfolio': expect.objectContaining({
-            schemaVersion: 2,
+            schemaVersion: 3,
             spreadsheetId: 'sheet_123',
           }),
         }),
@@ -252,7 +253,11 @@ describe('investment portfolio synchronization', () => {
     const fetchSpreadsheet = vi.fn(async (url) =>
       url.searchParams.get('sheet') === 'Summary'
         ? { ok: false, status: 503, text: async () => '' }
-        : { ok: true, text: async () => portfolioCsv() },
+        : {
+            ok: true,
+            text: async () =>
+              url.searchParams.get('sheet') === 'Dividends' ? dividendsCsv() : portfolioCsv(),
+          },
     )
 
     const result = await syncInvestmentPortfolio(
@@ -270,6 +275,33 @@ describe('investment portfolio synchronization', () => {
     })
     expect(result.warnings).toContainEqual(
       expect.objectContaining({ scope: 'summary', code: 'source_unavailable' }),
+    )
+  })
+
+  it('keeps portfolio data available when the Dividends tab is missing or malformed', async () => {
+    const { firestore } = createFirestore({
+      portfolio: canonicalPortfolio({ refreshAfter: 0 }),
+      currentValue: 1000,
+    })
+    const fetchSpreadsheet = vi.fn(async (url) => ({
+      ok: true,
+      text: async () =>
+        url.searchParams.get('sheet') === 'Summary'
+          ? summaryCsv('EUR', '1.000', '125', '100')
+          : portfolioCsv(),
+    }))
+
+    const result = await syncInvestmentPortfolio(
+      firestore,
+      { workspaceId: 'workspace-a', userId: 'member-a', assetId: 'investment-a', force: true },
+      fetchSpreadsheet,
+      vi.fn(),
+      () => 10_000,
+    )
+
+    expect(result).toMatchObject({ status: 'partial', dividends: [] })
+    expect(result.warnings).toContainEqual(
+      expect.objectContaining({ scope: 'dividends', code: 'source_unavailable' }),
     )
   })
 
@@ -512,7 +544,7 @@ function canonicalPortfolio({
   sync = { financialProjectionDirty: false, pendingSections: [] },
 } = {}) {
   return {
-    schemaVersion: 2,
+    schemaVersion: 3,
     source: 'google_sheets',
     spreadsheetId: 'sheet_123',
     spreadsheetUrl: 'https://docs.google.com/spreadsheets/d/sheet_123/edit',
@@ -523,8 +555,9 @@ function canonicalPortfolio({
       annualDividendIncome: 100,
     },
     cache: {
-      schemaVersion: 2,
+      schemaVersion: 3,
       holdings: normalizedHoldings(),
+      dividends: normalizedDividends(),
       lastCheckedAt: 1_000,
       dataUpdatedAt: 1_000,
       refreshAfter,
@@ -554,6 +587,20 @@ function normalizedHoldings() {
   ]
 }
 
+function normalizedDividends() {
+  return [
+    {
+      id: 'dividend-0',
+      date: '2014-12-19',
+      ticker: 'ENG.MC',
+      grossLocal: 26,
+      currency: 'EUR',
+      fxToBase: 1,
+      grossBase: 26,
+    },
+  ]
+}
+
 function sheetFetch({
   portfolioValue = '1.000,00',
   grossDividends = '125,00',
@@ -565,8 +612,19 @@ function sheetFetch({
     text: async () =>
       url.searchParams.get('sheet') === 'Summary'
         ? summaryCsv('EUR', portfolioValue, grossDividends, netDividends)
-        : portfolioBody || portfolioCsv(),
+        : url.searchParams.get('sheet') === 'Dividends'
+          ? dividendsCsv()
+          : portfolioBody || portfolioCsv(),
   }))
+}
+
+function dividendsCsv() {
+  return [
+    ['Date', 'Ticker', 'Gross (local)', 'Currency', 'FX to base', 'Gross (base)'],
+    ['19/12/2014', 'ENG.MC', '26,0', 'EUR', '1,00', '26,0'],
+  ]
+    .map((row) => row.map(csvCell).join(','))
+    .join('\r\n')
 }
 
 function portfolioCsv() {

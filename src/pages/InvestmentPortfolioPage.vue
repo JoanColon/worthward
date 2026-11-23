@@ -158,6 +158,11 @@
                   icon="donut_large"
                   :label="t('assets.portfolio.views.charts')"
                 />
+                <q-tab
+                  name="historic-dividends"
+                  icon="bar_chart"
+                  :label="t('assets.portfolio.views.historicDividends')"
+                />
               </q-tabs>
 
               <q-table
@@ -241,7 +246,7 @@
                 </template>
               </q-table>
 
-              <div v-else class="portfolio-allocation-view">
+              <div v-else-if="portfolioView === 'charts'" class="portfolio-allocation-view">
                 <q-tabs
                   v-model="allocationDimension"
                   dense
@@ -283,6 +288,24 @@
                     @select="openAllocationDetails($event, 'annualDividendBase')"
                   />
                 </div>
+              </div>
+
+              <div v-else class="historic-dividends-view">
+                <HistoricDividendsChart
+                  :values="historicDividendValues"
+                  :selected-year="selectedDividendYear"
+                  :title="t('assets.portfolio.historicDividends.title')"
+                  :subtitle="t('assets.portfolio.historicDividends.subtitle')"
+                  :base-currency="activePortfolioSummary.baseCurrency"
+                  :aria-label="t('assets.portfolio.historicDividends.ariaLabel')"
+                  :empty-label="t('assets.portfolio.historicDividends.empty')"
+                  @select-year="selectedDividendYear = $event"
+                />
+                <DividendCompositionChart
+                  :dividends="portfolioDividends || []"
+                  :year="selectedDividendYear"
+                  :base-currency="activePortfolioSummary.baseCurrency"
+                />
               </div>
             </template>
 
@@ -414,6 +437,8 @@ import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import AppPageHeader from '@/components/layout/AppPageHeader.vue'
 import AppConfirmDialog from '@/components/ui/AppConfirmDialog.vue'
+import DividendCompositionChart from '@/components/assets/DividendCompositionChart.vue'
+import HistoricDividendsChart from '@/components/assets/HistoricDividendsChart.vue'
 import PortfolioAllocationChart from '@/components/assets/PortfolioAllocationChart.vue'
 import {
   investmentPortfolioCache,
@@ -422,7 +447,9 @@ import {
   syncInvestmentPortfolio,
 } from '@/services/firebase/investment-portfolios.service'
 import {
+  annualDividendTotals,
   countryFlag,
+  dividendYears,
   formatCurrencyValue,
   portfolioAllocationGroups,
   portfolioKpis,
@@ -447,6 +474,8 @@ const confirmDisconnect = ref(false)
 const readingSheet = ref(false)
 const portfolioHoldings = ref(null)
 const portfolioSummary = ref(null)
+const portfolioDividends = ref(null)
+const selectedDividendYear = ref('')
 const sheetError = ref('')
 const sheetWarnings = ref([])
 const sheetWarningCount = ref(0)
@@ -496,6 +525,8 @@ const dividendAllocation = computed(() =>
     t('assets.portfolio.allocation.unknown'),
   ),
 )
+const historicDividendValues = computed(() => annualDividendTotals(portfolioDividends.value))
+const availableDividendYears = computed(() => dividendYears(portfolioDividends.value))
 const allocationColorLabels = computed(() =>
   [
     ...new Set(
@@ -630,6 +661,13 @@ const sheetUrlRules = [
 ]
 
 watch([workspaceId, assetId], () => prepare(), { immediate: true })
+watch(
+  availableDividendYears,
+  (years) => {
+    if (!years.includes(selectedDividendYear.value)) selectedDividendYear.value = years[0] || ''
+  },
+  { immediate: true },
+)
 
 async function prepare(force = false) {
   const currentPreparation = ++preparationId
@@ -720,6 +758,7 @@ async function readPortfolio(force = false) {
   const needsClassificationRefresh = portfolioCacheNeedsClassifications(cache)
   if (cache) {
     portfolioHoldings.value = cache.holdings
+    portfolioDividends.value = cache.dividends
     portfolioSummary.value = cache.summary
     sheetWarnings.value = cache.warnings || []
     sheetWarningCount.value = Number(cache.warningCount) || sheetWarnings.value.length
@@ -756,6 +795,7 @@ function portfolioCacheNeedsClassifications(cache) {
 
 function applyPortfolioResult(result) {
   portfolioHoldings.value = Array.isArray(result?.holdings) ? result.holdings : []
+  portfolioDividends.value = Array.isArray(result?.dividends) ? result.dividends : []
   portfolioSummary.value = result?.summary || null
   sheetWarnings.value = Array.isArray(result?.warnings)
     ? result.warnings
@@ -767,6 +807,7 @@ function clearSheetResult() {
   sheetReadId += 1
   readingSheet.value = false
   portfolioHoldings.value = null
+  portfolioDividends.value = null
   portfolioSummary.value = null
   sheetError.value = ''
   sheetWarnings.value = []

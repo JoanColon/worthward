@@ -693,11 +693,11 @@ export default {
       costOfLife: {
         label: 'Cost of Life & savings',
         question: 'Is your life becoming more affordable?',
-        title: 'How is your monthly capacity changing?',
+        title: 'How is your annual capacity changing?',
         description:
-          'Compare available income, effective expenses, and the capacity left for saving each month.',
+          'Compare annual available income, effective expenses, and the capacity left for saving.',
         note: 'Savings capacity is available income minus effective expenses; it is not a measured change in your cash accounts.',
-        chartAria: 'Monthly available income, effective expenses, and savings capacity.',
+        chartAria: 'Annual available income, effective expenses, and savings capacity.',
       },
       freedom: {
         label: 'Financial freedom',
@@ -719,22 +719,23 @@ export default {
       },
       metrics: {
         netWorthChange: 'Change in net worth',
-        monthlySavingsCapacity: 'Monthly savings capacity',
+        annualSavingsCapacity: 'Annual savings capacity',
         yearsFunded: 'Current years funded',
         netPosition: 'Current net position',
         noPercentage: 'No comparable percentage',
       },
       breakdown: {
         wealth: 'Changes by balance category',
-        flows: 'Latest monthly values',
+        flows: 'Latest annual values',
         freedom: 'Current calculation',
         composition: 'Current composition',
       },
       coverage: {
-        model: 'Expenses in this month use the financial model.',
-        tracked: 'Expenses in this month come from reconciled tracking data.',
-        mixed: 'This month combines modelled and reconciled expenses.',
+        model: 'Expenses in this year use the financial model.',
+        tracked: 'Expenses in this year come from reconciled tracking data.',
+        mixed: 'This year combines modelled and reconciled expenses.',
       },
+      projected: 'Projected',
     },
     keyMetrics: 'Key progress metrics',
     netWorth: 'Net worth',
@@ -1397,6 +1398,17 @@ export default {
       views: {
         holdings: 'Holdings',
         charts: 'Charts',
+        historicDividends: 'Historic dividends',
+      },
+      historicDividends: {
+        title: 'Dividends received by year',
+        subtitle: 'gross dividends in your base currency',
+        ariaLabel: 'Bar chart of gross dividends received in the base currency by year.',
+        empty: 'No valid dividend payments were found in the Dividends tab.',
+        compositionTitle: 'Dividend composition',
+        compositionSummary: '{value} gross dividends received',
+        compositionAria: 'Treemap of dividend income by ticker for {year}.',
+        compositionEmpty: 'No dividend composition is available for this year.',
       },
       allocation: {
         marketValue: 'Portfolio value distribution',

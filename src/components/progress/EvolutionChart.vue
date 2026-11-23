@@ -38,6 +38,8 @@ const props = defineProps({
   startLabel: { type: String, default: '' },
   endLabel: { type: String, default: '' },
   valueType: { type: String, default: 'currency' },
+  periodType: { type: String, default: 'month' },
+  projectedLabel: { type: String, default: '' },
   ariaLabel: { type: String, required: true },
   emptyLabel: { type: String, required: true },
 })
@@ -204,10 +206,13 @@ function timeSeriesOptions() {
     tooltip: {
       ...baseOptions().tooltip,
       formatter(items) {
-        const values = (Array.isArray(items) ? items : [items]).filter(
-          (item) => Number(item.data) !== 0,
-        )
-        return `<strong>${formatPeriod(values[0]?.axisValue)}</strong><br/>${values
+        const allValues = Array.isArray(items) ? items : [items]
+        const values =
+          props.periodType === 'year'
+            ? allValues
+            : allValues.filter((item) => Number(item.data) !== 0)
+        const point = props.points[values[0]?.dataIndex]
+        return `<strong>${formatPeriod(values[0]?.axisValue, point)}</strong><br/>${values
           .map(
             (item) =>
               `${item.marker}<span style="display:inline-block;min-width:8rem">${item.seriesName}</span> <strong>${formatValue(item.data)}</strong>`,
@@ -226,7 +231,9 @@ function timeSeriesOptions() {
         fontSize: 11,
         hideOverlap: true,
         margin: 12,
-        formatter: shortPeriod,
+        formatter(value, index) {
+          return shortPeriod(value, props.points[index])
+        },
       },
     },
     series: props.series.map((item) => ({
@@ -273,14 +280,24 @@ function signedCurrency(value) {
   return `${value >= 0 ? '+' : '−'}${formatCurrency(Math.abs(value))}`
 }
 
-function shortPeriod(period) {
+function shortPeriod(period, point) {
+  if (props.periodType === 'year') {
+    return point?.projected && props.projectedLabel
+      ? `${period}\n${props.projectedLabel}`
+      : String(period)
+  }
   const [year, month] = String(period).split('-').map(Number)
   return new Intl.DateTimeFormat(locale.value, { month: 'short', year: '2-digit' }).format(
     new Date(Date.UTC(year, month - 1, 1)),
   )
 }
 
-function formatPeriod(period) {
+function formatPeriod(period, point) {
+  if (props.periodType === 'year') {
+    return point?.projected && props.projectedLabel
+      ? `${period} · ${props.projectedLabel}`
+      : String(period)
+  }
   const [year, month] = String(period).split('-').map(Number)
   return new Intl.DateTimeFormat(locale.value, { month: 'long', year: 'numeric' }).format(
     new Date(Date.UTC(year, month - 1, 1)),

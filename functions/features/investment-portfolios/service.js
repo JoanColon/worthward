@@ -6,6 +6,7 @@ import { roundMoneyOrNull } from '../../shared/core/money.js'
 import { currentYear, rebuildFinancialYear } from '../financial-years/service.js'
 import {
   PORTFOLIO_SCHEMA,
+  normalizeDividends,
   normalizeInvestmentPortfolio,
   parseCsv,
 } from './schema.js'
@@ -151,7 +152,14 @@ async function synchronizeInvestmentPortfolio(
     }
     const warnings = normalized.warnings.slice(0, MAXIMUM_STORED_WARNINGS)
     const warningCount = normalized.warnings.length
-    const cacheBytes = Buffer.byteLength(JSON.stringify({ holdings: normalized.holdings, warnings }), 'utf8')
+    const cacheBytes = Buffer.byteLength(
+      JSON.stringify({
+        holdings: normalized.holdings,
+        dividends: normalized.dividends,
+        warnings,
+      }),
+      'utf8',
+    )
     if (cacheBytes > MAXIMUM_CACHE_BYTES) {
       throw new Error('The Google Sheet is too large to cache safely')
     }
@@ -176,6 +184,10 @@ async function synchronizeInvestmentPortfolio(
       roundMoneyOrNull(context.asset.currentValue) !== normalized.summary.totalPortfolioValue
     const summaryChanged = !sameValue(existingPortfolio?.summary, normalized.summary)
     const holdingsChanged = !sameValue(existingPortfolio?.cache?.holdings, normalized.holdings)
+    const dividendsChanged = !sameValue(
+      existingPortfolio?.cache?.dividends,
+      normalized.dividends,
+    )
     const pendingSections = existingPortfolio?.sync?.financialProjectionDirty ?
       existingPortfolio.sync.pendingSections || [] :
       []
@@ -186,7 +198,7 @@ async function synchronizeInvestmentPortfolio(
         ...(incomeDocumentsToUpdate.length ? ['income'] : []),
       ]),
     ]
-    const contentChanged = summaryChanged || holdingsChanged
+    const contentChanged = summaryChanged || holdingsChanged || dividendsChanged
     nextPortfolio = {
       schemaVersion: PORTFOLIO_SCHEMA.version,
       source: 'google_sheets',
@@ -196,6 +208,7 @@ async function synchronizeInvestmentPortfolio(
       cache: {
         schemaVersion: PORTFOLIO_SCHEMA.version,
         holdings: normalized.holdings,
+        dividends: normalized.dividends,
         warnings,
         warningCount,
         lastCheckedAt: now,
@@ -343,24 +356,53 @@ async function fetchInvestmentPortfolioSource(spreadsheetId, fetchImpl) {
     sheet: PORTFOLIO_SCHEMA.sheets.summary,
     _: requestId,
   })
+  const dividendsUrl = googleSheetQueryUrl(spreadsheetId, {
+    tqx: 'out:csv',
+    sheet: PORTFOLIO_SCHEMA.sheets.dividends,
+    range: 'A3:F',
+    _: requestId,
+  })
   let lastError
   for (let attempt = 0; attempt < SHEET_READ_ATTEMPTS; attempt += 1) {
     try {
-      const [portfolioResult, summaryResult] = await Promise.allSettled([
+      const [portfolioResult, summaryResult, dividendsResult] = await Promise.allSettled([
         fetchGoogleSheet(portfolioUrl, fetchImpl, 1_000_000, 'Portfolio'),
         fetchGoogleSheet(summaryUrl, fetchImpl, 100_000, 'Summary'),
+        fetchGoogleSheet(dividendsUrl, fetchImpl, 1_000_000, 'Dividends'),
       ])
       if (portfolioResult.status === 'rejected') throw portfolioResult.reason
+      let normalizedDividends = { dividends: [], warnings: [] }
+      let dividendsReadError =
+        dividendsResult.status === 'rejected' ? dividendsResult.reason : null
+      if (dividendsResult.status === 'fulfilled') {
+        try {
+          normalizedDividends = normalizeDividends(parseCsv(dividendsResult.value), {
+            collectWarnings: true,
+          })
+        } catch (error) {
+          dividendsReadError = error
+        }
+      }
       const normalized = normalizeInvestmentPortfolio(
         parseCsv(portfolioResult.value),
         summaryResult.status === 'fulfilled' ? parseCsv(summaryResult.value) : [],
       )
+      normalized.dividends = normalizedDividends.dividends
+      normalized.warnings.push(...normalizedDividends.warnings)
       if (summaryResult.status === 'rejected') {
         normalized.warnings.unshift({
           scope: 'summary',
           field: 'summary',
           code: 'source_unavailable',
           message: summaryResult.reason?.message || 'The Summary tab could not be read',
+        })
+      }
+      if (dividendsReadError) {
+        normalized.warnings.push({
+          scope: 'dividends',
+          field: 'dividends',
+          code: 'source_unavailable',
+          message: dividendsReadError?.message || 'The Dividends tab could not be read',
         })
       }
       return normalized
@@ -394,7 +436,7 @@ function mergeInvestmentPortfolio(imported, existingPortfolio) {
       ]),
     )
   })
-  return { ...imported, summary, holdings }
+  return { ...imported, summary, holdings, dividends: imported.dividends || [] }
 }
 
 /**
@@ -460,6 +502,7 @@ function portfolioCacheIsFresh(portfolio, now = Date.now()) {
     portfolio?.summary &&
     portfolio?.cache?.schemaVersion === PORTFOLIO_SCHEMA.version &&
     Array.isArray(portfolio.cache.holdings) &&
+    Array.isArray(portfolio.cache.dividends) &&
     !portfolio?.sync?.financialProjectionDirty &&
     Number(portfolio.cache.refreshAfter) > Number(now),
   )
@@ -476,6 +519,7 @@ function portfolioResult(portfolio, currentValue, cacheStatus, extra = {}) {
     currentValue: roundMoneyOrNull(currentValue),
     summary: portfolio.summary,
     holdings: portfolio.cache.holdings,
+    dividends: portfolio.cache.dividends,
     cacheStatus,
     status: warningCount ? 'partial' : 'success',
     warnings,

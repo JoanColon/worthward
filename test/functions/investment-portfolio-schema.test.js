@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  normalizeDividends,
   normalizeHoldings,
   normalizeInvestmentPortfolio,
   normalizeSummary,
@@ -126,6 +127,35 @@ describe('Google Sheets investment portfolio schema', () => {
         portfolioWeightPercent: 81.52,
         annualDividendBase: 550,
         incomeWeightPercent: 82.89,
+      },
+    ])
+  })
+
+  it('normalizes dividend rows whose headers start on row 3', () => {
+    expect(
+      normalizeDividends([
+        ['Date', 'Ticker', 'Gross (local)', 'Currency', 'FX to base', 'Gross (base)'],
+        ['19/12/2014', 'ENG.MC', '26,0', 'EUR', '1,00', '26,0'],
+        ['9/01/2015', 'PM', '30,0', 'USD', '0,90', '27,0'],
+      ]),
+    ).toEqual([
+      {
+        id: 'dividend-0',
+        date: '2014-12-19',
+        ticker: 'ENG.MC',
+        grossLocal: 26,
+        currency: 'EUR',
+        fxToBase: 1,
+        grossBase: 26,
+      },
+      {
+        id: 'dividend-1',
+        date: '2015-01-09',
+        ticker: 'PM',
+        grossLocal: 30,
+        currency: 'USD',
+        fxToBase: 0.9,
+        grossBase: 27,
       },
     ])
   })

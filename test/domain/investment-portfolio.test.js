@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import {
+  annualDividendTotals,
   countryFlag,
+  dividendCompositionByYear,
+  dividendYears,
   formatCurrencyValue,
   formatPercentageValue,
   portfolioAllocationGroups,
@@ -9,6 +12,35 @@ import {
 } from '../../src/domain/financial/investment-portfolio.js'
 
 describe('investment portfolio table', () => {
+  it('groups historical gross base dividends by year', () => {
+    expect(
+      annualDividendTotals([
+        { date: '2014-12-19', grossBase: 26 },
+        { date: '2014-12-23', grossBase: 9 },
+        { date: '2015-01-09', grossBase: 27 },
+        { date: 'invalid', grossBase: 100 },
+      ]),
+    ).toEqual([
+      { year: '2014', value: 35 },
+      { year: '2015', value: 27 },
+    ])
+  })
+
+  it('lists available years and groups one year of dividends by ticker', () => {
+    const dividends = [
+      { date: '2024-12-19', ticker: 'ENG.MC', grossBase: 10 },
+      { date: '2025-01-09', ticker: 'PM', grossBase: 27 },
+      { date: '2025-04-12', ticker: 'PM', grossBase: 13 },
+      { date: '2025-05-01', ticker: 'IBE.MC', grossBase: 35 },
+    ]
+
+    expect(dividendYears(dividends)).toEqual(['2025', '2024'])
+    expect(dividendCompositionByYear(dividends, '2025')).toEqual([
+      { name: 'PM', value: 40 },
+      { name: 'IBE.MC', value: 35 },
+    ])
+  })
+
   it('groups market value and dividend income by portfolio dimensions', () => {
     const holdings = [
       {

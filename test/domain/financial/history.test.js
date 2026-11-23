@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  buildAnnualFlowSeries,
   buildAssetAnnualSeries,
   buildMonthlyFlowSeries,
   buildNetWorthBreakdownSeries,
@@ -7,8 +8,49 @@ import {
   buildNetWorthSeries,
   buildProgressSeries,
   positionHistoryDocuments,
+  filterAnnualFlowSeries,
   withCurrentPosition,
 } from '../../../src/domain/financial/history'
+
+function flowMonth({
+  income = 0,
+  expenses = 0,
+  disposablePercentage = 100,
+  source = 'model',
+} = {}) {
+  return {
+    income: {
+      categories: {
+        salary: {
+          subcategories: {
+            salary: {
+              items: {
+                job: {
+                  total: income,
+                  disposablePercentage,
+                  memberValues: { alice: income * 0.4, bob: income * 0.6 },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    expenses: {
+      categories: {
+        living: {
+          subcategories: {
+            living: {
+              effective: expenses,
+              source,
+              memberValues: { alice: expenses * 0.25, bob: expenses * 0.75 },
+            },
+          },
+        },
+      },
+    },
+  }
+}
 
 function positionMonth(assets, liabilities = 0) {
   const memberValues = { member: assets }
@@ -31,6 +73,101 @@ function positionMonth(assets, liabilities = 0) {
 }
 
 describe('financial history series', () => {
+  it('builds annual flow totals from each materialized calendar year', () => {
+    const months2025 = Object.fromEntries(
+      Array.from({ length: 12 }, (_, index) => [
+        String(index + 1).padStart(2, '0'),
+        flowMonth({ income: 3_000, expenses: 1_500 }),
+      ]),
+    )
+    const months2026 = Object.fromEntries(
+      Array.from({ length: 12 }, (_, index) => [
+        String(index + 1).padStart(2, '0'),
+        flowMonth({
+          income: index < 10 ? 40_000 / 12 : 45_000 / 12,
+          expenses: 2_000,
+          source: index < 3 ? 'tracked' : 'model',
+        }),
+      ]),
+    )
+
+    expect(
+      buildAnnualFlowSeries(
+        [
+          { year: 2026, months: months2026 },
+          { year: 2025, months: months2025 },
+          { year: 2027, months: { '01': flowMonth({ income: 99_999 }) } },
+        ],
+        { throughYear: 2026 },
+      ),
+    ).toEqual([
+      {
+        period: '2025',
+        year: 2025,
+        income: 36_000,
+        costOfLife: 18_000,
+        savingsCapacity: 18_000,
+        coverage: 'model',
+        projected: false,
+      },
+      {
+        period: '2026',
+        year: 2026,
+        income: 40_833.3,
+        costOfLife: 24_000,
+        savingsCapacity: 16_833.3,
+        coverage: 'mixed',
+        projected: true,
+      },
+    ])
+  })
+
+  it('applies member ownership and disposable percentage to annual income', () => {
+    const points = buildAnnualFlowSeries(
+      [
+        {
+          year: 2026,
+          months: {
+            '01': flowMonth({ income: 10_000, expenses: 4_000, disposablePercentage: 50 }),
+            '02': flowMonth({ income: 20_000, expenses: 8_000, disposablePercentage: 25 }),
+          },
+        },
+      ],
+      { memberId: 'alice', throughYear: 2026 },
+    )
+
+    expect(points[0]).toMatchObject({
+      income: 4_000,
+      costOfLife: 3_000,
+      savingsCapacity: 1_000,
+    })
+  })
+
+  it('omits documents without flow data instead of inventing zero-valued years', () => {
+    expect(
+      buildAnnualFlowSeries(
+        [
+          { year: 2024, months: {} },
+          { year: 2025, months: { '01': { income: { categories: {} } } } },
+          { year: 2026, months: { '01': flowMonth() } },
+        ],
+        { throughYear: 2026 },
+      ).map(({ year }) => year),
+    ).toEqual([2026])
+  })
+
+  it('filters annual series as 1Y, 3Y, 5Y, or all without requiring multiple years', () => {
+    const points = [2021, 2022, 2023, 2024, 2025, 2026].map((year) => ({ year }))
+
+    expect(filterAnnualFlowSeries(points, '1')).toEqual([{ year: 2026 }])
+    expect(filterAnnualFlowSeries(points, '3').map(({ year }) => year)).toEqual([2024, 2025, 2026])
+    expect(filterAnnualFlowSeries(points, '5').map(({ year }) => year)).toEqual([
+      2022, 2023, 2024, 2025, 2026,
+    ])
+    expect(filterAnnualFlowSeries(points.slice(0, 1), '5')).toEqual([{ year: 2021 }])
+    expect(filterAnnualFlowSeries(points, 'all')).toBe(points)
+  })
+
   it('uses only observed financial year months as position history', () => {
     const history = {
       year: 2026,

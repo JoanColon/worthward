@@ -1771,12 +1771,18 @@ function slugify(value) {
   }
 
   .family-grid {
-    display: block;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.55rem;
     margin-top: 0.65rem;
   }
 
+  .family-card,
+  .achievement-list {
+    display: contents;
+  }
+
   .family-card {
-    display: block;
     overflow: visible;
     border: 0;
     border-radius: 0;
@@ -1788,21 +1794,13 @@ function slugify(value) {
     display: none;
   }
 
-  .achievement-list {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.65rem;
-    overflow: visible;
-    padding: 0.325rem 0;
-  }
-
   .achievement-list article {
     display: grid;
-    grid-template-rows: 7.6rem minmax(2.65rem, auto) 1.7rem;
+    grid-template-rows: 5.8rem minmax(2.35rem, auto) 1.55rem;
     gap: 0.25rem;
     min-width: 0;
-    min-height: 13.7rem;
-    padding: 0.75rem 0.45rem 0.65rem;
+    min-height: 10.8rem;
+    padding: 0.55rem 0.3rem 0.5rem;
     border: 1px solid var(--color-line);
     border-radius: 1.15rem;
     background: linear-gradient(180deg, #fff, #f9fbfd);
@@ -1822,18 +1820,18 @@ function slugify(value) {
 
   .achievement-list :deep(.milestone-badge),
   .achievement-list :deep(.milestone-badge--final) {
-    width: 7.4rem;
-    height: 7.4rem;
+    width: 5.7rem;
+    height: 5.7rem;
   }
 
   .achievement-list :deep(.badge-asset) {
-    width: 7.8rem;
-    height: 7.8rem;
+    width: 6rem;
+    height: 6rem;
   }
 
   .achievement-list :deep(.milestone-badge > svg:not(.badge-laurel)) {
-    width: 6.7rem;
-    height: 6.7rem;
+    width: 5.2rem;
+    height: 5.2rem;
   }
 
   .achievement-list :deep(.badge-lock) {
@@ -1845,14 +1843,14 @@ function slugify(value) {
 
   .achievement-list article > .milestone-title {
     display: block;
-    max-width: 9.5rem;
-    font-size: 0.9rem;
+    max-width: 6.5rem;
+    font-size: 0.78rem;
     line-height: 1.16;
   }
 
   .milestone-state {
     gap: 0.25rem;
-    font-size: 0.72rem;
+    font-size: 0.62rem;
     text-transform: uppercase;
   }
 
@@ -1906,24 +1904,24 @@ function slugify(value) {
 }
 
 @media (max-width: 360px) {
-  .achievement-list {
-    gap: 0.5rem;
+  .family-grid {
+    gap: 0.4rem;
   }
 
   .achievement-list article {
-    grid-template-rows: 6.8rem minmax(2.5rem, auto) 1.6rem;
-    min-height: 12.8rem;
+    grid-template-rows: 5.1rem minmax(2.35rem, auto) 1.5rem;
+    min-height: 10.1rem;
   }
 
   .achievement-list :deep(.milestone-badge),
   .achievement-list :deep(.milestone-badge--final) {
-    width: 6.6rem;
-    height: 6.6rem;
+    width: 5rem;
+    height: 5rem;
   }
 
   .achievement-list :deep(.badge-asset) {
-    width: 7rem;
-    height: 7rem;
+    width: 5.25rem;
+    height: 5.25rem;
   }
 }
 </style>
