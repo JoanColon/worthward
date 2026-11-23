@@ -145,6 +145,101 @@ export function compareFrenchMortgagePayoffScenarios({ extraMonthlyPayment = 0, 
 }
 
 /**
+ * Compares the two common outcomes of a one-off principal repayment: keeping the remaining
+ * contractual term with a lower payment, or keeping the payment and shortening the term.
+ */
+export function compareFrenchMortgageLumpSumScenarios({
+  principal,
+  annualInterestRate,
+  termMonths,
+  repaymentAmount,
+  repaymentAfterMonths,
+  asOfDate = new Date(),
+}) {
+  const originalPrincipal = requireNonNegativeNumber(principal, 'principal')
+  const contractualMonths = requirePositiveInteger(termMonths, 'term months')
+  const lumpSum = requireNonNegativeNumber(repaymentAmount, 'repayment amount')
+  const elapsedMonths = requireNonNegativeInteger(repaymentAfterMonths, 'repayment month')
+  if (elapsedMonths >= contractualMonths) {
+    throw new RangeError('The repayment must happen before the contractual term ends')
+  }
+
+  const monthlyPayment = calculateFrenchMortgageMonthlyPayment({
+    principal: originalPrincipal,
+    annualInterestRate,
+    termMonths: contractualMonths,
+  })
+  const originalSchedule = buildFrenchMortgageScheduleFromBalance({
+    currentBalance: originalPrincipal,
+    annualInterestRate,
+    monthlyPayment,
+    asOfDate,
+  })
+  const balanceBeforeRepayment =
+    elapsedMonths === 0 ? originalPrincipal : originalSchedule[elapsedMonths - 1]?.remainingBalance
+  if (!Number.isFinite(balanceBeforeRepayment) || balanceBeforeRepayment <= 0) {
+    throw new RangeError('The repayment must happen before the mortgage is repaid')
+  }
+
+  const repaymentApplied = roundMoneyOrZero(Math.min(lumpSum, balanceBeforeRepayment))
+  const balanceAfterRepayment = roundMoneyOrZero(balanceBeforeRepayment - repaymentApplied)
+  const remainingTermMonths = contractualMonths - elapsedMonths
+  const originalRemainingSchedule = originalSchedule.slice(elapsedMonths)
+  const originalRemainingInterest = totalScheduleInterest(originalRemainingSchedule)
+
+  const reducedMonthlyPayment = calculateFrenchMortgageMonthlyPayment({
+    principal: balanceAfterRepayment,
+    annualInterestRate,
+    termMonths: remainingTermMonths,
+  })
+  const reducedPaymentSchedule =
+    balanceAfterRepayment === 0 ?
+      [] :
+      buildFrenchMortgageScheduleFromBalance({
+          currentBalance: balanceAfterRepayment,
+          annualInterestRate,
+          monthlyPayment: reducedMonthlyPayment,
+          asOfDate,
+        })
+  const shortenedTermSchedule =
+    balanceAfterRepayment === 0 ?
+      [] :
+      buildFrenchMortgageScheduleFromBalance({
+          currentBalance: balanceAfterRepayment,
+          annualInterestRate,
+          monthlyPayment,
+          asOfDate,
+        })
+
+  return {
+    monthlyPayment,
+    balanceBeforeRepayment: roundMoneyOrZero(balanceBeforeRepayment),
+    repaymentApplied,
+    balanceAfterRepayment,
+    remainingTermMonths,
+    reducePayment: {
+      monthlyPayment: reducedMonthlyPayment,
+      monthlyCashFlowImprovement: roundMoneyOrZero(
+        Math.max(0, monthlyPayment - reducedMonthlyPayment),
+      ),
+      interestSaved: roundMoneyOrZero(
+        Math.max(0, originalRemainingInterest - totalScheduleInterest(reducedPaymentSchedule)),
+      ),
+      schedule: reducedPaymentSchedule,
+    },
+    shortenTerm: {
+      monthlyPayment,
+      remainingPayments: shortenedTermSchedule.length,
+      monthsEarlier: Math.max(0, remainingTermMonths - shortenedTermSchedule.length),
+      interestSaved: roundMoneyOrZero(
+        Math.max(0, originalRemainingInterest - totalScheduleInterest(shortenedTermSchedule)),
+      ),
+      schedule: shortenedTermSchedule,
+    },
+  }
+}
+
+/**
  * Reconstructs a mortgage balance at a date by replaying contractual payments after a recorded
  * balance anchor. The anchor is an observed historical fact, not a projection starting balance.
  */
@@ -248,5 +343,12 @@ function requireNonNegativeNumber(value, label) {
 function requirePositiveInteger(value, label) {
   const number = Number(value)
   if (!Number.isInteger(number) || number <= 0) throw new RangeError(`A valid ${label} is required`)
+  return number
+}
+
+/** Returns a validated non-negative integer or throws when the supplied value is invalid. */
+function requireNonNegativeInteger(value, label) {
+  const number = Number(value)
+  if (!Number.isInteger(number) || number < 0) throw new RangeError(`A valid ${label} is required`)
   return number
 }

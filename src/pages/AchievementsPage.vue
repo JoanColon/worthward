@@ -1735,14 +1735,14 @@ function slugify(value) {
 
 @media (max-width: 900px) {
   .milestone-filters {
-    display: flex;
-    overflow-x: auto;
-    padding-bottom: 0.35rem;
-    scrollbar-width: none;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    overflow: visible;
+    padding-bottom: 0;
   }
 
   .milestone-filters button {
-    min-width: max-content;
+    min-width: 0;
   }
 }
 
@@ -1755,15 +1755,54 @@ function slugify(value) {
   }
 
   .milestone-filters {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
     gap: 0.5rem;
-    margin: 1rem -0.65rem 0;
-    padding: 0 0.65rem 0.4rem;
+    margin: 1rem 0 0;
+    padding: 0;
   }
 
   .milestone-filters button {
+    justify-content: flex-start;
     min-height: 2.75rem;
     padding: 0.5rem 0.85rem;
     font-size: 0.82rem;
+  }
+
+  .milestone-filters .milestone-filter--all {
+    grid-column: span 4;
+    order: 5;
+    gap: var(--space-1);
+    padding-inline: var(--space-2);
+  }
+
+  .milestone-filter--netWorth,
+  .milestone-filter--freedom {
+    grid-column: span 6;
+  }
+
+  .milestone-filter--netWorth {
+    order: 1;
+  }
+
+  .milestone-filter--freedom {
+    order: 2;
+  }
+
+  .milestone-filter--safety,
+  .milestone-filter--debt {
+    grid-column: span 4;
+  }
+
+  .milestone-filter--safety {
+    order: 3;
+  }
+
+  .milestone-filter--debt {
+    order: 4;
+  }
+
+  .milestone-filter--all .q-icon {
+    font-size: 1rem;
   }
 
   .milestone-filters button .q-icon {

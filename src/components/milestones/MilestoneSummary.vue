@@ -117,7 +117,7 @@ const percentage = computed(() =>
   .milestone-summary {
     grid-template-columns: auto minmax(0, 1fr) auto;
     width: 100%;
-    padding: 0.85rem 0.9rem;
+    padding: 0.85rem 0.9rem 1.25rem;
     border-radius: 1.15rem;
   }
 
@@ -143,7 +143,7 @@ const percentage = computed(() =>
   .summary-progress-track {
     position: absolute;
     right: 0.9rem;
-    bottom: 0.65rem;
+    bottom: 0.6rem;
     left: 0.9rem;
     height: 0.35rem;
   }

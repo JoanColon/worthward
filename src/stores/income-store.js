@@ -23,7 +23,9 @@ export const useIncomeStore = defineStore('income', () => {
   const loadedCategoryIds = ref(new Set())
   let configRequestId = 0
   let categoryRequestId = 0
+  let pendingConfig = null
   const categoryRequestIds = new Map()
+  const categoryRequests = new Map()
   const categoryLoadingKeys = new Set()
 
   const setupCompleted = computed(() => Boolean(config.value?.setupCompleted))
@@ -35,6 +37,7 @@ export const useIncomeStore = defineStore('income', () => {
 
   async function loadConfig(workspaceId, force = false) {
     if (!workspaceId || (!force && loadedWorkspaceId.value === workspaceId)) return
+    if (!force && pendingConfig?.workspaceId === workspaceId) return pendingConfig.promise
     loading.value = true
     error.value = null
     loadedWorkspaceId.value = null
@@ -43,46 +46,68 @@ export const useIncomeStore = defineStore('income', () => {
     loadedCategoryIds.value = new Set()
     categoryRequestId += 1
     categoryRequestIds.clear()
+    categoryRequests.clear()
     categoryLoadingKeys.clear()
     categoryLoading.value = false
     const requestId = ++configRequestId
-    try {
-      const state = await getIncomeConfig(workspaceId)
-      if (requestId !== configRequestId) return
-      config.value = state
-      loadedWorkspaceId.value = workspaceId
-    } catch (loadError) {
-      if (requestId !== configRequestId) return
-      error.value = loadError
-    } finally {
-      if (requestId === configRequestId) loading.value = false
-    }
+    const promise = (async () => {
+      try {
+        const state = await getIncomeConfig(workspaceId)
+        if (requestId !== configRequestId) return
+        config.value = state
+        loadedWorkspaceId.value = workspaceId
+      } catch (loadError) {
+        if (requestId !== configRequestId) return
+        error.value = loadError
+      } finally {
+        if (requestId === configRequestId) loading.value = false
+        if (pendingConfig?.promise === promise) pendingConfig = null
+      }
+    })()
+    pendingConfig = { workspaceId, promise }
+    return promise
   }
 
   async function loadCategory(workspaceId, categoryId, force = false) {
-    await loadConfig(workspaceId, force)
-    if (error.value || !config.value?.categories?.[categoryId]) return
+    await loadConfig(workspaceId)
+    if (
+      loadedWorkspaceId.value !== workspaceId ||
+      error.value ||
+      !config.value?.categories?.[categoryId]
+    ) {
+      return
+    }
     if (!force && loadedCategoryIds.value.has(categoryId)) return
     const key = `${workspaceId}:${categoryId}`
+    if (categoryRequests.has(key)) return categoryRequests.get(key)
     categoryLoading.value = true
     const requestId = ++categoryRequestId
     categoryRequestIds.set(key, requestId)
     categoryLoadingKeys.add(key)
-    try {
-      const items = await getCategoryIncome(workspaceId, categoryId)
-      if (categoryRequestIds.get(key) !== requestId) return
-      incomeByCategory.value = { ...incomeByCategory.value, [categoryId]: items }
-      loadedCategoryIds.value = new Set(loadedCategoryIds.value).add(categoryId)
-    } catch (loadError) {
-      if (categoryRequestIds.get(key) !== requestId) return
-      error.value = loadError
-    } finally {
-      if (categoryRequestIds.get(key) === requestId) {
-        categoryRequestIds.delete(key)
-        categoryLoadingKeys.delete(key)
-        categoryLoading.value = categoryLoadingKeys.size > 0
+    const request = (async () => {
+      try {
+        const items = await getCategoryIncome(workspaceId, categoryId)
+        if (categoryRequestIds.get(key) !== requestId || loadedWorkspaceId.value !== workspaceId) {
+          return
+        }
+        incomeByCategory.value = { ...incomeByCategory.value, [categoryId]: items }
+        loadedCategoryIds.value = new Set(loadedCategoryIds.value).add(categoryId)
+      } catch (loadError) {
+        if (categoryRequestIds.get(key) !== requestId || loadedWorkspaceId.value !== workspaceId) {
+          return
+        }
+        error.value = loadError
+      } finally {
+        if (categoryRequestIds.get(key) === requestId) {
+          categoryRequestIds.delete(key)
+          categoryLoadingKeys.delete(key)
+          categoryLoading.value = categoryLoadingKeys.size > 0
+        }
+        if (categoryRequests.get(key) === request) categoryRequests.delete(key)
       }
-    }
+    })()
+    categoryRequests.set(key, request)
+    return request
   }
 
   async function completeSetup(workspaceId, selectedCategoryIds, memberIds) {
@@ -167,7 +192,9 @@ export const useIncomeStore = defineStore('income', () => {
   function reset() {
     configRequestId += 1
     categoryRequestId += 1
+    pendingConfig = null
     categoryRequestIds.clear()
+    categoryRequests.clear()
     categoryLoadingKeys.clear()
     config.value = null
     incomeByCategory.value = {}

@@ -25,7 +25,8 @@
         class="learn-content__back"
         @click="$emit('back')"
       />
-      <article class="learn-topic-detail">
+      <MortgageLearnTopic v-if="context.id === 'mortgage-detail'" :topic-id="selectedTopic.id" />
+      <article v-else class="learn-topic-detail">
         <span class="learn-topic-detail__eyebrow">{{ t('learn.topicEyebrow') }}</span>
         <h2>{{ t(selectedTopic.titleKey) }}</h2>
         <p class="learn-topic-detail__lead">{{ t(selectedTopic.descriptionKey) }}</p>
@@ -61,6 +62,7 @@
 
 <script setup>
 import { useI18n } from 'vue-i18n'
+import MortgageLearnTopic from '@/components/learn/MortgageLearnTopic.vue'
 
 defineProps({
   context: { type: Object, required: true },

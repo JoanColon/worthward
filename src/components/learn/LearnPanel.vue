@@ -2,11 +2,12 @@
   <q-dialog
     v-if="context"
     v-model="openModel"
+    class="learn-dialog"
+    :full-height="!isMobile"
     :position="isMobile ? 'bottom' : 'right'"
     @hide="showLearnIndex"
   >
     <q-card class="learn-panel" :class="{ 'learn-panel--mobile': isMobile }">
-      <span v-if="isMobile" class="learn-panel__handle" aria-hidden="true" />
       <LearnContent
         :context="context"
         :selected-topic="selectedTopic"
@@ -55,36 +56,51 @@ watch(
 
 <style scoped lang="scss">
 .learn-panel {
-  width: min(27rem, 100vw);
+  width: min(44rem, 100vw);
+  max-width: none;
   height: 100dvh;
   max-height: 100dvh;
-  border-radius: var(--radius-card) 0 0 var(--radius-card);
+  border-radius: 0;
   background: var(--color-surface);
+}
+
+.learn-panel :deep(.learn-content__header) {
+  padding-inline: var(--space-8);
+}
+
+.learn-panel :deep(.learn-content__body) {
+  padding-inline: var(--space-8);
 }
 
 .learn-panel--mobile {
   position: relative;
   width: 100vw;
   max-width: none;
-  height: 72dvh;
-  max-height: calc(100dvh - env(safe-area-inset-top) - 1rem);
-  border-width: 1px 0 0;
-  border-radius: 1.8rem 1.8rem 0 0;
-}
-
-.learn-panel__handle {
-  position: absolute;
-  z-index: 1;
-  top: 0.5rem;
-  left: 50%;
-  width: 3.25rem;
-  height: 0.32rem;
-  border-radius: 999px;
-  background: var(--color-line-strong);
-  transform: translateX(-50%);
+  height: 80vh;
+  height: 80dvh;
+  max-height: 80vh;
+  max-height: 80dvh;
+  border: 0;
+  border-radius: var(--radius-card) var(--radius-card) 0 0;
 }
 
 .learn-panel--mobile :deep(.learn-content__header) {
-  padding-top: var(--space-5);
+  padding-top: max(var(--space-5), env(safe-area-inset-top));
+  padding-inline: var(--space-5);
+}
+
+.learn-panel--mobile :deep(.learn-content__body) {
+  padding-inline: var(--space-5);
+}
+
+:global(.q-dialog__inner--right.learn-dialog),
+:global(.learn-dialog .q-dialog__inner--right) {
+  padding: 0;
+}
+
+@media (min-width: 1440px) {
+  .learn-panel {
+    width: min(48rem, 100vw);
+  }
 }
 </style>

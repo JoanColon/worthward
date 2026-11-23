@@ -26,6 +26,7 @@
 
       <template v-else-if="category && categoryConfig?.enabled">
         <AppPageHeader
+          inline-actions
           :title="t(category.nameKey)"
           :back-label="t('expenses.backToExpenses')"
           :back-to="expensesRoute"

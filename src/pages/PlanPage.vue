@@ -21,7 +21,6 @@
       <template v-else>
         <AppPageHeader
           :title="t('plan.title')"
-          :subtitle="t('plan.subtitle')"
           :back-label="t('navigation.backToWorkspaceHome')"
           :back-to="homeRoute"
         >
@@ -524,6 +523,7 @@ function liabilityCategoryName(categoryId) {
 
 <style scoped lang="scss">
 @use '@/css/mixins' as *;
+@use '@/css/foundation/breakpoints' as bp;
 
 .plan-page {
   @include financial-page;
@@ -942,12 +942,18 @@ function liabilityCategoryName(categoryId) {
   }
 }
 
-@media (max-width: 599px) {
+@media (max-width: bp.$xs-max) {
   .capacity-card {
     gap: 1rem;
-    margin-top: 0.85rem;
+    margin-top: var(--space-2);
     padding: 1.1rem;
   }
+
+  .section-label {
+    margin: var(--space-3) 0 var(--space-2) var(--space-1);
+    line-height: 1.2;
+  }
+
   .capacity-heading {
     display: flex;
     align-items: center;

@@ -28,6 +28,7 @@
 
       <template v-else>
         <AppPageHeader
+          inline-actions
           :title="t('expenses.title')"
           :back-label="t('navigation.backToWorkspaceHome')"
           :back-to="workspaceHomeRoute"

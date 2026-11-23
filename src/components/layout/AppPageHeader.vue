@@ -6,6 +6,7 @@
       {
         'app-page-header--has-actions': $slots.actions,
         'app-page-header--has-learn': learnContext,
+        'app-page-header--inline-actions': inlineActions,
       },
     ]"
   >
@@ -30,22 +31,24 @@
       <p v-if="subtitle">{{ subtitle }}</p>
     </div>
 
-    <div v-if="$slots.actions" class="app-page-header__actions">
-      <slot name="actions" />
-    </div>
+    <div v-if="$slots.actions || learnContext" class="app-page-header__controls">
+      <div v-if="$slots.actions" class="app-page-header__actions">
+        <slot name="actions" />
+      </div>
 
-    <q-btn
-      v-if="learnContext"
-      flat
-      round
-      icon="menu_book"
-      color="grey-7"
-      class="app-page-header__learn"
-      :aria-label="t('learn.open')"
-      @click="openLearn"
-    >
-      <q-tooltip>{{ t('learn.open') }}</q-tooltip>
-    </q-btn>
+      <q-btn
+        v-if="learnContext"
+        flat
+        round
+        icon="menu_book"
+        color="grey-7"
+        class="app-page-header__learn"
+        :aria-label="t('learn.open')"
+        @click="openLearn"
+      >
+        <q-tooltip>{{ t('learn.open') }}</q-tooltip>
+      </q-btn>
+    </div>
   </header>
 </template>
 
@@ -61,6 +64,7 @@ defineProps({
   subtitle: { type: String, default: '' },
   backLabel: { type: String, default: '' },
   backTo: { type: [String, Object], default: null },
+  inlineActions: { type: Boolean, default: false },
   size: {
     type: String,
     default: 'default',
@@ -122,10 +126,19 @@ p {
   line-height: 1.45;
 }
 
+.app-page-header__controls,
 .app-page-header__actions {
   display: flex;
   flex: 0 0 auto;
   align-items: center;
+}
+
+.app-page-header__controls {
+  gap: var(--space-2);
+  margin-left: auto;
+}
+
+.app-page-header__actions {
   gap: 0.75rem;
 }
 
@@ -171,24 +184,29 @@ p {
 }
 
 @media (max-width: 599px) {
-  .app-page-header--has-actions {
+  .app-page-header--has-actions:not(.app-page-header--inline-actions) {
     align-items: stretch;
     flex-direction: column;
   }
 
-  .app-page-header__actions {
+  .app-page-header--has-actions:not(.app-page-header--inline-actions) .app-page-header__controls {
     align-self: flex-start;
+    margin-left: 0;
   }
 
-  .app-page-header--has-learn {
-    position: relative;
-    padding-right: 3.25rem;
+  .app-page-header--inline-actions .app-page-header__content {
+    flex: 1 1 auto;
   }
 
-  .app-page-header--has-learn .app-page-header__learn {
-    position: absolute;
-    top: 0;
-    right: 0;
+  .app-page-header--inline-actions .app-page-header__title-row h1 {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .app-page-header--inline-actions .app-page-header__controls {
+    align-self: flex-end;
   }
 }
 </style>

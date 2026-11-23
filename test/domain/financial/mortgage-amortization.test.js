@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   buildFrenchMortgageScheduleFromBalance,
   calculateFrenchMortgageMonthlyPayment,
+  compareFrenchMortgageLumpSumScenarios,
   compareFrenchMortgagePayoffScenarios,
 } from '../../../functions/shared/liabilities/mortgage.js'
 import { nominalMonthlyRateFromAnnualPercent } from '../../../functions/shared/core/rates.js'
@@ -79,6 +80,26 @@ describe('French mortgage amortization', () => {
     expect(projection.nextPayment.interest + projection.nextPayment.principal).toBe(
       projection.nextPayment.payment,
     )
+  })
+
+  it('compares lower-payment and shorter-term outcomes after a lump-sum repayment', () => {
+    const comparison = compareFrenchMortgageLumpSumScenarios({
+      principal: 200_000,
+      annualInterestRate: 3,
+      termMonths: 25 * 12,
+      repaymentAmount: 10_000,
+      repaymentAfterMonths: 5 * 12,
+      asOfDate: '2026-01-01',
+    })
+
+    expect(comparison.monthlyPayment).toBe(948.42)
+    expect(comparison.balanceBeforeRepayment).toBe(171_011.14)
+    expect(comparison.reducePayment.monthlyPayment).toBe(892.96)
+    expect(comparison.reducePayment.monthlyCashFlowImprovement).toBe(55.46)
+    expect(comparison.reducePayment.interestSaved).toBe(3_310.23)
+    expect(comparison.shortenTerm.remainingPayments).toBe(222)
+    expect(comparison.shortenTerm.monthsEarlier).toBe(18)
+    expect(comparison.shortenTerm.interestSaved).toBe(7_806.13)
   })
 
   it('returns an empty schedule for a paid-off mortgage', () => {

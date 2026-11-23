@@ -81,6 +81,50 @@ describe('What If store', () => {
     })
   })
 
+  it('clears the previous workspace config while the next workspace loads', async () => {
+    let resolveWorkspaceB
+    getWhatIfConfig.mockResolvedValueOnce(config).mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveWorkspaceB = resolve
+      }),
+    )
+    const store = useWhatIfStore()
+    await store.load('workspace-a')
+
+    const workspaceBRequest = store.load('workspace-b')
+    expect(store.config.discretionaryReductionPercent).toBe(0)
+    resolveWorkspaceB({ ...config, discretionaryReductionPercent: 50 })
+    await workspaceBRequest
+
+    expect(store.config.discretionaryReductionPercent).toBe(50)
+  })
+
+  it('isolates an old workspace save from the current workspace state', async () => {
+    let finishWorkspaceASave
+    saveWhatIfSimulation.mockReturnValueOnce(
+      new Promise((resolve) => {
+        finishWorkspaceASave = resolve
+      }),
+    )
+    getWhatIfConfig
+      .mockResolvedValueOnce(config)
+      .mockResolvedValueOnce({ ...config, discretionaryReductionPercent: 50 })
+    const store = useWhatIfStore()
+    await store.load('workspace-a')
+    const staleSave = store.saveSimulation('workspace-a', { discretionaryReductionPercent: 10 })
+
+    await store.load('workspace-b')
+    expect(store.saving).toBe(false)
+    finishWorkspaceASave()
+    await staleSave
+    await store.load('workspace-b')
+
+    expect(store.config.discretionaryReductionPercent).toBe(50)
+    expect(store.saving).toBe(false)
+    expect(store.saveError).toBeNull()
+    expect(getWhatIfConfig).toHaveBeenCalledTimes(2)
+  })
+
   it('persists strategy inputs but not calculated results', async () => {
     const store = useWhatIfStore()
     await store.load('workspace-a')

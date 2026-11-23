@@ -19,12 +19,21 @@ export const useWhatIfStore = defineStore('what-if', () => {
   let pendingSaves = 0
   let saveQueue = Promise.resolve()
   let saveRevision = 0
+  let saveEpoch = 0
+  let stateWorkspaceId = null
 
   async function load(workspaceId, force = false, { includeStrategy = true } = {}) {
     const hasRequestedConfig =
       loadedWorkspaceId.value === workspaceId &&
       (!includeStrategy || strategyLoadedWorkspaceId.value === workspaceId)
     if (!workspaceId || (!force && hasRequestedConfig)) return config.value
+    if (stateWorkspaceId !== workspaceId) {
+      stateWorkspaceId = workspaceId
+      config.value = normalizeWhatIfConfig(defaultWhatIfConfig)
+      loadedWorkspaceId.value = null
+      strategyLoadedWorkspaceId.value = null
+      resetSaveState()
+    }
     const currentRequest = ++requestId
     loading.value = true
     loadError.value = null
@@ -44,9 +53,17 @@ export const useWhatIfStore = defineStore('what-if', () => {
   }
 
   async function saveWith(workspaceId, changes, writer) {
+    if (
+      !workspaceId ||
+      stateWorkspaceId !== workspaceId ||
+      loadedWorkspaceId.value !== workspaceId
+    ) {
+      throw new Error('What If configuration is not loaded for this workspace')
+    }
     const previous = config.value
     const next = normalizeWhatIfConfig({ ...config.value, ...changes })
     const revision = ++saveRevision
+    const epoch = saveEpoch
     config.value = next
     pendingSaves += 1
     saving.value = true
@@ -55,15 +72,20 @@ export const useWhatIfStore = defineStore('what-if', () => {
       const request = saveQueue.catch(() => null).then(() => writer(workspaceId, next))
       saveQueue = request
       await request
+      if (epoch !== saveEpoch || stateWorkspaceId !== workspaceId) return null
       loadedWorkspaceId.value = workspaceId
       return config.value
     } catch (caughtError) {
-      saveError.value = caughtError
-      if (revision === saveRevision) config.value = previous
+      if (epoch === saveEpoch && stateWorkspaceId === workspaceId) {
+        saveError.value = caughtError
+        if (revision === saveRevision) config.value = previous
+      }
       throw caughtError
     } finally {
-      pendingSaves -= 1
-      saving.value = pendingSaves > 0
+      if (epoch === saveEpoch) {
+        pendingSaves -= 1
+        saving.value = pendingSaves > 0
+      }
     }
   }
 
@@ -77,16 +99,23 @@ export const useWhatIfStore = defineStore('what-if', () => {
 
   function reset() {
     requestId += 1
+    stateWorkspaceId = null
     config.value = normalizeWhatIfConfig(defaultWhatIfConfig)
     loading.value = false
-    saving.value = false
-    pendingSaves = 0
-    saveQueue = Promise.resolve()
-    saveRevision += 1
+    resetSaveState()
     loadError.value = null
     saveError.value = null
     loadedWorkspaceId.value = null
     strategyLoadedWorkspaceId.value = null
+  }
+
+  function resetSaveState() {
+    saveEpoch += 1
+    pendingSaves = 0
+    saveQueue = Promise.resolve()
+    saveRevision += 1
+    saving.value = false
+    saveError.value = null
   }
 
   return {
