@@ -152,6 +152,7 @@ export function compareFrenchMortgageLumpSumScenarios({
   principal,
   annualInterestRate,
   termMonths,
+  monthlyPayment: contractualMonthlyPayment,
   repaymentAmount,
   repaymentAfterMonths,
   asOfDate = new Date(),
@@ -164,11 +165,14 @@ export function compareFrenchMortgageLumpSumScenarios({
     throw new RangeError('The repayment must happen before the contractual term ends')
   }
 
-  const monthlyPayment = calculateFrenchMortgageMonthlyPayment({
-    principal: originalPrincipal,
-    annualInterestRate,
-    termMonths: contractualMonths,
-  })
+  const monthlyPayment =
+    contractualMonthlyPayment == null
+      ? calculateFrenchMortgageMonthlyPayment({
+          principal: originalPrincipal,
+          annualInterestRate,
+          termMonths: contractualMonths,
+        })
+      : requirePositiveNumber(contractualMonthlyPayment, 'monthly payment')
   const originalSchedule = buildFrenchMortgageScheduleFromBalance({
     currentBalance: originalPrincipal,
     annualInterestRate,
@@ -343,6 +347,12 @@ function requireNonNegativeNumber(value, label) {
 function requirePositiveInteger(value, label) {
   const number = Number(value)
   if (!Number.isInteger(number) || number <= 0) throw new RangeError(`A valid ${label} is required`)
+  return number
+}
+
+function requirePositiveNumber(value, label) {
+  const number = requireNonNegativeNumber(value, label)
+  if (number <= 0) throw new RangeError(`A positive ${label} is required`)
   return number
 }
 

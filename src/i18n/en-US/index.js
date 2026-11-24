@@ -100,102 +100,22 @@ export default {
       },
     },
     contexts: {
-      dashboard: {
-        title: 'Understand your financial position',
-        description: 'Explore the core measures behind your workspace overview.',
+      cash: {
+        title: 'Understand your cash',
+        description:
+          'Explore how inflation, remuneration and liquidity shape the real value of cash.',
       },
-      assets: {
-        title: 'Understand your assets',
-        description: 'Learn how value, access and wear affect what you own.',
-      },
-      liabilities: {
-        title: 'Understand your liabilities',
-        description: 'Explore how borrowing costs and repayment schedules shape your debt.',
+      investments: {
+        title: 'Understand your investments',
+        description: 'Explore how bonds and stocks generate returns, compound and carry risk.',
       },
       mortgage: {
         title: 'Understand your mortgage',
         description:
           'A mortgage is more than a monthly payment. Understanding how your debt evolves can help you save on interest, build equity and make better financial decisions.',
       },
-      income: {
-        title: 'Understand your income',
-        description: 'Explore how income availability and stability support your financial plan.',
-      },
-      expenses: {
-        title: 'Understand your expenses',
-        description: 'Learn how different types of spending affect your cost of life.',
-      },
-      expenseTracker: {
-        title: 'Understand your spending',
-        description: 'Compare your plan with recorded expenses and improve future estimates.',
-      },
-      plan: {
-        title: 'Understand your plan',
-        description: 'Explore the principles behind saving consistently and building resilience.',
-      },
-      strategy: {
-        title: 'Understand your strategy',
-        description: 'Explore the financial concepts behind your long-term projections.',
-      },
-      progress: {
-        title: 'Understand your progress',
-        description: 'Learn how changes in wealth and milestones reflect your financial direction.',
-      },
-      investments: {
-        title: 'Understand your investments',
-        description: 'Explore how risk, diversification and returns shape a portfolio.',
-      },
-      realEstate: {
-        title: 'Understand real estate',
-        description: 'Learn how property value, liquidity and costs affect investment returns.',
-      },
     },
     topics: {
-      netWorth: {
-        title: 'Net worth',
-        description: 'The difference between everything you own and everything you owe.',
-        body: 'Net worth is calculated by subtracting your total liabilities from your total assets. Tracking it over time gives a broader view of financial progress than looking at income or a single account alone.',
-      },
-      costOfLife: {
-        title: 'Cost of Life',
-        description: 'The recurring spending needed to support your current lifestyle.',
-        body: 'Your Cost of Life brings together the expenses required to maintain your lifestyle. Understanding its monthly and annual level helps you assess savings capacity, emergency needs and the income a future plan may require.',
-      },
-      savingsRate: {
-        title: 'Savings rate',
-        description: 'The share of income that remains available for saving or investing.',
-        body: 'A savings rate compares the amount you retain with the income available to you. It can help show whether changes in income or spending are creating more room for future goals.',
-      },
-      assetValuation: {
-        title: 'Asset valuation',
-        description: 'Estimating what an asset is reasonably worth today.',
-        body: 'An asset value should reflect a reasonable current estimate rather than its original purchase price. Market prices, condition, selling costs and uncertainty can all affect the amount you could actually realize.',
-      },
-      liquidity: {
-        title: 'Liquidity',
-        description: 'How quickly an asset can become cash without losing significant value.',
-        body: 'Cash is highly liquid, while property and some investments can take time or incur costs to sell. Liquidity matters because a valuable asset may still be difficult to use for an immediate expense.',
-      },
-      depreciation: {
-        title: 'Depreciation',
-        description: 'The loss of an asset’s value over time.',
-        body: 'Some assets lose value through use, age or obsolescence. Accounting for depreciation keeps net worth estimates realistic and distinguishes assets that preserve value from those that mainly support consumption.',
-      },
-      debt: {
-        title: 'Debt',
-        description: 'Money owed under an agreement to repay it over time.',
-        body: 'Debt creates a future repayment obligation and often carries interest or fees. Its financial impact depends on the balance, rate, term, repayment structure and what the borrowed money was used for.',
-      },
-      interestRates: {
-        title: 'Interest rates',
-        description: 'The price charged for borrowing money.',
-        body: 'An interest rate determines part of the cost of carrying debt. Small rate differences can produce meaningful changes in total interest when balances are large or repayment periods are long.',
-      },
-      loanAmortization: {
-        title: 'Loan amortization',
-        description: 'How scheduled payments reduce a loan balance over time.',
-        body: 'An amortization schedule divides each payment between interest and principal. As principal is repaid, the outstanding balance falls and the interest charged in later periods usually changes.',
-      },
       frenchAmortization: {
         title: 'French amortization',
         description:
@@ -212,110 +132,16 @@ export default {
         description: 'Compare a lower monthly payment with becoming debt-free sooner.',
         body: 'An extra principal payment can reduce future interest and may shorten the loan term, depending on the contract. Fees, alternative uses for the money and required liquidity should also be considered.',
       },
-      disposableIncome: {
-        title: 'Disposable income',
-        description: 'Income available after taxes and mandatory deductions.',
-        body: 'Disposable income is the amount available for living costs, saving and other choices after compulsory deductions. It is a more useful planning base than gross income alone.',
+      inflationPurchasingPower: {
+        title: 'Inflation & purchasing power',
+        description: 'See what cash can buy over time and explore how much liquidity you need.',
+        body: 'Inflation reduces what a fixed amount of cash can buy. Cash remuneration can offset some or all of that loss, while an emergency fund keeps essential liquidity available.',
       },
-      incomeStability: {
-        title: 'Income stability',
-        description: 'How predictable and resilient your income is over time.',
-        body: 'Stable income is easier to plan around, while variable or concentrated income may require a larger buffer. Stability depends on regularity, source diversity and exposure to employment or business risk.',
-      },
-      fixedVsVariableExpenses: {
-        title: 'Fixed vs. variable expenses',
-        description: 'Costs that stay relatively stable compared with those that change.',
-        body: 'Fixed expenses tend to recur at similar amounts, while variable expenses fluctuate with use or decisions. The distinction helps identify which parts of a budget are committed and which are easier to adjust.',
-      },
-      discretionarySpending: {
-        title: 'Discretionary spending',
-        description: 'Spending that can be adjusted without removing basic necessities.',
-        body: 'Discretionary spending supports lifestyle choices rather than essential obligations. It is not inherently negative, but understanding it helps you evaluate trade-offs between present enjoyment and future goals.',
-      },
-      budgetVsActual: {
-        title: 'Budget vs. actual',
-        description: 'Comparing planned spending with what really happened.',
-        body: 'A budget is an expectation; actual spending is observed behaviour. Comparing the two reveals where assumptions are accurate and where future plans may need to change.',
-      },
-      estimatedVsConfirmed: {
-        title: 'Estimated vs. confirmed',
-        description: 'The difference between a forecast amount and a recorded amount.',
-        body: 'Estimates make planning possible before every transaction is known. Confirmed amounts replace assumptions with evidence and can improve the accuracy of later monthly or annual projections.',
-      },
-      payYourselfFirst: {
-        title: 'Pay yourself first',
-        description: 'Treating saving as a planned priority rather than a leftover.',
-        body: 'Paying yourself first means allocating money to savings or investments before optional spending. Automating that allocation can make progress more consistent, provided essential costs and debt obligations remain covered.',
-      },
-      emergencyFund: {
-        title: 'Emergency fund',
-        description: 'Liquid savings reserved for unexpected essential costs.',
-        body: 'An emergency fund helps absorb income interruptions or unplanned expenses without immediately relying on debt or selling long-term assets. Its appropriate size depends on spending needs and income stability.',
-      },
-      savingsStrategy: {
-        title: 'Savings strategy',
-        description: 'A repeatable plan for directing surplus income toward goals.',
-        body: 'A savings strategy connects available cash flow with priorities such as a safety buffer, debt reduction or investing. Clear allocations make trade-offs visible and easier to maintain over time.',
-      },
-      compoundInterest: {
-        title: 'Compound interest',
-        description: 'Growth earned on both contributions and previous growth.',
-        body: 'Compounding occurs when returns remain invested and can generate further returns. Time, contribution frequency, fees and the achieved rate all influence the eventual result.',
-      },
-      inflation: {
-        title: 'Inflation and purchasing power',
-        description: 'How rising prices reduce what a future amount can buy.',
-        body: 'Inflation means the same nominal amount may purchase fewer goods and services later. Long-term projections often distinguish nominal values from inflation-adjusted values to show future purchasing power more clearly.',
-      },
-      expectedReturns: {
-        title: 'Expected returns',
-        description: 'An assumption about potential future investment performance.',
-        body: 'An expected return is a planning estimate, not a promise. Actual results can vary widely, so projections are best interpreted as scenarios whose assumptions should remain visible and reasonable.',
-      },
-      financialIndependence: {
-        title: 'Financial independence',
-        description: 'Having enough resources to support spending without relying on work income.',
-        body: 'Financial independence compares sustainable resources with expected living costs. Rules such as a 4% withdrawal rate are simplified planning heuristics and do not guarantee that a portfolio will last.',
-      },
-      netWorthGrowth: {
-        title: 'Net worth growth',
-        description: 'The change in assets minus liabilities across time.',
-        body: 'Net worth can grow through saving, investment gains, asset appreciation and debt repayment. Reviewing the components helps distinguish repeatable progress from temporary market movements.',
-      },
-      milestones: {
-        title: 'Financial milestones',
-        description: 'Observable markers of resilience, freedom and debt reduction.',
-        body: 'Milestones turn long-term progress into recognizable stages. They provide context and motivation, but they are indicators rather than a complete measure of financial wellbeing.',
-      },
-      riskAndVolatility: {
-        title: 'Risk and volatility',
-        description: 'Uncertainty of outcomes and the movement of investment values.',
-        body: 'Volatility describes how sharply prices change, while risk more broadly includes the possibility of permanent loss or missing a goal. Capacity and willingness to tolerate both vary by investor and time horizon.',
-      },
-      diversification: {
-        title: 'Diversification',
-        description: 'Spreading exposure across different investments and risks.',
-        body: 'Diversification reduces dependence on a single asset, company, sector or market. It can limit concentrated losses, although it cannot eliminate market-wide risk.',
-      },
-      dividendYield: {
-        title: 'Dividend yield',
-        description: 'Annual dividends relative to an investment’s current price.',
-        body: 'Dividend yield measures cash distributions as a percentage of price. A high yield is not automatically a high return and may reflect falling prices, business risk or an unsustainable distribution.',
-      },
-      totalReturn: {
-        title: 'Total return',
-        description: 'Price changes plus income received from an investment.',
-        body: 'Total return combines capital gains or losses with dividends, interest or other distributions. It provides a fuller performance measure than income yield or price movement viewed separately.',
-      },
-      propertyAppreciation: {
-        title: 'Property appreciation',
-        description: 'An increase in a property’s market value over time.',
-        body: 'Property appreciation depends on local supply and demand, condition, location and the wider economy. It is uncertain and should be separated from improvements paid for by the owner.',
-      },
-      realEstateReturns: {
-        title: 'Real estate returns',
-        description: 'The combined effect of value changes, income, costs and financing.',
-        body: 'A property’s return may include rent and appreciation, offset by taxes, maintenance, vacancies, transaction costs and interest. Leverage can amplify both gains and losses.',
+      understandingBondsStocks: {
+        title: 'Understanding bonds & stocks',
+        description:
+          'Compare what you own, where returns come from and why values behave differently.',
+        body: 'Bonds create contractual claims on future payments, while stocks represent ownership in a business. Their income, risks and compounding mechanisms differ.',
       },
     },
   },

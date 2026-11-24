@@ -25,7 +25,22 @@
         class="learn-content__back"
         @click="$emit('back')"
       />
-      <MortgageLearnTopic v-if="context.id === 'mortgage-detail'" :topic-id="selectedTopic.id" />
+      <MortgageLearnTopic
+        v-if="
+          selectedTopic.id === 'frenchAmortization' ||
+          selectedTopic.id === 'principalVsInterest' ||
+          selectedTopic.id === 'earlyRepayment'
+        "
+        :topic-id="selectedTopic.id"
+        :model-context="context.id === 'mortgage-detail'"
+        :model-data="mortgageModelData"
+      />
+      <CashLearnTopic
+        v-else-if="selectedTopic.id === 'inflationPurchasingPower'"
+        :model-context="context.id === 'cash-model'"
+        :model-data="cashModelData"
+      />
+      <InvestmentLearnTopic v-else-if="selectedTopic.id === 'understandingBondsStocks'" />
       <article v-else class="learn-topic-detail">
         <span class="learn-topic-detail__eyebrow">{{ t('learn.topicEyebrow') }}</span>
         <h2>{{ t(selectedTopic.titleKey) }}</h2>
@@ -61,8 +76,16 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRoute } from 'vue-router'
+import CashLearnTopic from '@/components/learn/CashLearnTopic.vue'
+import InvestmentLearnTopic from '@/components/learn/InvestmentLearnTopic.vue'
 import MortgageLearnTopic from '@/components/learn/MortgageLearnTopic.vue'
+import { mortgageDetailFromLiability } from '@/domain/financial/mortgage-liability-adapter'
+import { useAssetsStore } from '@/stores/assets-store'
+import { useLiabilitiesStore } from '@/stores/liabilities-store'
+import { buildFrenchMortgageScheduleFromBalance } from '../../../functions/shared/liabilities/mortgage.js'
 
 defineProps({
   context: { type: Object, required: true },
@@ -72,6 +95,49 @@ defineProps({
 defineEmits(['back', 'close', 'select'])
 
 const { t } = useI18n()
+const route = useRoute()
+const assetsStore = useAssetsStore()
+const liabilitiesStore = useLiabilitiesStore()
+
+const mortgageModelData = computed(() => {
+  if (route.name !== 'mortgage-detail') return null
+  const liability = liabilitiesStore
+    .itemsForCategory('mortgage')
+    .find(({ id }) => id === String(route.params.liabilityId))
+  const model = mortgageDetailFromLiability(liability)
+  if (!model) return null
+
+  try {
+    const schedule = buildFrenchMortgageScheduleFromBalance({
+      currentBalance: model.currentBalance,
+      annualInterestRate: model.annualInterestRate,
+      monthlyPayment: model.monthlyPayment,
+      asOfDate: new Date(),
+    })
+    return {
+      name: liability.itemName,
+      currentBalance: model.currentBalance,
+      annualInterestRate: model.annualInterestRate,
+      monthlyPayment: model.monthlyPayment,
+      remainingTermMonths: schedule.length,
+    }
+  } catch {
+    return null
+  }
+})
+
+const cashModelData = computed(() => {
+  if (route.name !== 'cash-model') return null
+  const asset = assetsStore
+    .itemsForCategory('cash')
+    .find(({ id }) => id === String(route.params.assetId))
+  if (!asset) return null
+  return {
+    name: asset.itemName,
+    currentBalance: Number(asset.currentValue) || 0,
+    annualReturnPercent: Number(asset.detail?.cash?.annualReturnPercent) || 0,
+  }
+})
 </script>
 
 <style scoped lang="scss">

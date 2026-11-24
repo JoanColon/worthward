@@ -3,6 +3,11 @@
     <span class="mortgage-lesson__eyebrow">{{ t(`${topicKey}.eyebrow`) }}</span>
     <h2>{{ t(`${topicKey}.title`) }}</h2>
     <p class="mortgage-lesson__lead">{{ t(`${topicKey}.lead`) }}</p>
+    <LearnDataSourceToggle
+      v-model="dataSource"
+      :enabled="modelContext"
+      :model-available="Boolean(modelData)"
+    />
 
     <template v-if="topicId === 'frenchAmortization'">
       <LearnLessonSection :label="t('learn.lesson.whatIsIt')">
@@ -41,6 +46,7 @@
                 min="0"
                 step="1000"
                 prefix="€"
+                :readonly="usingModelData"
                 :aria-label="t(`${topicKey}.loan`)"
               />
             </div>
@@ -57,6 +63,7 @@
                 max="100"
                 step="0.1"
                 suffix="%"
+                :readonly="usingModelData"
                 :aria-label="t(`${topicKey}.fixedRate`)"
               />
             </div>
@@ -73,6 +80,7 @@
                 max="100"
                 step="1"
                 :suffix="t(`${topicKey}.years`)"
+                :readonly="usingModelData"
                 :aria-label="t(`${topicKey}.term`)"
               />
             </div>
@@ -183,6 +191,7 @@
                 min="0"
                 step="1000"
                 prefix="€"
+                :readonly="usingModelData"
                 :aria-label="t(`${topicKey}.loan`)"
               />
             </div>
@@ -199,6 +208,7 @@
                 max="100"
                 step="0.1"
                 suffix="%"
+                :readonly="usingModelData"
                 :aria-label="t(`${topicKey}.fixedRate`)"
               />
             </div>
@@ -215,6 +225,7 @@
                 max="100"
                 step="1"
                 :suffix="t(`${topicKey}.years`)"
+                :readonly="usingModelData"
                 :aria-label="t(`${topicKey}.term`)"
               />
             </div>
@@ -243,7 +254,7 @@
                 type="number"
                 inputmode="numeric"
                 min="0"
-                :max="Math.max(0, Number(exampleTermYears) - 1)"
+                :max="Math.max(0, Math.floor(Number(exampleTermYears)) - 1)"
                 step="1"
                 :suffix="t(`${topicKey}.years`)"
                 :aria-label="t(`${topicKey}.repaymentAfter`)"
@@ -355,8 +366,9 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import LearnDataSourceToggle from '@/components/learn/LearnDataSourceToggle.vue'
 import LearnLessonSection from '@/components/learn/LearnLessonSection.vue'
 import {
   buildFrenchMortgageScheduleFromBalance,
@@ -366,20 +378,39 @@ import {
 
 const props = defineProps({
   topicId: { type: String, required: true },
+  modelContext: { type: Boolean, default: false },
+  modelData: { type: Object, default: null },
 })
 
 const { t } = useI18n()
 const topicKey = computed(() => `learn.mortgageLessons.${props.topicId}`)
+const dataSource = ref('example')
 const exampleLoan = ref(200_000)
 const exampleRate = ref(3)
-const exampleTermYears = ref(25)
+const exampleTermMonths = ref(25 * 12)
+const exampleTermYears = computed({
+  get: () => Number((exampleTermMonths.value / 12).toFixed(2)),
+  set: (value) => {
+    exampleTermMonths.value = Math.max(1, Math.round((Number(value) || 0) * 12))
+  },
+})
 const earlyRepaymentAmount = ref(10_000)
 const earlyRepaymentAfterYears = ref(5)
+const usingModelData = computed(() => dataSource.value === 'model' && Boolean(props.modelData))
+
+watch(dataSource, resetSimulationData, { immediate: true })
+watch(
+  () => props.modelData,
+  () => {
+    if (usingModelData.value) resetSimulationData()
+  },
+  { deep: true },
+)
 
 const mortgageExample = computed(() => {
   const principal = Number(exampleLoan.value)
   const annualInterestRate = Number(exampleRate.value)
-  const termYears = Number(exampleTermYears.value)
+  const termMonths = Number(exampleTermMonths.value)
 
   if (
     !Number.isFinite(principal) ||
@@ -387,20 +418,17 @@ const mortgageExample = computed(() => {
     !Number.isFinite(annualInterestRate) ||
     annualInterestRate < 0 ||
     annualInterestRate > 100 ||
-    !Number.isInteger(termYears) ||
-    termYears < 1 ||
-    termYears > 100
+    !Number.isInteger(termMonths) ||
+    termMonths < 1 ||
+    termMonths > 1_200
   ) {
     return null
   }
 
   try {
-    const termMonths = termYears * 12
-    const monthlyPayment = calculateFrenchMortgageMonthlyPayment({
-      principal,
-      annualInterestRate,
-      termMonths,
-    })
+    const monthlyPayment = usingModelData.value
+      ? Number(props.modelData.monthlyPayment)
+      : calculateFrenchMortgageMonthlyPayment({ principal, annualInterestRate, termMonths })
     const schedule = buildFrenchMortgageScheduleFromBalance({
       currentBalance: principal,
       annualInterestRate,
@@ -421,7 +449,7 @@ const formattedMonthlyPayment = computed(() =>
 const earlyRepaymentProjection = computed(() => {
   const principal = Number(exampleLoan.value)
   const annualInterestRate = Number(exampleRate.value)
-  const termYears = Number(exampleTermYears.value)
+  const termMonths = Number(exampleTermMonths.value)
   const repaymentAmount = Number(earlyRepaymentAmount.value)
   const repaymentAfterYears = Number(earlyRepaymentAfterYears.value)
 
@@ -431,14 +459,14 @@ const earlyRepaymentProjection = computed(() => {
     !Number.isFinite(annualInterestRate) ||
     annualInterestRate < 0 ||
     annualInterestRate > 100 ||
-    !Number.isInteger(termYears) ||
-    termYears < 1 ||
-    termYears > 100 ||
+    !Number.isInteger(termMonths) ||
+    termMonths < 1 ||
+    termMonths > 1_200 ||
     !Number.isFinite(repaymentAmount) ||
     repaymentAmount < 0 ||
     !Number.isInteger(repaymentAfterYears) ||
     repaymentAfterYears < 0 ||
-    repaymentAfterYears >= termYears
+    repaymentAfterYears * 12 >= termMonths
   ) {
     return null
   }
@@ -447,7 +475,8 @@ const earlyRepaymentProjection = computed(() => {
     return compareFrenchMortgageLumpSumScenarios({
       principal,
       annualInterestRate,
-      termMonths: termYears * 12,
+      termMonths,
+      monthlyPayment: usingModelData.value ? Number(props.modelData.monthlyPayment) : undefined,
       repaymentAmount,
       repaymentAfterMonths: repaymentAfterYears * 12,
       asOfDate: '2026-01-01',
@@ -526,6 +555,24 @@ const repaymentChecks = computed(() => [
   t(`${topicKey.value}.checkLiquidity`),
   t(`${topicKey.value}.checkAlternatives`),
 ])
+
+function resetSimulationData() {
+  if (dataSource.value === 'model' && props.modelData) {
+    exampleLoan.value = Number(props.modelData.currentBalance) || 0
+    exampleRate.value = Number(props.modelData.annualInterestRate) || 0
+    exampleTermMonths.value = Math.max(1, Number(props.modelData.remainingTermMonths) || 1)
+    earlyRepaymentAmount.value = Math.min(10_000, exampleLoan.value)
+    earlyRepaymentAfterYears.value = 0
+    return
+  }
+
+  dataSource.value = 'example'
+  exampleLoan.value = 200_000
+  exampleRate.value = 3
+  exampleTermMonths.value = 25 * 12
+  earlyRepaymentAmount.value = 10_000
+  earlyRepaymentAfterYears.value = 5
+}
 </script>
 
 <style scoped lang="scss">

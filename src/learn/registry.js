@@ -1,85 +1,47 @@
+const assetCategoryContexts = { cash: 'cash', investment: 'investments' }
+const liabilityCategoryContexts = { mortgage: 'mortgages' }
+
 export const learnTopics = {
-  netWorth: topic('netWorth'),
-  costOfLife: topic('costOfLife'),
-  savingsRate: topic('savingsRate'),
-  assetValuation: topic('assetValuation'),
-  liquidity: topic('liquidity'),
-  depreciation: topic('depreciation'),
-  debt: topic('debt'),
-  interestRates: topic('interestRates'),
-  loanAmortization: topic('loanAmortization'),
   frenchAmortization: topic('frenchAmortization'),
   principalVsInterest: topic('principalVsInterest'),
   earlyRepayment: topic('earlyRepayment'),
-  disposableIncome: topic('disposableIncome'),
-  incomeStability: topic('incomeStability'),
-  fixedVsVariableExpenses: topic('fixedVsVariableExpenses'),
-  discretionarySpending: topic('discretionarySpending'),
-  budgetVsActual: topic('budgetVsActual'),
-  estimatedVsConfirmed: topic('estimatedVsConfirmed'),
-  payYourselfFirst: topic('payYourselfFirst'),
-  emergencyFund: topic('emergencyFund'),
-  savingsStrategy: topic('savingsStrategy'),
-  compoundInterest: topic('compoundInterest'),
-  inflation: topic('inflation'),
-  expectedReturns: topic('expectedReturns'),
-  financialIndependence: topic('financialIndependence'),
-  netWorthGrowth: topic('netWorthGrowth'),
-  milestones: topic('milestones'),
-  riskAndVolatility: topic('riskAndVolatility'),
-  diversification: topic('diversification'),
-  dividendYield: topic('dividendYield'),
-  totalReturn: topic('totalReturn'),
-  propertyAppreciation: topic('propertyAppreciation'),
-  realEstateReturns: topic('realEstateReturns'),
+  inflationPurchasingPower: topic('inflationPurchasingPower'),
+  understandingBondsStocks: topic('understandingBondsStocks'),
 }
 
 export const learnContexts = {
-  'workspace-dashboard': context('dashboard', ['netWorth', 'costOfLife', 'savingsRate']),
-  assets: context('assets', ['assetValuation', 'liquidity', 'depreciation']),
-  liabilities: context('liabilities', ['debt', 'interestRates', 'loanAmortization']),
+  cash: context('cash', ['inflationPurchasingPower']),
+  'cash-model': context('cash', ['inflationPurchasingPower']),
+  investments: context('investments', ['understandingBondsStocks']),
+  mortgages: context('mortgage', ['frenchAmortization', 'principalVsInterest', 'earlyRepayment']),
   'mortgage-detail': context('mortgage', [
     'frenchAmortization',
     'principalVsInterest',
     'earlyRepayment',
   ]),
-  income: context('income', ['disposableIncome', 'incomeStability']),
-  expenses: context('expenses', ['fixedVsVariableExpenses', 'discretionarySpending']),
-  'expense-tracker': context('expenseTracker', ['budgetVsActual', 'estimatedVsConfirmed']),
-  plan: context('plan', ['payYourselfFirst', 'emergencyFund', 'savingsStrategy']),
-  'what-if-strategy': context('strategy', [
-    'compoundInterest',
-    'inflation',
-    'expectedReturns',
-    'financialIndependence',
-  ]),
-  progress: context('progress', ['netWorthGrowth', 'financialIndependence', 'milestones']),
-  'investment-portfolio': context('investments', [
-    'riskAndVolatility',
-    'diversification',
-    'dividendYield',
-    'totalReturn',
-  ]),
-  'real-estate-model': context('realEstate', [
-    'propertyAppreciation',
-    'liquidity',
-    'realEstateReturns',
-  ]),
 }
 
 export function resolveLearnContext(route) {
   const routeName = typeof route?.name === 'string' ? route.name : ''
-  const registeredContext = learnContexts[routeName]
+  const category = String(route?.params?.category || '')
+  const contextId = resolveContextId(routeName, category)
+  const registeredContext = learnContexts[contextId]
   if (!registeredContext) return null
 
   return {
-    id: routeName,
+    id: contextId,
     ...registeredContext,
     topics: registeredContext.topicIds.map((topicId) => ({
       id: topicId,
       ...learnTopics[topicId],
     })),
   }
+}
+
+function resolveContextId(routeName, category) {
+  if (routeName === 'asset-category') return assetCategoryContexts[category] || routeName
+  if (routeName === 'liability-category') return liabilityCategoryContexts[category] || routeName
+  return routeName
 }
 
 function topic(id) {

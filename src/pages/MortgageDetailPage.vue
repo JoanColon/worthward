@@ -502,6 +502,7 @@ import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import AppPageHeader from '@/components/layout/AppPageHeader.vue'
 import MortgageBalanceChart from '@/components/liabilities/MortgageBalanceChart.vue'
+import { amortizationPageForDate } from '@/domain/financial/amortization-pagination'
 import { mortgageDetailFromLiability } from '@/domain/financial/mortgage-liability-adapter'
 import {
   buildFrenchMortgageScheduleFromBalance,
@@ -668,6 +669,17 @@ const pageLoading = computed(
 )
 
 watch([workspaceId, liabilityId], () => prepare(), { immediate: true })
+watch(amortizationDialog, (open) => {
+  if (!open) return
+  amortizationPagination.value = {
+    ...amortizationPagination.value,
+    page: amortizationPageForDate(
+      amortizationRows.value,
+      localToday(),
+      amortizationPagination.value.rowsPerPage,
+    ),
+  }
+})
 
 async function prepare(force = false) {
   const currentPreparation = ++preparationId

@@ -102,6 +102,22 @@ describe('French mortgage amortization', () => {
     expect(comparison.shortenTerm.interestSaved).toBe(7_806.13)
   })
 
+  it('uses an existing contractual payment when modelling a real mortgage', () => {
+    const comparison = compareFrenchMortgageLumpSumScenarios({
+      principal: 146_230,
+      annualInterestRate: 2.41,
+      termMonths: 204,
+      monthlyPayment: 812,
+      repaymentAmount: 10_000,
+      repaymentAfterMonths: 0,
+      asOfDate: '2026-10-27',
+    })
+
+    expect(comparison.monthlyPayment).toBe(812)
+    expect(comparison.shortenTerm.monthlyPayment).toBe(812)
+    expect(comparison.balanceBeforeRepayment).toBe(146_230)
+  })
+
   it('returns an empty schedule for a paid-off mortgage', () => {
     expect(
       buildFrenchMortgageScheduleFromBalance({
