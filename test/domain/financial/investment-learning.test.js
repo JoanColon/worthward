@@ -4,7 +4,7 @@ import {
   buildRiskScenarioPaths,
   compareBondAndStock,
   priceFixedCouponBond,
-} from '../../../src/domain/financial/investment-learning.js'
+} from '../../../functions/shared/assets/securities.js'
 
 const defaults = {
   initialInvestment: 10_000,

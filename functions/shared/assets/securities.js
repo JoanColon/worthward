@@ -1,3 +1,8 @@
+/**
+ * Pure fixed-income and equity calculations shared by application features and Learn.
+ */
+
+/** Compares fixed bond coupons with share-price growth and dividends. */
 export function compareBondAndStock({
   initialInvestment,
   years,
@@ -23,9 +28,9 @@ export function compareBondAndStock({
   const stockProjection = [{ year: 0, value: initial }]
 
   for (let year = 1; year <= horizon; year += 1) {
-    couponValue = reinvestCoupons
-      ? couponValue * (1 + couponReinvestment) + annualCoupon
-      : annualCoupon * year
+    couponValue = reinvestCoupons ?
+      couponValue * (1 + couponReinvestment) + annualCoupon :
+      annualCoupon * year
 
     const annualDividend = stockMarketValue * dividend
     dividendsReceived += annualDividend
@@ -69,17 +74,17 @@ export function compareBondAndStock({
   }
 }
 
+/** Prices a fixed-coupon bond by discounting its remaining contractual cash flows. */
 export function priceFixedCouponBond({ faceValue, couponRate, marketYield, years }) {
   const face = nonNegative(faceValue, 'faceValue')
   const coupon = rate(couponRate, 'couponRate')
   const yieldRate = rate(marketYield, 'marketYield')
   const horizon = integerBetween(years, 1, 100, 'years')
   const annualCoupon = face * coupon
-  const marketPrice =
-    Math.abs(yieldRate) < 1e-12
-      ? face + annualCoupon * horizon
-      : annualCoupon * ((1 - (1 + yieldRate) ** -horizon) / yieldRate) +
-        face / (1 + yieldRate) ** horizon
+  const marketPrice = Math.abs(yieldRate) < 1e-12 ?
+    face + annualCoupon * horizon :
+    annualCoupon * ((1 - (1 + yieldRate) ** -horizon) / yieldRate) +
+      face / (1 + yieldRate) ** horizon
 
   return {
     faceValue: face,
@@ -93,6 +98,7 @@ export function priceFixedCouponBond({ faceValue, couponRate, marketYield, years
   }
 }
 
+/** Builds a price curve for a fixed-coupon bond over a range of market yields. */
 export function bondYieldCurve({ faceValue, couponRate, years, maximumYield = 12, steps = 24 }) {
   const max = Math.max(0, Number(maximumYield) || 0)
   const count = integerBetween(steps, 2, 200, 'steps')
@@ -105,6 +111,7 @@ export function bondYieldCurve({ faceValue, couponRate, years, maximumYield = 12
   })
 }
 
+/** Builds deterministic bond and equity paths for comparing return uncertainty. */
 export function buildRiskScenarioPaths({
   initialInvestment,
   years,
@@ -172,9 +179,9 @@ function percentageReturn(finalValue, initialValue) {
 }
 
 function annualizedReturn(finalValue, initialValue, years) {
-  return initialValue > 0 && finalValue >= 0
-    ? ((finalValue / initialValue) ** (1 / years) - 1) * 100
-    : -100
+  return initialValue > 0 && finalValue >= 0 ?
+    ((finalValue / initialValue) ** (1 / years) - 1) * 100 :
+    -100
 }
 
 function nonNegative(value, field) {
@@ -185,8 +192,9 @@ function nonNegative(value, field) {
 
 function rate(value, field) {
   const number = Number(value) / 100
-  if (!Number.isFinite(number) || number <= -1 || number > 10)
+  if (!Number.isFinite(number) || number <= -1 || number > 10) {
     throw new RangeError(`Invalid ${field}`)
+  }
   return number
 }
 

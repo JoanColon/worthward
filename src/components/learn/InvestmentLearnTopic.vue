@@ -430,7 +430,7 @@ import {
   buildRiskScenarioPaths,
   compareBondAndStock,
   priceFixedCouponBond,
-} from '@/domain/financial/investment-learning'
+} from '../../../functions/shared/assets/securities.js'
 import { formatCurrency } from '@/utils/formatters'
 
 const initialInvestment = ref(10_000),

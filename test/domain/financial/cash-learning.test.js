@@ -3,7 +3,7 @@ import {
   emergencyFundScenario,
   purchasingPowerScenario,
   remuneratedCashScenario,
-} from '../../../src/domain/financial/cash-learning.js'
+} from '../../../functions/shared/assets/cash.js'
 
 describe('cash learning simulations', () => {
   it('shows the purchasing power lost to inflation', () => {

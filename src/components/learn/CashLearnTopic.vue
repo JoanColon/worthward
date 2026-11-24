@@ -252,7 +252,7 @@ import {
   emergencyFundScenario,
   purchasingPowerScenario,
   remuneratedCashScenario,
-} from '@/domain/financial/cash-learning'
+} from '../../../functions/shared/assets/cash.js'
 import { currencySymbol, formatCurrency } from '@/utils/formatters'
 
 const props = defineProps({
