@@ -12,6 +12,10 @@ export default {
     retry: 'Try again',
     save: 'Save',
   },
+  notFound: {
+    title: 'Oops. Nothing here…',
+    action: 'Go home',
+  },
   learn: {
     title: 'Worthward Learn',
     open: 'Open Worthward Learn',
@@ -361,6 +365,7 @@ export default {
   },
   dashboard: {
     title: 'Home',
+    ariaLabel: 'Financial dashboard',
     snapshotSubtitle: 'Your finances at a glance.',
     greeting: {
       personalized: 'Hi, {name}',
@@ -1640,8 +1645,10 @@ export default {
       modelParameters: 'Model parameters',
       originalPrincipal: 'Original principal',
       currentBalance: 'Current balance',
+      remainingMortgageBalance: 'Remaining mortgage balance',
       annualInterestRate: 'Annual interest rate',
       monthlyPayment: 'Monthly payment',
+      perMonth: ' per month',
       monthlyPaymentHint: 'Leave empty to calculate the standard French payment.',
       linkedExpense: 'Linked expense',
       linkedProperty: 'Linked property',
@@ -1958,8 +1965,8 @@ export default {
     loading: 'Loading your expenses…',
     saved: 'Expenses updated.',
     overview: {
-      subtitle: 'Your cost of living',
-      annualCost: 'Annual Cost of Living',
+      subtitle: 'Your Cost of Life',
+      annualCost: 'Annual Cost of Life',
       monthlyAverage: '{amount} average per month',
       averagePerMonth: 'average per month',
       breakdownTitle: 'Cost by category',

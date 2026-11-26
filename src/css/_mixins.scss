@@ -19,7 +19,8 @@
 
   h2 {
     color: var(--color-ink);
-    font-size: clamp(1.2rem, 1.6vw, 1.5rem);
+    font-size: var(--font-size-card-title);
+    font-weight: var(--font-weight-bold);
     line-height: 1.2;
     letter-spacing: -0.025em;
   }
@@ -28,7 +29,7 @@
   small {
     margin-top: 0.25rem;
     color: var(--color-copy);
-    font-size: 0.8rem;
+    font-size: var(--font-size-card-subtitle);
     line-height: 1.45;
   }
 
@@ -113,13 +114,9 @@
   width: 100%;
   min-width: 0;
   min-height: calc(100dvh - 64px);
-  padding: clamp(0.75rem, 1.8vh, 1.15rem) clamp(1rem, 2vw, 1.75rem);
+  padding: var(--page-padding-block) var(--page-padding-inline) var(--page-bottom-padding);
   overflow-x: clip;
   background: var(--color-page);
-
-  @media (max-width: 760px) {
-    padding: 0.75rem 0.75rem calc(var(--mobile-nav-height) + 1rem);
-  }
 }
 
 @mixin financial-shell($width: standard) {

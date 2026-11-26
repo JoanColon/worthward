@@ -222,9 +222,7 @@ const periodLabel = computed(() =>
     .desktop-period-switch {
       display: flex;
       width: auto;
-      min-width: 11.5rem;
       margin: 0;
-      padding: 0.16rem;
     }
 
     .body-period-switch {
@@ -288,10 +286,9 @@ const periodLabel = computed(() =>
 
     .desktop-period-switch {
       display: flex;
-      width: 6.75rem;
+      width: auto;
       min-width: 0;
       margin: 0;
-      padding: 0.1rem;
     }
 
     .body-period-switch {

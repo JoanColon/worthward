@@ -1,8 +1,8 @@
 <template>
   <section class="app-empty-state" :class="[`app-empty-state--${tone}`, { compact }]">
     <span v-if="icon" class="app-empty-state__icon"><q-icon :name="icon" /></span>
-    <h2>{{ title }}</h2>
-    <p>{{ description }}</p>
+    <h2 class="app-card-title">{{ title }}</h2>
+    <p class="app-body">{{ description }}</p>
     <div v-if="actionLabel || $slots.actions" class="app-empty-state__actions">
       <slot name="actions">
         <q-btn
@@ -80,16 +80,9 @@ const emit = defineEmits(['action'])
   color: var(--color-primary);
 }
 
-h2 {
-  margin: 0;
-  color: var(--color-ink);
-}
-
 p {
   max-width: 34rem;
   margin: 0.45rem 0 1.25rem;
-  color: var(--color-copy);
-  line-height: var(--line-height-body);
 }
 
 .app-empty-state__actions {

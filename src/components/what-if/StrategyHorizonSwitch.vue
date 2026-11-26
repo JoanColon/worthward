@@ -1,30 +1,21 @@
 <template>
-  <div class="horizon-options" role="group" :aria-label="t('whatIf.strategy.horizonSelector')">
-    <button
-      v-for="years in options"
-      :key="years"
-      type="button"
-      :class="{ selected: modelValue === years }"
-      :aria-pressed="modelValue === years"
-      @click="emit('update:modelValue', years)"
-    >
-      {{ compact ? `${years}y` : `${years} years` }}
-    </button>
-    <button
-      type="button"
-      :class="{ selected: !options.includes(modelValue) }"
-      :aria-pressed="!options.includes(modelValue)"
-      @click="emit('custom')"
-    >
-      {{ t('whatIf.reduction.custom') }}
-    </button>
-  </div>
+  <AppPeriodSwitch
+    class="horizon-options"
+    variant="compact"
+    :size="compact ? 'small' : 'default'"
+    :model-value="switchValue"
+    :options="switchOptions"
+    :aria-label="t('whatIf.strategy.horizonSelector')"
+    @update:model-value="select"
+  />
 </template>
 
 <script setup>
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import AppPeriodSwitch from '@/components/ui/AppPeriodSwitch.vue'
 
-defineProps({
+const props = defineProps({
   modelValue: { type: Number, required: true },
   options: { type: Array, default: () => [10, 20, 30] },
   compact: { type: Boolean, default: false },
@@ -32,49 +23,30 @@ defineProps({
 
 const emit = defineEmits(['update:modelValue', 'custom'])
 const { t } = useI18n()
+const customValue = '__custom__'
+const switchValue = computed(() =>
+  props.options.includes(props.modelValue) ? props.modelValue : customValue,
+)
+const switchOptions = computed(() => [
+  ...props.options.map((years) => ({
+    value: years,
+    label: props.compact ? `${years}y` : `${years} years`,
+  })),
+  { value: customValue, label: t('whatIf.reduction.custom') },
+])
+
+function select(value) {
+  if (value === customValue) emit('custom')
+  else emit('update:modelValue', value)
+}
 </script>
 
-<style scoped lang="scss">
-@use '@/css/mixins' as *;
-
-.horizon-options {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  padding: 0.2rem;
-  border: 1px solid var(--color-line);
-  border-radius: 0.55rem;
-  background: var(--color-surface-soft);
-}
-
-button {
-  min-width: var(--strategy-horizon-option-min-width, 3rem);
-  height: 1.75rem;
-  padding: 0.2rem 0.45rem;
-  border: 0;
-  background: transparent;
-  color: var(--color-copy);
-  font-size: 0.61rem;
-  line-height: 1;
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-button.selected {
-  background: var(--color-surface);
-  color: var(--color-primary);
-  box-shadow: 0 1px 4px rgb(15 23 42 / 10%);
-}
-
-button:focus-visible {
-  @include focus-ring;
-}
-
+<style scoped>
 .detail-horizon-options {
   width: 100%;
 }
 
-.detail-horizon-options button {
+.detail-horizon-options :deep(button) {
   flex: 1;
 }
 </style>

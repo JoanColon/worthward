@@ -25,10 +25,12 @@
 
       <div class="app-page-header__title-row">
         <slot name="title-prefix" />
-        <h1>{{ title }}</h1>
+        <h1 class="app-page-title" :class="{ 'app-page-title--hero': size === 'hero' }">
+          {{ title }}
+        </h1>
         <slot name="title-action" />
       </div>
-      <p v-if="subtitle">{{ subtitle }}</p>
+      <p v-if="subtitle" class="app-page-subtitle">{{ subtitle }}</p>
     </div>
 
     <div v-if="$slots.actions || learnContext" class="app-page-header__controls">
@@ -83,7 +85,7 @@ const learnContext = computed(() => resolveLearnContext(route))
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
-  gap: 2rem;
+  gap: var(--page-header-gap);
   min-width: 0;
 }
 
@@ -105,25 +107,9 @@ const learnContext = computed(() => resolveLearnContext(route))
   min-width: 0;
 }
 
-h1 {
-  margin: 0;
-  color: var(--color-ink);
-  font-size: clamp(2rem, 3.5vh, 2.7rem);
-  line-height: 1;
-  letter-spacing: -0.055em;
-}
-
-.app-page-header--hero h1 {
-  font-size: clamp(2.25rem, 5vw, 4rem);
-  letter-spacing: -0.05em;
-}
-
-p {
+.app-page-subtitle {
   max-width: 48rem;
   margin: 0.5rem 0 0;
-  color: var(--color-copy);
-  font-size: 0.95rem;
-  line-height: 1.45;
 }
 
 .app-page-header__controls,
@@ -170,16 +156,6 @@ p {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-  }
-
-  h1,
-  .app-page-header--hero h1 {
-    font-size: 2rem;
-    line-height: 1.05;
-  }
-
-  p {
-    font-size: 0.88rem;
   }
 }
 

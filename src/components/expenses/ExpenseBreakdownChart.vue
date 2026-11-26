@@ -1,7 +1,7 @@
 <template>
   <section class="breakdown-card" :class="{ embedded }" :aria-label="title">
     <header v-if="!embedded">
-      <h2>{{ title }}</h2>
+      <h2 class="app-card-title">{{ title }}</h2>
     </header>
 
     <div v-if="entries.length" class="breakdown-content">
@@ -166,12 +166,6 @@ function escapeHtml(value) {
 
 .breakdown-card.embedded .breakdown-content {
   width: 100%;
-}
-
-header h2 {
-  margin: 0;
-  color: var(--color-ink);
-  font-size: 1rem;
 }
 
 .breakdown-content {

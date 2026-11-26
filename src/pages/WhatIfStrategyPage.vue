@@ -8,7 +8,13 @@
       <div v-else-if="error" class="page-state">
         <q-icon name="cloud_off" size="2rem" />
         <strong>{{ t('whatIf.errors.loadTitle') }}</strong>
-        <q-btn color="primary" unelevated no-caps label="Retry" @click="prepare(true)" />
+        <q-btn
+          color="primary"
+          unelevated
+          no-caps
+          :label="t('common.retry')"
+          @click="prepare(true)"
+        />
       </div>
       <template v-else>
         <AppPageHeader
@@ -39,7 +45,7 @@
         </q-banner>
 
         <div class="strategy-overview">
-          <section class="panel overview-available-panel">
+          <AppCard compact class="overview-available-panel">
             <div>
               <span>{{ t('whatIf.strategy.available') }}</span>
               <strong
@@ -49,13 +55,13 @@
               <small>{{ t('whatIf.strategy.fromWhatIf') }}</small>
             </div>
             <q-icon name="signal_cellular_alt" />
-          </section>
+          </AppCard>
 
-          <section class="panel overview-allocation-panel">
+          <AppCard compact class="overview-allocation-panel">
             <div class="overview-section-heading">
               <div>
-                <h2>{{ t('whatIf.strategy.allocation') }}</h2>
-                <p>
+                <h2 class="app-card-title">{{ t('whatIf.strategy.allocation') }}</h2>
+                <p class="app-card-subtitle">
                   {{
                     t('whatIf.strategy.allocationDescription', {
                       amount: formatCurrency(monthlySavings),
@@ -98,13 +104,13 @@
                 <span>{{ formatCurrency(monthlyFor(allocation.debt)) }} / m</span>
               </article>
             </div>
-          </section>
+          </AppCard>
 
-          <section class="panel overview-outcomes-panel">
+          <AppCard compact class="overview-outcomes-panel">
             <div class="overview-section-heading">
               <div>
-                <h2>{{ t('whatIf.strategy.projectedOutcomes') }}</h2>
-                <p>
+                <h2 class="app-card-title">{{ t('whatIf.strategy.projectedOutcomes') }}</h2>
+                <p class="app-card-subtitle">
                   {{
                     t('whatIf.strategy.projectedOutcomesDescription', {
                       years: activeScenario.horizonYears,
@@ -134,15 +140,15 @@
                 <q-icon name="chevron_right" class="outcome-arrow" />
               </button>
             </div>
-          </section>
+          </AppCard>
         </div>
 
         <div class="desktop-projections">
-          <section class="panel desktop-projection-panel">
+          <AppCard compact class="desktop-projection-panel">
             <template v-if="selectedDesktopOutcomeKind === 'cash'">
               <div class="desktop-projection-heading">
                 <div>
-                  <h2>{{ t('whatIf.strategy.cashDetails') }}</h2>
+                  <h2 class="app-card-title">{{ t('whatIf.strategy.cashDetails') }}</h2>
                 </div>
                 <StrategyHorizonSwitch
                   :model-value="activeScenario.horizonYears"
@@ -190,7 +196,7 @@
             <template v-else-if="selectedDesktopOutcomeKind === 'investment'">
               <div class="desktop-projection-heading">
                 <div>
-                  <h2>{{ t('whatIf.strategy.investmentDetails') }}</h2>
+                  <h2 class="app-card-title">{{ t('whatIf.strategy.investmentDetails') }}</h2>
                 </div>
                 <div class="desktop-projection-controls">
                   <StrategyHorizonSwitch
@@ -240,7 +246,7 @@
             <template v-else-if="selectedDesktopOutcomeKind === 'netWorth'">
               <div class="desktop-projection-heading">
                 <div>
-                  <h2>{{ t('whatIf.strategy.netWorthDetails') }}</h2>
+                  <h2 class="app-card-title">{{ t('whatIf.strategy.netWorthDetails') }}</h2>
                 </div>
                 <div class="desktop-projection-controls">
                   <StrategyHorizonSwitch
@@ -289,7 +295,7 @@
             <template v-else-if="selectedDebt">
               <div class="desktop-projection-heading">
                 <div>
-                  <h2>{{ t('whatIf.strategy.debtProjection.title') }}</h2>
+                  <h2 class="app-card-title">{{ t('whatIf.strategy.debtProjection.title') }}</h2>
                 </div>
                 <q-select
                   :model-value="selectedDebt.id"
@@ -399,7 +405,7 @@
                 </div>
               </div>
             </aside>
-          </section>
+          </AppCard>
         </div>
       </template>
     </main>
@@ -409,8 +415,8 @@
         <span class="strategy-sheet-handle" aria-hidden="true" />
         <q-card-section class="strategy-sheet-heading">
           <div>
-            <h2>{{ t('whatIf.strategy.editAllocation') }}</h2>
-            <p>
+            <h2 class="app-card-title">{{ t('whatIf.strategy.editAllocation') }}</h2>
+            <p class="app-card-subtitle">
               {{
                 t('whatIf.strategy.editAllocationDescription', {
                   amount: formatCurrency(monthlySavings),
@@ -426,8 +432,10 @@
             <div class="sheet-settings-heading">
               <span><q-icon name="account_balance_wallet" /></span>
               <div>
-                <h3>{{ t('whatIf.strategy.allocation') }}</h3>
-                <p>{{ t('whatIf.strategy.allocationSettingsDescription') }}</p>
+                <h3 class="app-card-title">{{ t('whatIf.strategy.allocation') }}</h3>
+                <p class="app-card-subtitle">
+                  {{ t('whatIf.strategy.allocationSettingsDescription') }}
+                </p>
               </div>
             </div>
 
@@ -473,14 +481,16 @@
             <div class="sheet-settings-heading">
               <span><q-icon name="tune" /></span>
               <div>
-                <h3>{{ t('whatIf.strategy.modelParameters') }}</h3>
-                <p>{{ t('whatIf.strategy.modelParametersDescription') }}</p>
+                <h3 class="app-card-title">{{ t('whatIf.strategy.modelParameters') }}</h3>
+                <p class="app-card-subtitle">
+                  {{ t('whatIf.strategy.modelParametersDescription') }}
+                </p>
               </div>
             </div>
 
             <div class="sheet-subheading first-parameter-heading">
-              <h3>{{ t('whatIf.strategy.inflation') }}</h3>
-              <p>{{ t('whatIf.strategy.inflationDescription') }}</p>
+              <h3 class="app-card-title">{{ t('whatIf.strategy.inflation') }}</h3>
+              <p class="app-card-subtitle">{{ t('whatIf.strategy.inflationDescription') }}</p>
             </div>
             <article class="investment-mix-card cash-return-card">
               <span class="mix-card-icon cash-return"><q-icon name="trending_up" /></span>
@@ -518,8 +528,8 @@
             </article>
 
             <div class="sheet-subheading">
-              <h3>{{ t('whatIf.strategy.cashReturn') }}</h3>
-              <p>{{ t('whatIf.strategy.cashReturnDescription') }}</p>
+              <h3 class="app-card-title">{{ t('whatIf.strategy.cashReturn') }}</h3>
+              <p class="app-card-subtitle">{{ t('whatIf.strategy.cashReturnDescription') }}</p>
             </div>
             <article class="investment-mix-card cash-return-card">
               <span class="mix-card-icon cash-return"><q-icon name="savings" /></span>
@@ -567,8 +577,8 @@
             </article>
 
             <div class="sheet-subheading">
-              <h3>{{ t('whatIf.strategy.investmentMix') }}</h3>
-              <p>{{ t('whatIf.strategy.investmentMixDescription') }}</p>
+              <h3 class="app-card-title">{{ t('whatIf.strategy.investmentMix') }}</h3>
+              <p class="app-card-subtitle">{{ t('whatIf.strategy.investmentMixDescription') }}</p>
             </div>
             <div class="mix-list sheet-mix-list">
               <article v-for="entry in activeMix" :key="entry.id" class="investment-mix-card">
@@ -681,7 +691,7 @@
         <span class="strategy-sheet-handle" aria-hidden="true" />
         <q-card-section class="strategy-sheet-heading">
           <div>
-            <h2>{{ detailSheetTitle }}</h2>
+            <h2 class="app-card-title">{{ detailSheetTitle }}</h2>
           </div>
           <q-btn flat round dense icon="close" v-close-popup :aria-label="t('common.close')" />
         </q-card-section>
@@ -956,7 +966,7 @@
       <q-card class="app-info-dialog responsive-info-card">
         <span class="info-sheet-handle" aria-hidden="true" />
         <q-card-section class="app-info-heading">
-          <h2>{{ t('whatIf.strategy.debtInfoTitle') }}</h2>
+          <h2 class="app-card-title">{{ t('whatIf.strategy.debtInfoTitle') }}</h2>
           <q-btn v-close-popup flat round dense icon="close" :aria-label="t('common.close')" />
         </q-card-section>
         <q-card-section class="app-info-copy">
@@ -970,7 +980,7 @@
         <span class="info-sheet-handle" aria-hidden="true" />
         <q-card-section class="freedom-info-heading">
           <span class="mini-icon freedom"><q-icon name="flight_takeoff" /></span>
-          <h2>{{ t('whatIf.strategy.freedomInfoTitle') }}</h2>
+          <h2 class="app-card-title">{{ t('whatIf.strategy.freedomInfoTitle') }}</h2>
           <q-btn v-close-popup flat round dense icon="close" :aria-label="t('common.close')" />
         </q-card-section>
         <q-card-section class="freedom-info-copy">
@@ -994,7 +1004,7 @@
       <q-card class="strategy-sheet info-sheet">
         <q-card-section class="strategy-sheet-heading">
           <div>
-            <h2>{{ t('whatIf.strategy.calculationInfoTitle') }}</h2>
+            <h2 class="app-card-title">{{ t('whatIf.strategy.calculationInfoTitle') }}</h2>
           </div>
           <q-btn flat round dense icon="close" v-close-popup :aria-label="t('common.close')" />
         </q-card-section>
@@ -1023,8 +1033,8 @@
           v-close-popup
         />
         <q-card-section class="investment-dialog-heading">
-          <h2>{{ t('whatIf.strategy.addInvestmentTypeTitle') }}</h2>
-          <p>{{ t('whatIf.strategy.addInvestmentTypeDescription') }}</p>
+          <h2 class="app-card-title">{{ t('whatIf.strategy.addInvestmentTypeTitle') }}</h2>
+          <p class="app-card-subtitle">{{ t('whatIf.strategy.addInvestmentTypeDescription') }}</p>
         </q-card-section>
         <q-card-section class="investment-dialog-options">
           <button
@@ -1065,8 +1075,8 @@
     <q-dialog v-model="initialScenarioDialogOpen" persistent>
       <q-card class="scenario-name-dialog">
         <q-card-section>
-          <h2>{{ t('whatIf.strategy.nameFirstScenario') }}</h2>
-          <p>{{ t('whatIf.strategy.nameFirstScenarioDescription') }}</p>
+          <h2 class="app-card-title">{{ t('whatIf.strategy.nameFirstScenario') }}</h2>
+          <p class="app-card-subtitle">{{ t('whatIf.strategy.nameFirstScenarioDescription') }}</p>
           <q-input
             v-model="initialScenarioName"
             outlined
@@ -1332,20 +1342,36 @@ const liabilityOptions = computed(() =>
   modeledDebts.value.map(({ id, name }) => ({ value: id, label: name })),
 )
 const cashTargetOptions = computed(() =>
-  [3, 6, 12].map((months) => ({ value: months, label: `${months} months` })),
+  [3, 6, 12].map((months) => ({
+    value: months,
+    label: t('whatIf.strategy.monthsValue', { months }),
+  })),
 )
 const mixMeta = {
-  stockMarket: { label: 'Stock market', icon: 'trending_up', tone: 'stock-market' },
-  realEstate: { label: 'Real estate', icon: 'apartment', tone: 'real-estate' },
-  fixedIncome: { label: 'Fixed income', icon: 'account_balance', tone: 'fixed-income' },
-  crypto: { label: 'Crypto', icon: 'currency_bitcoin', tone: 'crypto' },
-  businessEquity: { label: 'Business equity', icon: 'business_center', tone: 'business' },
-  other: { label: 'Other', icon: 'category', tone: 'other' },
+  stockMarket: {
+    labelKey: 'plan.investments.stockMarket',
+    icon: 'trending_up',
+    tone: 'stock-market',
+  },
+  realEstate: { labelKey: 'plan.investments.realEstate', icon: 'apartment', tone: 'real-estate' },
+  fixedIncome: {
+    labelKey: 'plan.investments.fixedIncome',
+    icon: 'account_balance',
+    tone: 'fixed-income',
+  },
+  crypto: { labelKey: 'plan.investments.crypto', icon: 'currency_bitcoin', tone: 'crypto' },
+  businessEquity: {
+    labelKey: 'plan.investments.businessEquity',
+    icon: 'business_center',
+    tone: 'business',
+  },
+  other: { labelKey: 'plan.investments.other', icon: 'category', tone: 'other' },
 }
 const activeMix = computed(() =>
   Object.entries(activeScenario.value.investmentMix).map(([id, value]) => ({
     id,
     ...mixMeta[id],
+    label: t(mixMeta[id].labelKey),
     description: t(`whatIf.strategy.investmentTypes.${id}`),
     ...value,
   })),
@@ -1355,7 +1381,7 @@ const availableMixOptions = computed(() =>
     .filter(({ id }) => !activeScenario.value.investmentMix[id])
     .map(({ id, returnPercent }) => ({
       value: id,
-      label: mixMeta[id].label,
+      label: t(mixMeta[id].labelKey),
       icon: mixMeta[id].icon,
       returnPercent,
     })),
@@ -2056,6 +2082,7 @@ function liabilityCategoryName(categoryId) {
     'available available'
     'allocation outcomes';
   gap: 1rem;
+  align-items: start;
   margin-top: 0.75rem;
 }
 .overview-available-panel {
@@ -2111,13 +2138,8 @@ function liabilityCategoryName(categoryId) {
 .overview-section-heading p {
   margin: 0;
 }
-.overview-section-heading h2 {
-  font-size: 1.1rem;
-}
 .overview-section-heading p {
   margin-top: 0.25rem;
-  color: var(--color-copy);
-  font-size: 0.74rem;
 }
 .text-link {
   display: inline-flex;
@@ -2555,14 +2577,9 @@ function liabilityCategoryName(categoryId) {
 .detail-section-heading h3 {
   margin: 0;
 }
-.strategy-sheet-heading h2 {
-  font-size: 1.35rem;
-}
 .strategy-sheet-heading p,
 .sheet-subheading p {
   margin-top: 0.3rem;
-  color: var(--color-copy);
-  font-size: 0.82rem;
 }
 .strategy-sheet-scroll {
   min-height: 0;
@@ -2599,15 +2616,8 @@ function liabilityCategoryName(categoryId) {
 .sheet-settings-heading p {
   margin: 0;
 }
-.sheet-settings-heading h3 {
-  color: var(--color-ink);
-  font-size: 1.05rem;
-}
 .sheet-settings-heading p {
   margin-top: 0.15rem;
-  color: var(--color-copy);
-  font-size: 0.75rem;
-  line-height: 1.4;
 }
 .model-parameters-section {
   background: var(--color-surface);
@@ -2632,9 +2642,6 @@ function liabilityCategoryName(categoryId) {
   margin-top: 1.25rem;
   padding-top: 1rem;
   border-top: 1px solid var(--color-line);
-}
-.sheet-subheading h3 {
-  font-size: 1rem;
 }
 .strategy-sheet-actions {
   display: grid;
@@ -2922,8 +2929,6 @@ function liabilityCategoryName(categoryId) {
 }
 .investment-dialog-heading p {
   margin-top: 0.35rem;
-  color: var(--color-copy);
-  font-size: 0.82rem;
 }
 .investment-dialog-options {
   display: grid;
@@ -3077,12 +3082,9 @@ function liabilityCategoryName(categoryId) {
 }
 .scenario-name-dialog h2 {
   margin: 0;
-  color: var(--color-ink);
-  font-size: 1.2rem;
 }
 .scenario-name-dialog p {
   margin: 0.4rem 0 1.25rem;
-  color: var(--color-copy);
 }
 .freedom-info-dialog {
   width: min(31rem, calc(100vw - 2rem));
@@ -3098,7 +3100,6 @@ function liabilityCategoryName(categoryId) {
 .freedom-info-heading h2 {
   flex: 1;
   margin: 0;
-  font-size: 1.15rem;
 }
 .freedom-info-copy {
   display: grid;

@@ -58,11 +58,26 @@
   --font-weight-semibold: 650;
   --font-weight-bold: 750;
   --line-height-body: 1.55;
-  // Shared KPI typography keeps financial cards readable and consistent.
-  --font-size-kpi-label: 1rem;
-  --font-size-kpi-supporting: 0.95rem;
-  --font-size-kpi-label-compact: 0.9rem;
-  --font-size-kpi-supporting-compact: 0.875rem;
+  // Semantic type roles. Components consume these instead of owning a scale.
+  --font-size-page-title: clamp(1.75rem, calc(1.6rem + 0.55vw), 2.125rem);
+  --font-size-page-title-hero: clamp(2rem, calc(1.7rem + 1.35vw), 3rem);
+  --font-size-page-subtitle: clamp(0.875rem, calc(0.84rem + 0.12vw), 0.9375rem);
+  --font-size-section-title: clamp(1.25rem, calc(1.12rem + 0.45vw), 1.5rem);
+  --font-size-section-label: 0.75rem;
+  --font-size-card-title: clamp(1rem, calc(0.94rem + 0.3vw), 1.25rem);
+  --font-size-card-subtitle: clamp(0.8125rem, calc(0.78rem + 0.12vw), 0.875rem);
+  --font-size-kpi-label: clamp(0.875rem, calc(0.82rem + 0.2vw), 1rem);
+  --font-size-kpi-value: clamp(2.75rem, calc(2.2rem + 2.4vw), 4.35rem);
+  --font-size-kpi-value-secondary: clamp(1.5rem, calc(1.32rem + 0.75vw), 1.75rem);
+  --font-size-kpi-supporting: clamp(0.8125rem, calc(0.78rem + 0.15vw), 0.95rem);
+  // Compatibility aliases while feature-specific KPI layouts migrate.
+  --font-size-kpi-label-compact: 0.875rem;
+  --font-size-kpi-supporting-compact: 0.8125rem;
+  --font-size-row-title: clamp(0.9375rem, calc(0.9rem + 0.12vw), 1rem);
+  --font-size-row-value: clamp(0.9375rem, calc(0.9rem + 0.18vw), 1.0625rem);
+  --font-size-body: 0.9375rem;
+  --font-size-caption: clamp(0.75rem, calc(0.72rem + 0.1vw), 0.8125rem);
+  --font-size-table-header: clamp(0.75rem, calc(0.72rem + 0.12vw), 0.84rem);
   --opacity-disabled: 0.5;
   --space-1: 0.25rem;
   --space-2: 0.5rem;
@@ -78,6 +93,17 @@
   --button-height-lg: 3.1rem;
   --button-padding-inline: 1rem;
   --button-font-weight: 650;
+  // Segmented selectors share geometry and state styling across features.
+  --segmented-control-padding: 0.1875rem;
+  --segmented-control-radius: 999px;
+  --segmented-option-min-width: 3.5rem;
+  --segmented-option-height: 1.75rem;
+  --segmented-option-padding: 0.25rem 0.65rem;
+  --segmented-option-font-size: 0.75rem;
+  --segmented-option-min-width-small: 2.75rem;
+  --segmented-option-height-small: 1.5rem;
+  --segmented-option-padding-small: 0.125rem 0.4rem;
+  --segmented-option-font-size-small: 0.6875rem;
   --radius-sm: 0.85rem;
   --radius-md: 1.15rem;
   --radius-lg: 1.35rem;
@@ -91,4 +117,28 @@
   --layout-width-analytical: 90rem;
   --content-max-width: var(--layout-width-wide);
   --mobile-nav-height: 74px;
+  // Responsive composition roles.
+  --page-padding-block: clamp(0.75rem, 1.8vh, 1.15rem);
+  --page-padding-inline: clamp(1rem, 2vw, 1.75rem);
+  --page-bottom-padding: var(--page-padding-block);
+  --page-header-gap: clamp(0.75rem, 1.5vw, 2rem);
+  --page-section-gap: clamp(0.75rem, 1.6vw, 1rem);
+  --card-gap: clamp(0.75rem, 1.4vw, 1.25rem);
+  --card-padding: clamp(1rem, 1.5vw, 1.5rem);
+  --card-header-gap: clamp(0.75rem, 1.2vw, 1rem);
+  --card-title-subtitle-gap: 0.25rem;
+  --icon-size-card: clamp(2.65rem, 2.3rem + 1vw, 3.5rem);
+  --icon-size-kpi: clamp(2.7rem, 2.3rem + 1.3vw, 3.75rem);
+  --touch-target-min: 2.75rem;
+}
+
+@media (max-width: 760px) {
+  :root {
+    --page-padding-block: 0.75rem;
+    --page-padding-inline: 0.75rem;
+    --page-bottom-padding: calc(var(--mobile-nav-height) + 1rem + env(safe-area-inset-bottom));
+    --page-section-gap: 0.75rem;
+    --card-padding: 1rem;
+    --radius-card: var(--radius-md);
+  }
 }

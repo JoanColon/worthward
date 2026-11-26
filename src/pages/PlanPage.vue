@@ -40,7 +40,7 @@
         <section class="capacity-card" :class="{ negative: annualSavings < 0 }">
           <div class="capacity-main">
             <div class="capacity-heading">
-              <span>{{
+              <span class="app-kpi-label">{{
                 annualSavings >= 0 ? t('plan.savingsCapacity') : t('plan.shortfall')
               }}</span>
               <AppPeriodSwitch
@@ -555,11 +555,7 @@ function liabilityCategoryName(categoryId) {
   gap: 0.35rem;
 }
 .capacity-heading > span {
-  color: var(--color-copy);
-  font-size: var(--font-size-kpi-label);
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  display: block;
 }
 .capacity-main > strong {
   font-size: clamp(2.8rem, 7vw, 4.8rem);
@@ -854,12 +850,8 @@ function liabilityCategoryName(categoryId) {
   }
 
   .period-switch {
-    --app-period-option-min-width: 4.7rem;
-    --app-period-option-padding: 0.3rem 0.6rem;
-    --app-period-option-font-size: 0.72rem;
     top: 0.7rem;
     right: 0.8rem;
-    padding: 0.15rem;
   }
 
   .capacity-breakdown {
@@ -964,12 +956,8 @@ function liabilityCategoryName(categoryId) {
     font-size: var(--font-size-kpi-label-compact);
   }
   .period-switch {
-    --app-period-option-min-width-mobile: 0;
-    --app-period-option-padding-mobile: 0.32rem 0.58rem;
-    --app-period-option-font-size-mobile: 0.7rem;
     position: static;
     flex-shrink: 0;
-    padding: 0.16rem;
   }
   .capacity-main {
     gap: 0.3rem;

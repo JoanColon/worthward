@@ -5,7 +5,7 @@
 
       <FinancialSetupCard v-if="showSetup" :items="setupItems" class="setup-guide" />
 
-      <section class="dashboard-grid" aria-label="Financial dashboard">
+      <section class="dashboard-grid" :aria-label="t('dashboard.ariaLabel')">
         <FinancialPositionCard
           :data="dashboardData"
           :history-points="historyPoints"

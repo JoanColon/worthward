@@ -13,13 +13,32 @@
         <div class="mini-mark">{{ BRAND.mark }}</div>
         <q-toolbar-title class="app-title">{{ BRAND.name }}</q-toolbar-title>
 
-        <MemberScopeSelector
-          v-if="routeWorkspaceId && members.length"
-          v-model="selectedMemberId"
-          :members="members"
-          compact
-          class="layout-member-selector"
-        />
+        <div v-if="routeWorkspaceId" class="workspace-context-actions">
+          <q-btn
+            v-if="route.name !== 'workspace-dashboard'"
+            flat
+            round
+            dense
+            icon="home"
+            class="gt-sm"
+            :to="workspaceRoute(routeWorkspaceId)"
+            :aria-label="t('navigation.backToWorkspaceHome')"
+          >
+            <q-tooltip>{{ t('navigation.backToWorkspaceHome') }}</q-tooltip>
+          </q-btn>
+          <q-separator
+            v-if="route.name !== 'workspace-dashboard' && members.length"
+            vertical
+            class="gt-sm workspace-home-separator"
+          />
+          <MemberScopeSelector
+            v-if="members.length"
+            v-model="selectedMemberId"
+            :members="members"
+            compact
+            class="layout-member-selector"
+          />
+        </div>
 
         <q-btn
           flat
@@ -568,9 +587,20 @@ async function finishNativeStartup() {
   font-size: 1.2rem;
 }
 
+.workspace-context-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-left: auto;
+}
+
+.workspace-home-separator {
+  height: 2rem;
+  color: var(--color-line);
+}
+
 .layout-member-selector {
   flex: 0 0 auto;
-  margin-left: auto;
 }
 
 .app-drawer {

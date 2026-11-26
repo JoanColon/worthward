@@ -11,8 +11,8 @@
         class="page-state error-state"
       >
         <q-icon name="cloud_off" />
-        <h1>{{ t('liabilities.errors.loadTitle') }}</h1>
-        <p>{{ t('liabilities.errors.load') }}</p>
+        <h1 class="app-section-title">{{ t('liabilities.errors.loadTitle') }}</h1>
+        <p class="app-body">{{ t('liabilities.errors.load') }}</p>
         <q-btn
           unelevated
           no-caps
@@ -33,8 +33,8 @@
         <section v-if="!configured" class="setup-card">
           <span class="setup-icon"><q-icon name="account_balance" /></span>
           <div class="setup-copy">
-            <h2>{{ t('liabilities.mortgage.setupTitle') }}</h2>
-            <p>{{ t('liabilities.mortgage.setupDescription') }}</p>
+            <h2 class="app-section-title">{{ t('liabilities.mortgage.setupTitle') }}</h2>
+            <p class="app-body">{{ t('liabilities.mortgage.setupDescription') }}</p>
           </div>
 
           <q-form ref="modelForm" class="mortgage-form" @submit.prevent="saveModel">
@@ -195,18 +195,17 @@
             <div class="mortgage-summary">
               <span class="summary-icon"><q-icon name="house_siding" /></span>
               <div>
-                <span>{{ t('liabilities.mortgage.title') }}</span>
-                <strong
-                  >{{ formatCurrency(mortgage.balance) }}
-                  {{ t('liabilities.mortgage.remaining') }}</strong
-                >
-                <p>
+                <span class="app-kpi-label">{{
+                  t('liabilities.mortgage.remainingMortgageBalance')
+                }}</span>
+                <strong class="app-kpi-value">{{ formatCurrency(mortgage.balance) }}</strong>
+                <p class="app-kpi-supporting">
                   {{ formatRate(mortgageModel.annualInterestRate) }}
                   {{ t('liabilities.mortgage.fixed') }} ·
                   {{ formatCurrency(mortgageModel.monthlyPayment)
                   }}{{ t('liabilities.mortgage.perMonth') }}
                 </p>
-                <small
+                <small class="app-caption"
                   >{{ formatDuration(projection.remainingPayments) }}
                   {{ t('liabilities.mortgage.remaining') }}</small
                 >
@@ -217,8 +216,8 @@
               <div class="section-heading">
                 <span class="section-icon"><q-icon name="calendar_month" /></span>
                 <div>
-                  <h2>{{ t('liabilities.mortgage.nextPayment') }}</h2>
-                  <small v-if="projection.nextPayment">{{
+                  <h2 class="app-card-title">{{ t('liabilities.mortgage.nextPayment') }}</h2>
+                  <small v-if="projection.nextPayment" class="app-caption">{{
                     formatMonthYear(projection.nextPayment.date)
                   }}</small>
                 </div>
@@ -246,8 +245,10 @@
               <div class="section-heading">
                 <span class="section-icon"><q-icon name="show_chart" /></span>
                 <div>
-                  <h2>{{ t('liabilities.mortgage.balanceOverTime') }}</h2>
-                  <small>{{ t('liabilities.mortgage.balanceChartDescription') }}</small>
+                  <h2 class="app-card-title">{{ t('liabilities.mortgage.balanceOverTime') }}</h2>
+                  <small class="app-card-subtitle">{{
+                    t('liabilities.mortgage.balanceChartDescription')
+                  }}</small>
                 </div>
               </div>
               <q-btn
@@ -455,8 +456,8 @@
       <q-card class="amortization-dialog">
         <q-card-section class="amortization-dialog-header">
           <div>
-            <h2>{{ t('liabilities.mortgage.amortizationTable') }}</h2>
-            <p>
+            <h2 class="app-card-title">{{ t('liabilities.mortgage.amortizationTable') }}</h2>
+            <p class="app-card-subtitle">
               {{ t('liabilities.mortgage.amortizationTableDescription') }}
             </p>
           </div>
@@ -1009,13 +1010,10 @@ function moneyColumn(name, labelKey) {
 
 .setup-copy h2 {
   margin: 1rem 0 0;
-  color: var(--color-ink);
-  font-size: 1.6rem;
 }
 
 .setup-copy p {
   margin: 0.5rem 0 0;
-  color: var(--color-copy);
 }
 
 .mortgage-form {
@@ -1087,22 +1085,8 @@ function moneyColumn(name, labelKey) {
   gap: 0.3rem;
 }
 
-.mortgage-summary span,
-.mortgage-summary p,
-.mortgage-summary small {
-  color: var(--color-copy);
-}
-
-.mortgage-summary strong {
-  color: var(--color-ink);
-  font-size: clamp(2rem, 6vw, 3.25rem);
-  line-height: 1.05;
-  letter-spacing: -0.045em;
-}
-
 .mortgage-summary p {
   margin: 0;
-  font-weight: 650;
 }
 
 .chart-card {
@@ -1136,15 +1120,6 @@ function moneyColumn(name, labelKey) {
 .section-heading h2,
 .section-heading small {
   margin: 0;
-}
-
-.section-heading:not(.chart-heading) h2 {
-  color: var(--color-ink);
-  font-size: 1.2rem;
-}
-
-.section-heading small {
-  color: var(--color-copy);
 }
 
 .payment-values {
@@ -1231,14 +1206,8 @@ function moneyColumn(name, labelKey) {
   margin: 0;
 }
 
-.amortization-dialog-header h2 {
-  color: var(--color-ink);
-  font-size: 1.5rem;
-}
-
 .amortization-dialog-header p {
   margin-top: 0.35rem;
-  color: var(--color-copy);
 }
 
 .amortization-summary {

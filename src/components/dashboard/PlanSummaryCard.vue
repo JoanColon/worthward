@@ -7,22 +7,12 @@
     :icon-tone="activeCard.iconTone"
   >
     <template #action>
-      <div
-        class="summary-switch"
-        role="group"
+      <AppPeriodSwitch
+        v-model="activeSlide"
+        variant="compact"
         :aria-label="t('dashboard.summaryCarousel.navigationLabel')"
-      >
-        <button
-          v-for="item in slides"
-          :key="item.name"
-          type="button"
-          :class="{ active: activeSlide === item.name }"
-          :aria-pressed="activeSlide === item.name"
-          @click="activeSlide = item.name"
-        >
-          {{ item.label }}
-        </button>
-      </div>
+        :options="slides"
+      />
     </template>
 
     <q-carousel
@@ -113,6 +103,7 @@
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import DashboardCard from './DashboardCard.vue'
+import AppPeriodSwitch from '@/components/ui/AppPeriodSwitch.vue'
 import { formatCurrency } from '@/utils/formatters'
 
 defineProps({
@@ -126,8 +117,8 @@ defineProps({
 const { t } = useI18n()
 const activeSlide = ref('plan')
 const slides = computed(() => [
-  { name: 'plan', label: t('dashboard.planSummary.title') },
-  { name: 'progress', label: t('progress.title') },
+  { value: 'plan', label: t('dashboard.planSummary.title') },
+  { value: 'progress', label: t('progress.title') },
 ])
 const activeCard = computed(() =>
   activeSlide.value === 'progress'
@@ -150,39 +141,6 @@ const activeCard = computed(() =>
 .plan-summary-card {
   display: flex;
   flex-direction: column;
-
-  .summary-switch {
-    display: inline-flex;
-    padding: 0.18rem;
-    border: 1px solid var(--color-line-strong);
-    border-radius: 999px;
-    background: var(--color-surface-soft);
-  }
-
-  .summary-switch button {
-    appearance: none;
-    min-height: 1.85rem;
-    padding: 0.25rem 0.65rem;
-    border: 0;
-    border-radius: 999px;
-    background: transparent;
-    color: var(--color-copy);
-    font: inherit;
-    font-size: 0.72rem;
-    font-weight: var(--font-weight-semibold);
-    cursor: pointer;
-  }
-
-  .summary-switch button.active {
-    background: var(--color-ink);
-    color: var(--color-inverse);
-    box-shadow: var(--shadow-control);
-  }
-
-  .summary-switch button:focus-visible {
-    outline: 2px solid var(--color-primary);
-    outline-offset: 2px;
-  }
 
   .card-icon .q-icon {
     display: grid;

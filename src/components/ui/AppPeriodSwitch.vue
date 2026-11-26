@@ -31,7 +31,7 @@ const props = defineProps({
   ariaLabel: { type: String, required: true },
   variant: {
     type: String,
-    default: 'financial',
+    default: 'light',
     validator: (value) => ['financial', 'compact', 'light'].includes(value),
   },
   size: {
@@ -53,13 +53,15 @@ function select(value) {
 </script>
 
 <style scoped lang="scss">
-@use '@/css/foundation/breakpoints' as bp;
-
 .app-period-switch {
   display: flex;
   flex: 0 0 auto;
   overflow: hidden;
-  border-radius: 999px;
+  padding: var(--segmented-control-padding);
+  border: 1px solid var(--color-line-strong);
+  border-radius: var(--segmented-control-radius);
+  background: var(--color-surface-soft);
+  box-shadow: var(--shadow-control);
 }
 
 button {
@@ -68,14 +70,23 @@ button {
   flex: 1;
   align-items: center;
   justify-content: center;
-  min-width: 0;
+  min-width: var(--segmented-option-min-width);
+  min-height: var(--segmented-option-height);
+  padding: var(--segmented-option-padding);
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--segmented-control-radius);
   background: transparent;
+  color: var(--color-copy);
   font: inherit;
+  font-size: var(--segmented-option-font-size);
   font-weight: var(--button-font-weight);
   text-align: center;
+  white-space: nowrap;
   cursor: pointer;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease,
+    box-shadow 160ms ease;
 }
 
 button:focus-visible {
@@ -89,92 +100,32 @@ button:disabled {
 }
 
 .app-period-switch--financial {
-  padding: 0.22rem;
   border: 1px solid var(--color-inverse-line);
   background: var(--color-inverse-soft);
+  box-shadow: none;
 }
 
 .app-period-switch--financial button {
-  min-width: var(--app-period-option-min-width, 5.4rem);
-  padding: var(--app-period-option-padding, 0.45rem 0.8rem);
   color: var(--color-inverse-muted);
-  font-size: var(--app-period-option-font-size, 0.8rem);
 }
 
-.app-period-switch--financial button.selected,
-.app-period-switch--compact button.selected {
+.app-period-switch--financial button.selected {
   background: var(--color-surface);
   color: var(--color-ink);
   box-shadow: var(--shadow-control);
 }
 
-.app-period-switch--compact {
-  padding: 0.16rem;
-  border: 1px solid var(--color-ink);
-  background: var(--color-ink);
-}
-
-.app-period-switch--compact button {
-  min-height: 1.75rem;
-  padding: 0.32rem 0.65rem;
-  color: var(--color-inverse-muted);
-  font-size: 0.73rem;
-}
-
-.app-period-switch--light {
-  padding: 0.25rem;
-  border: 1px solid var(--color-line-strong);
-  background: var(--color-surface);
-  box-shadow: var(--shadow-control);
-}
-
-.app-period-switch--light button {
-  min-width: var(--app-period-option-min-width, 3.2rem);
-  min-height: var(--button-height-sm);
-  padding: var(--app-period-option-padding, 0.4rem 0.75rem);
-  color: var(--color-copy);
-  font-size: var(--app-period-option-font-size, inherit);
-  transition: 160ms ease;
-}
-
+.app-period-switch--compact button.selected,
 .app-period-switch--light button.selected {
   background: var(--color-ink);
   color: var(--color-inverse);
-  box-shadow: 0 6px 14px rgb(11 22 51 / 16%);
-}
-
-.app-period-switch--small {
-  padding: 0.1rem;
+  box-shadow: var(--shadow-control);
 }
 
 .app-period-switch--small button {
-  min-height: 1.45rem;
-  padding: 0.12rem 0.2rem;
-  font-size: 0.58rem;
-}
-
-@media (max-width: bp.$content-compact-max) {
-  .app-period-switch--financial {
-    padding: 0.15rem;
-  }
-
-  .app-period-switch--financial button {
-    min-width: var(--app-period-option-min-width-mobile, 3.9rem);
-    min-height: 1.75rem;
-    padding: var(--app-period-option-padding-mobile, 0.2rem 0.5rem);
-    font-size: var(--app-period-option-font-size-mobile, 0.67rem);
-  }
-}
-
-@media (max-width: bp.$xs-max) {
-  .app-period-switch--compact {
-    padding: 0.1rem;
-  }
-
-  .app-period-switch--compact button {
-    min-height: 1.45rem;
-    padding: 0.12rem 0.2rem;
-    font-size: 0.58rem;
-  }
+  min-width: var(--segmented-option-min-width-small);
+  min-height: var(--segmented-option-height-small);
+  padding: var(--segmented-option-padding-small);
+  font-size: var(--segmented-option-font-size-small);
 }
 </style>

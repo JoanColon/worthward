@@ -667,10 +667,6 @@ async function runSaving(operation) {
     padding: 0.55rem 0.65rem 0;
   }
 
-  .mobile-table-period :deep(.app-period-switch) {
-    --app-period-option-min-width: 4.5rem;
-  }
-
   .category-table-heading {
     grid-template-columns: minmax(0, 1fr) auto auto;
   }

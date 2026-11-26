@@ -145,6 +145,15 @@ const routes = [
       },
     ],
   },
+  ...(import.meta.env.DEV
+    ? [
+        {
+          path: '/design-system',
+          name: 'design-system',
+          component: () => import('@/pages/DesignSystemPage.vue'),
+        },
+      ]
+    : []),
   {
     path: '/:pathMatch(.*)*',
 

@@ -53,13 +53,14 @@
             @click="load(true)"
           />
         </section>
-        <section v-else-if="!hasEvolutionData" class="empty-state">
-          <span class="empty-state__icon"><q-icon name="timeline" /></span>
-          <div>
-            <h2>{{ t('progress.empty.title') }}</h2>
-            <p>{{ t('progress.empty.description') }}</p>
-          </div>
-        </section>
+        <AppEmptyState
+          v-else-if="!hasEvolutionData"
+          icon="timeline"
+          :title="t('progress.empty.title')"
+          :description="t('progress.empty.description')"
+          tone="primary"
+          compact
+        />
 
         <section v-else class="evolution-workspace">
           <nav class="perspective-nav" :aria-label="t('progress.evolution.navigationLabel')">
@@ -78,14 +79,14 @@
                 <q-icon :name="perspective.icon" />
               </span>
               <span>
-                <strong>{{ perspective.label }}</strong>
-                <small>{{ perspective.question }}</small>
+                <strong class="app-row-title">{{ perspective.label }}</strong>
+                <small class="app-caption">{{ perspective.question }}</small>
               </span>
               <q-icon name="chevron_right" class="perspective-chevron" />
             </button>
           </nav>
 
-          <article class="perspective-panel">
+          <AppCard :padded="false" class="perspective-panel">
             <div class="evolution-toolbar">
               <AppPeriodSwitch
                 v-model="selectedPeriod"
@@ -98,24 +99,39 @@
 
             <header class="perspective-header">
               <div class="perspective-heading">
-                <span class="perspective-eyebrow">{{ activePerspectiveConfig.label }}</span>
-                <h2>{{ activePerspectiveConfig.title }}</h2>
-                <p class="perspective-description">{{ activePerspectiveConfig.description }}</p>
+                <span class="perspective-eyebrow app-section-label">
+                  {{ activePerspectiveConfig.label }}
+                </span>
+                <h2 class="app-section-title">{{ activePerspectiveConfig.title }}</h2>
+                <p class="perspective-description app-body">
+                  {{ activePerspectiveConfig.description }}
+                </p>
               </div>
               <div
                 class="metric-highlight metric-highlight--mobile"
-                :class="`metric-highlight--${activePerspectiveConfig.tone}`"
+                :class="[
+                  `metric-highlight--${activePerspectiveConfig.tone}`,
+                  { 'app-result--negative': metric.valueNegative },
+                ]"
               >
-                <span>{{ metric.label }}</span>
-                <strong>{{ metric.value }}</strong>
-                <small v-if="metric.change" :class="{ negative: metric.negative }">
+                <span class="app-caption">{{ metric.label }}</span>
+                <strong
+                  class="app-kpi-value-secondary"
+                  :class="metric.valueNegative ? 'app-tone-negative' : 'app-tone-positive'"
+                  >{{ metric.value }}</strong
+                >
+                <small
+                  v-if="metric.change"
+                  class="app-caption"
+                  :class="metric.negative ? 'app-tone-negative' : 'app-tone-positive'"
+                >
                   {{ metric.change }}
                 </small>
               </div>
             </header>
 
             <div class="analysis-grid">
-              <section class="chart-card">
+              <AppCard :padded="false" compact class="chart-card">
                 <EvolutionChart
                   v-if="activePerspective === 'wealth-creation'"
                   mode="bridge"
@@ -154,50 +170,67 @@
                   :aria-label="t('progress.evolution.composition.chartAria')"
                   :empty-label="t('progress.historyEmpty')"
                 />
-                <p class="chart-note">{{ activePerspectiveConfig.note }}</p>
-              </section>
+                <p class="chart-note app-caption">{{ activePerspectiveConfig.note }}</p>
+              </AppCard>
 
               <aside class="analysis-aside">
                 <div
                   class="metric-highlight metric-highlight--desktop"
-                  :class="`metric-highlight--${activePerspectiveConfig.tone}`"
+                  :class="[
+                    `metric-highlight--${activePerspectiveConfig.tone}`,
+                    { 'app-result--negative': metric.valueNegative },
+                  ]"
                 >
-                  <span>{{ metric.label }}</span>
-                  <strong>{{ metric.value }}</strong>
-                  <small v-if="metric.change" :class="{ negative: metric.negative }">
+                  <span class="app-caption">{{ metric.label }}</span>
+                  <strong
+                    class="app-kpi-value-secondary"
+                    :class="metric.valueNegative ? 'app-tone-negative' : 'app-tone-positive'"
+                    >{{ metric.value }}</strong
+                  >
+                  <small
+                    v-if="metric.change"
+                    class="app-caption"
+                    :class="metric.negative ? 'app-tone-negative' : 'app-tone-positive'"
+                  >
                     {{ metric.change }}
                   </small>
                 </div>
 
-                <section class="breakdown-card">
-                  <h3>{{ breakdownTitle }}</h3>
+                <AppCard :padded="false" compact class="breakdown-card">
+                  <h3 class="app-card-title">{{ breakdownTitle }}</h3>
                   <div class="breakdown-list">
                     <div v-for="item in breakdownItems" :key="item.key" class="breakdown-row">
                       <span class="breakdown-marker" :style="{ background: item.color }">
                         <q-icon v-if="item.icon" :name="item.icon" />
                       </span>
                       <span class="breakdown-copy">
-                        <strong>{{ item.label }}</strong>
-                        <small v-if="item.meta">{{ item.meta }}</small>
+                        <strong class="app-row-title">{{ item.label }}</strong>
+                        <small v-if="item.meta" class="app-caption">{{ item.meta }}</small>
                       </span>
-                      <b :class="{ positive: item.positive, negative: item.negative }">
+                      <b
+                        class="app-row-value"
+                        :class="{
+                          'app-tone-positive': item.positive,
+                          'app-tone-negative': item.negative,
+                        }"
+                      >
                         {{ item.value }}
                       </b>
                     </div>
                   </div>
 
                   <div v-if="activePerspective === 'freedom'" class="formula-card">
-                    <span>{{ t('progress.freedom.infoFormula') }}</span>
-                    <small>{{ t('progress.freedom.calculationNote') }}</small>
+                    <span class="app-row-title">{{ t('progress.freedom.infoFormula') }}</span>
+                    <small class="app-caption">{{ t('progress.freedom.calculationNote') }}</small>
                   </div>
                   <div v-if="activePerspective === 'cost-of-life'" class="coverage-note">
                     <q-icon name="info_outline" />
-                    <span>{{ coverageDescription }}</span>
+                    <span class="app-caption">{{ coverageDescription }}</span>
                   </div>
-                </section>
+                </AppCard>
               </aside>
             </div>
-          </article>
+          </AppCard>
         </section>
       </template>
     </main>
@@ -211,6 +244,8 @@ import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import AppPageHeader from '@/components/layout/AppPageHeader.vue'
 import AppPeriodSwitch from '@/components/ui/AppPeriodSwitch.vue'
+import AppCard from '@/components/ui/AppCard.vue'
+import AppEmptyState from '@/components/ui/AppEmptyState.vue'
 import EvolutionChart from '@/components/progress/EvolutionChart.vue'
 import { assetCategories } from '@/config/asset-categories'
 import { CHART_COLORS, CHART_SERIES_COLORS } from '@/config/chart-theme'
@@ -468,7 +503,8 @@ const metric = computed(() => {
     const delta = current && first && current !== first ? value - first.savingsCapacity : null
     return metricValue(t('progress.evolution.metrics.annualSavingsCapacity'), value, delta)
   }
-  if (!startPoint.value || !endPoint.value) return { label: '', value: '', change: '' }
+  if (!startPoint.value || !endPoint.value)
+    return { label: '', value: '', change: '', valueNegative: false }
   if (activePerspective.value === 'freedom') {
     const delta = endPoint.value.yearsFunded - startPoint.value.yearsFunded
     return {
@@ -476,6 +512,7 @@ const metric = computed(() => {
       value: formatYears(endPoint.value.yearsFunded),
       change: signedYears(delta),
       negative: delta < 0,
+      valueNegative: endPoint.value.yearsFunded < 0,
     }
   }
   const delta = endPoint.value.netWorth - startPoint.value.netWorth
@@ -607,6 +644,7 @@ function metricValue(label, value, change, valueIsDelta = false) {
       label,
       value: valueIsDelta ? signedCurrency(value) : formatCurrency(value),
       change: '',
+      valueNegative: value < 0,
     }
   }
   const changeIsPercent = typeof change === 'string'
@@ -615,6 +653,7 @@ function metricValue(label, value, change, valueIsDelta = false) {
     value: valueIsDelta ? signedCurrency(value) : formatCurrency(value),
     change: changeIsPercent ? change : signedCurrency(change),
     negative: changeIsPercent ? String(change).startsWith('−') : change < 0,
+    valueNegative: value < 0,
   }
 }
 
@@ -786,14 +825,8 @@ function signedCurrency(value) {
 .perspective-nav small {
   display: block;
 }
-.perspective-nav strong {
-  font-size: 0.84rem;
-}
 .perspective-nav small {
   margin-top: 0.18rem;
-  color: var(--color-copy);
-  font-size: 0.74rem;
-  line-height: 1.35;
 }
 .perspective-icon,
 .breakdown-marker {
@@ -829,11 +862,7 @@ function signedCurrency(value) {
   position: relative;
   min-width: 0;
   margin-top: 1rem;
-  padding: clamp(1.4rem, 3vw, 2.4rem);
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-card);
-  background: var(--color-surface);
-  box-shadow: var(--shadow-card);
+  padding: var(--card-padding);
 }
 .perspective-header {
   display: grid;
@@ -843,24 +872,13 @@ function signedCurrency(value) {
 }
 .perspective-eyebrow {
   color: var(--color-success);
-  font-size: 0.78rem;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
 }
 .perspective-heading h2 {
   margin: 0.45rem 0 0;
-  color: var(--color-ink);
-  font-size: clamp(1.8rem, 3vw, 2.75rem);
-  line-height: 1.02;
-  letter-spacing: -0.045em;
 }
 .perspective-description {
   max-width: 54rem;
   margin: 0.65rem 0 0;
-  color: var(--color-copy);
-  font-size: 0.92rem;
-  line-height: 1.45;
 }
 .metric-highlight {
   padding: 1.2rem 1.35rem;
@@ -881,36 +899,12 @@ function signedCurrency(value) {
 .metric-highlight small {
   display: block;
 }
-.metric-highlight span {
-  color: var(--color-copy);
-  font-size: 0.78rem;
-}
 .metric-highlight strong {
   margin-top: 0.25rem;
-  color: var(--color-success-dark);
-  font-size: clamp(1.65rem, 3vw, 2.35rem);
-  line-height: 1;
-  letter-spacing: -0.035em;
-}
-.metric-highlight--blue strong {
-  color: var(--color-primary-dark);
-}
-.metric-highlight--purple strong {
-  color: var(--color-purple);
-}
-.metric-highlight--warning strong {
-  color: var(--color-warning-dark);
 }
 .metric-highlight small {
   margin-top: 0.45rem;
-  color: var(--color-success-dark);
-  font-weight: 750;
 }
-.metric-highlight small.negative,
-.breakdown-row b.negative {
-  color: var(--color-danger);
-}
-
 .analysis-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.65fr) minmax(15rem, 0.85fr);
@@ -926,22 +920,14 @@ function signedCurrency(value) {
 .chart-card,
 .breakdown-card {
   min-width: 0;
-  padding: 1rem;
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-md);
-  background: var(--color-surface);
+  padding: var(--card-padding);
 }
 .chart-note {
   margin: 0.4rem 0 0;
   padding: 0 0.5rem;
-  color: var(--color-muted);
-  font-size: 0.75rem;
-  line-height: 1.4;
 }
 .breakdown-card h3 {
   margin: 0 0 0.7rem;
-  color: var(--color-ink);
-  font-size: 1rem;
 }
 .breakdown-row {
   display: grid;
@@ -964,21 +950,8 @@ function signedCurrency(value) {
 .breakdown-copy small {
   display: block;
 }
-.breakdown-copy strong {
-  color: var(--color-ink);
-  font-size: 0.8rem;
-}
-.breakdown-copy small {
-  color: var(--color-muted);
-  font-size: 0.7rem;
-}
 .breakdown-row b {
-  color: var(--color-ink);
-  font-size: 0.8rem;
   white-space: nowrap;
-}
-.breakdown-row b.positive {
-  color: var(--color-success-dark);
 }
 .formula-card,
 .coverage-note {
@@ -986,17 +959,10 @@ function signedCurrency(value) {
   padding: 0.85rem;
   border-radius: var(--radius-sm);
   background: var(--color-surface-soft);
-  color: var(--color-copy);
-  font-size: 0.74rem;
-  line-height: 1.45;
 }
 .formula-card span,
 .formula-card small {
   display: block;
-}
-.formula-card span {
-  color: var(--color-ink);
-  font-weight: 750;
 }
 .formula-card small {
   margin-top: 0.35rem;
@@ -1006,8 +972,7 @@ function signedCurrency(value) {
   gap: 0.55rem;
 }
 
-.state,
-.empty-state {
+.state {
   display: grid;
   place-items: center;
   gap: 0.8rem;
@@ -1018,29 +983,6 @@ function signedCurrency(value) {
   background: var(--color-surface);
   color: var(--color-copy);
   text-align: center;
-}
-.empty-state {
-  grid-template-columns: auto auto;
-  place-content: center;
-  text-align: left;
-}
-.empty-state__icon {
-  display: grid;
-  place-items: center;
-  width: 4rem;
-  height: 4rem;
-  border-radius: 50%;
-  background: var(--color-blue-soft);
-  color: var(--color-primary);
-  font-size: 2rem;
-}
-.empty-state h2,
-.empty-state p {
-  margin: 0;
-}
-.empty-state p {
-  max-width: 32rem;
-  margin-top: 0.35rem;
 }
 .achievements-view {
   margin-top: 1.25rem;
@@ -1056,9 +998,6 @@ function signedCurrency(value) {
   }
   .perspective-chevron {
     display: none;
-  }
-  .perspective-panel {
-    padding: 2.2rem;
   }
   .evolution-toolbar {
     position: absolute;
@@ -1077,9 +1016,6 @@ function signedCurrency(value) {
     position: relative;
     min-height: 7rem;
     padding: 1.15rem 7.5rem 1.15rem 1.45rem;
-  }
-  .metric-highlight--desktop strong {
-    font-size: clamp(2rem, 3vw, 2.8rem);
   }
   .metric-highlight--desktop small {
     position: absolute;
@@ -1159,10 +1095,6 @@ function signedCurrency(value) {
     padding: 0.55rem;
     border-radius: var(--radius-md);
   }
-  .perspective-nav strong {
-    font-size: 0.74rem;
-    line-height: 1.2;
-  }
   .perspective-nav small {
     display: none;
   }
@@ -1176,25 +1108,18 @@ function signedCurrency(value) {
   }
   .perspective-panel {
     margin-top: 0.85rem;
-    padding: 1rem 0.9rem;
-    border-radius: var(--radius-lg);
   }
   .evolution-toolbar {
     display: flex;
     margin-bottom: 0.85rem;
   }
   .period-switch {
-    --app-period-option-min-width: 0;
     grid-row: 1;
     width: 100%;
   }
   .perspective-header {
     grid-template-columns: 1fr;
     gap: 1rem;
-  }
-  .perspective-heading h2 {
-    font-size: 1.75rem;
-    line-height: 1.08;
   }
   .perspective-description {
     display: none;
@@ -1211,9 +1136,6 @@ function signedCurrency(value) {
   .metric-highlight strong {
     grid-column: 1;
   }
-  .metric-highlight strong {
-    font-size: 1.8rem;
-  }
   .metric-highlight small {
     grid-column: 2;
     grid-row: 1 / span 2;
@@ -1226,21 +1148,8 @@ function signedCurrency(value) {
   .analysis-grid {
     margin-top: 1rem;
   }
-  .chart-card,
-  .breakdown-card {
-    padding: 0.65rem;
-  }
   .breakdown-list {
     grid-template-columns: 1fr;
-  }
-  .chart-note {
-    font-size: 0.68rem;
-  }
-  .empty-state {
-    grid-template-columns: 1fr;
-    justify-items: center;
-    padding: 2rem;
-    text-align: center;
   }
 }
 </style>

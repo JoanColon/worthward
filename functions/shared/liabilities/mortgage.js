@@ -165,14 +165,13 @@ export function compareFrenchMortgageLumpSumScenarios({
     throw new RangeError('The repayment must happen before the contractual term ends')
   }
 
-  const monthlyPayment =
-    contractualMonthlyPayment == null
-      ? calculateFrenchMortgageMonthlyPayment({
-          principal: originalPrincipal,
-          annualInterestRate,
-          termMonths: contractualMonths,
-        })
-      : requirePositiveNumber(contractualMonthlyPayment, 'monthly payment')
+  const monthlyPayment = contractualMonthlyPayment == null ?
+    calculateFrenchMortgageMonthlyPayment({
+      principal: originalPrincipal,
+      annualInterestRate,
+      termMonths: contractualMonths,
+    }) :
+    requirePositiveNumber(contractualMonthlyPayment, 'monthly payment')
   const originalSchedule = buildFrenchMortgageScheduleFromBalance({
     currentBalance: originalPrincipal,
     annualInterestRate,

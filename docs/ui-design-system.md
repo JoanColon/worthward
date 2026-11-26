@@ -11,6 +11,7 @@ src/css/
 ├── foundation/
 │   ├── _tokens.scss                 Runtime CSS custom properties
 │   ├── _breakpoints.scss            Canonical Sass media-query values
+│   ├── _typography.scss             Global semantic type roles
 │   └── _base.scss                   Document and responsive foundations
 ├── components/
 │   ├── _buttons.scss                Shared q-btn conventions
@@ -44,6 +45,28 @@ Runtime tokens live in `foundation/_tokens.scss`. Prefer them over new hardcoded
 - Borders and focus: `--color-line`, `--color-line-strong`, `--color-primary-focus`.
 - Financial roles: `--color-financial-assets`, `--color-financial-liabilities`, `--color-financial-income`, `--color-financial-expenses`.
 - Spacing: `--space-1` through `--space-10`; use the smallest existing step that matches the composition.
+- Responsive composition: `--page-padding-*`, `--page-section-gap`, `--card-padding`, `--card-gap`, `--card-header-gap` and shared icon sizes.
+
+## Semantic typography
+
+Use the global roles directly in templates. Their responsive values are controlled by tokens, so do not create desktop/mobile variants.
+
+- Page: `app-page-title`, `app-page-title--hero`, `app-page-subtitle`.
+- Sections and cards: `app-section-title`, `app-section-label`, `app-card-title`, `app-card-subtitle`.
+- Financial data: `app-kpi-label`, `app-kpi-value`, `app-kpi-value-secondary`, `app-kpi-supporting`.
+- Financial results: `app-tone-positive`, `app-tone-negative`; add `app-result--negative` to a result surface when its primary result is adverse. Category colours must not override result meaning.
+- Dense content: `app-row-title`, `app-row-value`, `app-table-header`.
+- Copy: `app-body`, `app-caption`.
+
+Sentence case is the default. `app-section-label` is the intentional uppercase eyebrow role. Components may override a role only when the content has a materially different function.
+
+## Product terminology
+
+- **Cost of Life** is the canonical Worthward term for the expense model. Do not use “Cost of Living” for the same concept.
+- **Available income** is income available to the selected scope; **savings capacity** is what remains after Cost of Life.
+- **Net worth** is assets minus liabilities. **Wealth creation** describes its change; **wealth composition** describes its makeup.
+- **Financial freedom** is expressed as years of Cost of Life funded by net investable wealth.
+- Use **Cash & savings**, **Investments** and **Debt** as category labels. Use sentence case for titles, KPI labels and actions.
 
 Financial meaning and UI validation are separate. A negative performance value is not automatically a form error. Expense category colors and long ordinal chart palettes may remain categorical rather than semantic.
 
@@ -104,7 +127,9 @@ Provides a consistent card-level empty state with contextual text and an optiona
 ### Existing components
 
 - `AppPageHeader` owns route-level title, subtitle, back navigation and actions.
-- `DashboardCard` remains the dashboard-specific card composition; it is not a universal surface.
+- `AppCard` owns the shared surface, padding, optional heading, icon, actions and tones.
+- `DashboardCard` is a compatibility/domain composition built on `AppCard`.
+- `FinancialKpiOverview` owns the shared responsive KPI/chart split used by overview cards.
 - `OwnershipEditor`, `OwnershipAvatar`, `SimpleValueEditor`, `PositionCategorySetup` and `MilestoneBadge` remain domain components.
 
 ## Quasar conventions
@@ -138,3 +163,5 @@ yarn build
 ```
 
 The repository has no automated visual-regression suite. Verify affected flows manually on desktop and phone widths, including keyboard focus, dialog scrolling and loading/disabled states. Do not claim pixel equivalence without screenshot comparison.
+
+The development-only route `/design-system` renders production components and edge-case content at browser widths such as 360, 390, 768, 1024 and 1440px. It is removed from production route builds through `import.meta.env.DEV`.
