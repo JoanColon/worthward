@@ -1,7 +1,7 @@
 <template>
   <q-page class="liabilities-page">
     <main class="liabilities-shell">
-      <div v-if="liabilitiesStore.loading" class="loading-state">
+      <div v-if="liabilitiesStore.loading || loadingMetrics" class="loading-state">
         <q-spinner color="primary" size="2rem" />
         <span>{{ t('liabilities.loading') }}</span>
       </div>
@@ -41,6 +41,7 @@
           icon="credit_card"
           :label="t('liabilities.totalLiabilities')"
           :formatted-total="formatCurrency(total)"
+          :metrics="overviewMetrics"
           :scope-label="scopeLabel"
           :chart-title="t('liabilities.overview.breakdownTitle')"
           :total-label="t('liabilities.overview.currentBalance')"
@@ -76,7 +77,7 @@
                 :value="canonicalCategoryValue(category.id)"
                 :formatted-value="categoryValue(category.id)"
                 :saving="isCategorySaving(category.id)"
-                :disabled="isItemizedCategory(category.id)"
+                :disabled="readOnly || isItemizedCategory(category.id)"
                 :title="t('liabilities.quickEdit.title')"
                 :input-label="t('liabilities.form.totalBalance')"
                 @click="handleValueClick($event, category.id)"
@@ -99,7 +100,7 @@
                       <q-item-section>{{ t('liabilities.overview.viewDetails') }}</q-item-section>
                     </q-item>
                     <q-item
-                      v-if="!isItemizedCategory(category.id)"
+                      v-if="!readOnly && !isItemizedCategory(category.id)"
                       clickable
                       v-close-popup
                       @click="openOwnershipEditor(category.id)"
@@ -108,6 +109,7 @@
                       <q-item-section>{{ t('liabilities.ownership.label') }}</q-item-section>
                     </q-item>
                     <q-item
+                      v-if="!readOnly"
                       clickable
                       v-close-popup
                       class="text-negative"
@@ -122,7 +124,7 @@
             </div>
           </div>
 
-          <div class="category-actions">
+          <div v-if="!readOnly" class="category-actions">
             <q-btn
               flat
               no-caps
@@ -233,6 +235,7 @@ import SimpleValueEditor from '@/components/financial/SimpleValueEditor.vue'
 import AppPageHeader from '@/components/layout/AppPageHeader.vue'
 import AppConfirmDialog from '@/components/ui/AppConfirmDialog.vue'
 import { liabilityCategories } from '@/config/liability-categories'
+import { isDemoWorkspaceId } from '@/domain/access/demo-workspace'
 import { CHART_SERIES_COLORS } from '@/config/chart-theme'
 import {
   currentFinancialMonth,
@@ -241,6 +244,10 @@ import {
   financialYearMonthCategoryValue,
   financialYearMonthValue,
 } from '../../functions/shared/positions/annual-projection.js'
+import {
+  calculateLiabilityOverviewMetrics,
+  calculateModeledMonthlyLiabilityPayments,
+} from '../../functions/shared/positions/overview-metrics.js'
 import { authUser } from '@/services/auth'
 import { useFinancialScopeStore } from '@/stores/financial-scope-store'
 import { useFinancialYearsStore } from '@/stores/financial-years-store'
@@ -250,8 +257,12 @@ import {
   cloneOwnershipAllocation,
   isValidOwnershipAllocation,
 } from '../../functions/shared/core/ownership.js'
-import { formatCurrency } from '@/utils/formatters'
+import { formatCurrency, formatPercentage } from '@/utils/formatters'
 import { getWorkspaceMembers } from '@/utils/workspace-members'
+import {
+  financialMonthForWorkspace,
+  financialYearForWorkspace,
+} from '@/domain/access/demo-workspace'
 
 const $q = useQuasar()
 const { t } = useI18n()
@@ -262,6 +273,7 @@ const financialYearsStore = useFinancialYearsStore()
 const scopeStore = useFinancialScopeStore()
 const workspaceStore = useWorkspaceStore()
 const saving = ref(false)
+const loadingMetrics = ref(false)
 const editingCategories = ref(false)
 const confirmDisable = ref(false)
 const confirmCategoryDelete = ref(false)
@@ -272,10 +284,12 @@ const ownershipDialog = ref(false)
 const editingOwnershipCategoryId = ref(null)
 const editingOwnership = ref({ mode: 'single', shares: [] })
 const ownershipValid = ref(false)
-const currentYear = currentFinancialYear()
-const currentMonth = currentFinancialMonth()
+const routeWorkspaceId = String(route.params.workspaceId)
+const currentYear = financialYearForWorkspace(routeWorkspaceId, currentFinancialYear())
+const currentMonth = financialMonthForWorkspace(routeWorkspaceId, currentFinancialMonth())
 
 const workspaceId = computed(() => String(route.params.workspaceId))
+const readOnly = computed(() => isDemoWorkspaceId(workspaceId.value))
 const workspaceHomeRoute = computed(() => ({
   name: 'workspace-dashboard',
   params: { workspaceId: workspaceId.value },
@@ -298,6 +312,28 @@ const enabledCategories = computed(() =>
 const total = computed(() =>
   financialYearMonthValue(financialYear.value, currentMonth, 'liabilities', selectedMemberId.value),
 )
+const overviewMetrics = computed(() => {
+  const metrics = calculateLiabilityOverviewMetrics(
+    financialYear.value,
+    currentMonth,
+    selectedMemberId.value,
+  )
+  const modeledMonthlyPayments = calculateModeledMonthlyLiabilityPayments(
+    liabilitiesStore.itemsForCategory('mortgage'),
+    selectedMemberId.value,
+  )
+  return [
+    {
+      label: t('liabilities.overview.modeledMonthlyPayments'),
+      value: formatCurrency(modeledMonthlyPayments),
+      help: t('liabilities.overview.modeledMonthlyPaymentsHelp'),
+    },
+    {
+      label: t('liabilities.overview.debtToAssets'),
+      value: formatPercentage(metrics.debtToAssetsPercent),
+    },
+  ]
+})
 const breakdownEntries = computed(() => {
   const entries = enabledCategories.value
     .map((category) => ({
@@ -327,10 +363,18 @@ onMounted(() => loadLiabilities(workspaceId.value))
 watch(workspaceId, (value) => loadLiabilities(value))
 
 async function loadLiabilities(activeWorkspaceId) {
-  await Promise.allSettled([
-    liabilitiesStore.loadConfig(activeWorkspaceId),
-    financialYearsStore.load(activeWorkspaceId, currentYear),
-  ])
+  loadingMetrics.value = true
+  try {
+    await Promise.allSettled([
+      liabilitiesStore.loadConfig(activeWorkspaceId),
+      financialYearsStore.load(activeWorkspaceId, currentYear),
+    ])
+    if (liabilitiesStore.enabledCategories.includes('mortgage')) {
+      await liabilitiesStore.loadCategory(activeWorkspaceId, 'mortgage')
+    }
+  } finally {
+    loadingMetrics.value = false
+  }
 }
 
 async function completeSetup(selected) {

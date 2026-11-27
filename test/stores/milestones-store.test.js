@@ -123,4 +123,16 @@ describe('milestones store', () => {
     )
     expect(store.trackingActive).toBe(true)
   })
+
+  it('loads frozen demo achievements without maintenance or synchronization', async () => {
+    const workspaceStore = useWorkspaceStore()
+    workspaceStore.workspaces = [{ id: 'worthward_demo', milestoneTracking: { status: 'active' } }]
+    const store = useMilestonesStore()
+
+    await store.load('worthward_demo')
+
+    expect(getFinancialYear).toHaveBeenCalledWith('worthward_demo', 2026)
+    expect(ensureFinancialYear).not.toHaveBeenCalled()
+    expect(syncMilestoneAchievements).not.toHaveBeenCalled()
+  })
 })

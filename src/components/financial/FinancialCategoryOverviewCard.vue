@@ -4,8 +4,7 @@
     :icon="icon"
     :label="label"
     :formatted-total="formattedTotal"
-    :secondary-value="secondaryValue"
-    :secondary-label="secondaryLabel"
+    :supporting-text="[secondaryValue, secondaryLabel].filter(Boolean).join(' ')"
     :badge-label="badgeLabel"
   >
     <FinancialCategoryBreakdown

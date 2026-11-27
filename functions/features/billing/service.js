@@ -10,6 +10,7 @@ import {
   normalizeSubscription,
   workspaceEntitlementProjection,
 } from '../../shared/billing/entitlements.js'
+import { isDemoWorkspaceId } from '../../shared/workspaces/demo.js'
 
 export const ANDROID_PACKAGE_NAME = 'com.worthward.app'
 
@@ -148,7 +149,9 @@ export async function verifyGooglePlaySubscription(
       ...workspaceEntitlementProjection(subscriptionProjection),
       updatedAt: FieldValue.serverTimestamp(),
     }
-    for (const workspace of ownedWorkspaces.docs) {
+    for (const workspace of ownedWorkspaces.docs.filter(
+      (document) => !isDemoWorkspaceId(document.id),
+    )) {
       transaction.update(workspace.ref, { entitlement })
     }
     return subscriptionProjection

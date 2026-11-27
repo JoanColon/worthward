@@ -6,6 +6,7 @@ import {
   saveWhatIfSimulation as saveWhatIfSimulationDocument,
   saveWhatIfStrategy as saveWhatIfStrategyDocument,
 } from '@/services/firebase/what-if.service'
+import { isDemoWorkspaceId } from '@/domain/access/demo-workspace'
 
 export const useWhatIfStore = defineStore('what-if', () => {
   const config = ref(normalizeWhatIfConfig(defaultWhatIfConfig))
@@ -62,6 +63,11 @@ export const useWhatIfStore = defineStore('what-if', () => {
     }
     const previous = config.value
     const next = normalizeWhatIfConfig({ ...config.value, ...changes })
+    if (isDemoWorkspaceId(workspaceId)) {
+      config.value = next
+      saveError.value = null
+      return config.value
+    }
     const revision = ++saveRevision
     const epoch = saveEpoch
     config.value = next

@@ -2,13 +2,19 @@
 import { FieldValue } from 'firebase-admin/firestore'
 import { deleteWorkspaceData } from '../workspaces/service.js'
 import { workspaceOwnerId } from '../workspaces/access.js'
+import { isDemoWorkspaceId } from '../../shared/workspaces/demo.js'
 
 async function deleteAccountData(firestore, { auth, userId }) {
   const memberships = await firestore
     .collection('workspaces')
     .where('memberIds', 'array-contains', userId)
     .get()
-  const owned = memberships.docs.filter((document) => workspaceOwnerId(document.data()) === userId)
+  const mutableMemberships = memberships.docs.filter(
+    (document) => !isDemoWorkspaceId(document.id),
+  )
+  const owned = mutableMemberships.filter(
+    (document) => workspaceOwnerId(document.data()) === userId,
+  )
   const sharedOwned = owned.filter((document) => (document.data().memberIds || []).length > 1)
   if (sharedOwned.length) {
     throw accountError(
@@ -17,7 +23,7 @@ async function deleteAccountData(firestore, { auth, userId }) {
     )
   }
 
-  const guestMemberships = memberships.docs.filter(
+  const guestMemberships = mutableMemberships.filter(
     (document) => workspaceOwnerId(document.data()) !== userId,
   )
   for (const document of guestMemberships) {

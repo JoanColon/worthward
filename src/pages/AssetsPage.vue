@@ -41,6 +41,7 @@
           icon="account_balance_wallet"
           :label="t('assets.totalAssets')"
           :formatted-total="formatCurrency(total)"
+          :metrics="overviewMetrics"
           :scope-label="scopeLabel"
           :chart-title="t('assets.overview.breakdownTitle')"
           :total-label="t('assets.overview.currentValue')"
@@ -76,7 +77,7 @@
                 :value="canonicalCategoryValue(category.id)"
                 :formatted-value="categoryValue(category.id)"
                 :saving="isCategorySaving(category.id)"
-                :disabled="isItemizedCategory(category.id)"
+                :disabled="readOnly || isItemizedCategory(category.id)"
                 @click="handleValueClick($event, category.id)"
                 @save="saveSimpleCategoryValue(category.id, $event)"
               />
@@ -97,7 +98,7 @@
                       <q-item-section>{{ t('assets.overview.viewDetails') }}</q-item-section>
                     </q-item>
                     <q-item
-                      v-if="!isItemizedCategory(category.id)"
+                      v-if="!readOnly && !isItemizedCategory(category.id)"
                       clickable
                       v-close-popup
                       @click="openOwnershipEditor(category.id)"
@@ -106,6 +107,7 @@
                       <q-item-section>{{ t('assets.ownership.label') }}</q-item-section>
                     </q-item>
                     <q-item
+                      v-if="!readOnly"
                       clickable
                       v-close-popup
                       class="text-negative"
@@ -120,7 +122,7 @@
             </div>
           </div>
 
-          <div class="category-actions">
+          <div v-if="!readOnly" class="category-actions">
             <q-btn
               flat
               no-caps
@@ -231,6 +233,7 @@ import SimpleValueEditor from '@/components/financial/SimpleValueEditor.vue'
 import AppPageHeader from '@/components/layout/AppPageHeader.vue'
 import AppConfirmDialog from '@/components/ui/AppConfirmDialog.vue'
 import { assetCategories } from '@/config/asset-categories'
+import { isDemoWorkspaceId } from '@/domain/access/demo-workspace'
 import { CHART_SERIES_COLORS } from '@/config/chart-theme'
 import {
   currentFinancialMonth,
@@ -239,6 +242,7 @@ import {
   financialYearMonthCategoryValue,
   financialYearMonthValue,
 } from '../../functions/shared/positions/annual-projection.js'
+import { calculateAssetOverviewMetrics } from '../../functions/shared/positions/overview-metrics.js'
 import { authUser } from '@/services/auth'
 import { useAssetsStore } from '@/stores/assets-store'
 import { useFinancialYearsStore } from '@/stores/financial-years-store'
@@ -250,6 +254,10 @@ import {
 } from '../../functions/shared/core/ownership.js'
 import { formatCurrency } from '@/utils/formatters'
 import { getWorkspaceMembers } from '@/utils/workspace-members'
+import {
+  financialMonthForWorkspace,
+  financialYearForWorkspace,
+} from '@/domain/access/demo-workspace'
 
 const $q = useQuasar()
 const { t } = useI18n()
@@ -270,10 +278,12 @@ const ownershipDialog = ref(false)
 const editingOwnershipCategoryId = ref(null)
 const editingOwnership = ref({ mode: 'single', shares: [] })
 const ownershipValid = ref(false)
-const currentYear = currentFinancialYear()
-const currentMonth = currentFinancialMonth()
+const routeWorkspaceId = String(route.params.workspaceId)
+const currentYear = financialYearForWorkspace(routeWorkspaceId, currentFinancialYear())
+const currentMonth = financialMonthForWorkspace(routeWorkspaceId, currentFinancialMonth())
 
 const workspaceId = computed(() => String(route.params.workspaceId))
+const readOnly = computed(() => isDemoWorkspaceId(workspaceId.value))
 const workspaceHomeRoute = computed(() => ({
   name: 'workspace-dashboard',
   params: { workspaceId: workspaceId.value },
@@ -296,6 +306,24 @@ const enabledCategories = computed(() =>
 const total = computed(() =>
   financialYearMonthValue(financialYear.value, currentMonth, 'assets', selectedMemberId.value),
 )
+const overviewMetrics = computed(() => {
+  const metrics = calculateAssetOverviewMetrics(
+    financialYear.value,
+    currentMonth,
+    selectedMemberId.value,
+  )
+  return [
+    {
+      label: t('assets.overview.financialAssets'),
+      value: formatCurrency(metrics.financialAssets),
+      help: t('assets.overview.financialAssetsHelp'),
+    },
+    {
+      label: t('assets.overview.realEstate'),
+      value: formatCurrency(metrics.realEstate),
+    },
+  ]
+})
 const breakdownEntries = computed(() => {
   const entries = enabledCategories.value
     .map((category) => ({

@@ -271,7 +271,7 @@
             />
           </section>
 
-          <section class="model-parameters">
+          <section v-if="!readOnly" class="model-parameters">
             <q-expansion-item
               v-model="editing"
               expand-icon="chevron_right"
@@ -522,6 +522,7 @@ import { useFinancialYearsStore } from '@/stores/financial-years-store'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import { currencySymbol, formatCurrency } from '@/utils/formatters'
 import { getWorkspaceMembers } from '@/utils/workspace-members'
+import { DEMO_REFERENCE_DATE, isDemoWorkspaceId } from '@/domain/access/demo-workspace'
 
 const $q = useQuasar()
 const { t } = useI18n()
@@ -543,6 +544,7 @@ const form = reactive(emptyForm())
 let preparationId = 0
 
 const workspaceId = computed(() => String(route.params.workspaceId))
+const readOnly = computed(() => isDemoWorkspaceId(workspaceId.value))
 const liabilityId = computed(() => String(route.params.liabilityId))
 const mortgagesRoute = computed(() => ({
   name: 'liability-category',
@@ -893,6 +895,7 @@ function isIsoDate(value) {
 }
 
 function localToday() {
+  if (isDemoWorkspaceId(workspaceId.value)) return DEMO_REFERENCE_DATE
   const now = new Date()
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(
     now.getDate(),

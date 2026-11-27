@@ -292,6 +292,10 @@ export default {
     },
   },
   workspace: {
+    demo: {
+      description: 'Explore a shared read-only workspace',
+      readOnly: 'Demo · Read only',
+    },
     firstTitle: 'Create your first financial workspace',
     firstDescription: 'Manage finances alone or together.',
     newTitle: 'Create a financial workspace',
@@ -1266,6 +1270,10 @@ export default {
     overview: {
       breakdownTitle: 'Assets by category',
       breakdownEmpty: 'Add asset values to see your category breakdown.',
+      financialAssets: 'Financial assets',
+      financialAssetsHelp: 'Cash and investment assets. Other asset categories are not included.',
+      realEstate: 'Real estate',
+      percentOfAssets: '{percentage} of assets',
       category: 'Category',
       currentValue: 'Current value',
       viewDetails: 'View details',
@@ -1584,6 +1592,12 @@ export default {
     overview: {
       breakdownTitle: 'Liabilities by category',
       breakdownEmpty: 'Add liability balances to see your category breakdown.',
+      modeledMonthlyPayments: 'Modeled monthly payments',
+      modeledMortgagePayments: 'Contractual mortgage payments',
+      modeledMonthlyPaymentsHelp:
+        'Includes contractual payments from modeled mortgages. Simple debt balances have no payment schedule and are not included.',
+      debtToAssets: 'Debt-to-assets ratio',
+      ofTotalAssetValue: 'Of total asset value',
       category: 'Category',
       currentBalance: 'Current balance',
       viewDetails: 'View details',
@@ -1776,6 +1790,8 @@ export default {
     overview: {
       annualIncome: 'Annual income',
       averagePerMonth: 'average per month',
+      monthlyAverageSupport: '{amount} average per month',
+      percentOfIncome: '{percentage} of income',
       breakdownTitle: 'Income by category',
       breakdownEmpty: 'Add income estimates to see your category breakdown.',
       category: 'Category',
@@ -1969,6 +1985,9 @@ export default {
       annualCost: 'Annual Cost of Life',
       monthlyAverage: '{amount} average per month',
       averagePerMonth: 'average per month',
+      essentialExpenses: 'Essential expenses',
+      lifestyleExpenses: 'Lifestyle expenses',
+      percentOfExpenses: '{percentage} of expenses',
       breakdownTitle: 'Cost by category',
       breakdownEmpty: 'Add expense estimates to see your category breakdown.',
       categoriesTitle: 'Categories',

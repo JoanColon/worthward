@@ -100,6 +100,10 @@
   color: var(--color-danger);
 }
 
+.app-result--positive {
+  background-color: var(--color-green-soft);
+}
+
 .app-result--negative {
   // Semantic result surfaces must win over a categorical card tone.
   background-color: var(--color-red-soft) !important;

@@ -32,7 +32,7 @@
       </section>
     </div>
 
-    <div class="review-actions">
+    <div v-if="!readOnly" class="review-actions">
       <q-btn
         flat
         no-caps
@@ -54,6 +54,7 @@ defineProps({
   groups: { type: Array, required: true },
   canUseAllTracked: { type: Boolean, default: false },
   saving: { type: Boolean, default: false },
+  readOnly: { type: Boolean, default: false },
 })
 defineEmits(['view-group', 'use-all-tracked'])
 const { t } = useI18n()

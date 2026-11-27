@@ -1,6 +1,7 @@
 import { doc, getDoc, onSnapshot } from 'firebase/firestore'
 import { httpsCallable } from 'firebase/functions'
 import { db, functions } from '@/firebase/firebase'
+import { assertMutableWorkspaceId } from '@/domain/access/demo-workspace'
 
 function financialYearRef(workspaceId, year) {
   return doc(db, 'workspaces', workspaceId, 'financialYears', String(year))
@@ -14,6 +15,7 @@ export async function getFinancialYear(workspaceId, year) {
 }
 
 export async function ensureFinancialYear(workspaceId, year) {
+  assertMutableWorkspaceId(workspaceId)
   assertYear(year)
   return httpsCallable(functions, 'ensureFinancialYear')({ workspaceId, year })
 }

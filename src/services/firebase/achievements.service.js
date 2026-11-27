@@ -1,5 +1,6 @@
 import { collection, doc, getDocs, serverTimestamp, writeBatch } from 'firebase/firestore'
 import { db } from '@/firebase/firebase'
+import { assertMutableWorkspaceId } from '@/domain/access/demo-workspace'
 
 export const MILESTONE_CONFIRMATION_DELAY_MS = 24 * 60 * 60 * 1000
 
@@ -13,6 +14,7 @@ export async function activateMilestoneTracking(
   milestoneProgress,
   existingAchievements = [],
 ) {
+  assertMutableWorkspaceId(workspaceId)
   const batch = writeBatch(db)
   const workspaceReference = doc(db, 'workspaces', workspaceId)
   const reached = milestoneProgress.filter((milestone) => milestone.reached)
@@ -59,6 +61,7 @@ export async function syncMilestoneAchievements(
   existingAchievements = [],
   now = Date.now(),
 ) {
+  assertMutableWorkspaceId(workspaceId)
   const batch = writeBatch(db)
   const existingById = new Map(
     existingAchievements.map((achievement) => [

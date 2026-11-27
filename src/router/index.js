@@ -6,6 +6,7 @@ import {
   createWebHistory,
 } from 'vue-router'
 import { authUser, waitForAuth } from '@/services/auth'
+import { isDemoWorkspaceId } from '@/domain/access/demo-workspace'
 import routes from './routes'
 
 /*
@@ -47,6 +48,13 @@ export default defineRouter((/* { store, ssrContext } */) => {
         return redirect
       }
       return { name: 'home' }
+    }
+
+    if (to.name === 'setup' && isDemoWorkspaceId(to.params.workspaceId)) {
+      return {
+        name: 'workspace-dashboard',
+        params: { workspaceId: to.params.workspaceId },
+      }
     }
   })
 

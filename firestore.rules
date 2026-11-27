@@ -6,6 +6,18 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    function isDemoWorkspaceId(workspaceId) {
+      return workspaceId == 'worthward_demo';
+    }
+
+    function canReadWorkspace(workspaceId, workspace) {
+      return isSignedIn()
+        && (
+          isDemoWorkspaceId(workspaceId)
+          || request.auth.uid in workspace.memberIds
+        );
+    }
+
     function isWorkspaceMember(workspace) {
       return isSignedIn()
         && request.auth.uid in workspace.memberIds;
@@ -27,7 +39,9 @@ service cloud.firestore {
 
     function canWriteWorkspaceData(workspaceId) {
       let workspace = workspaceById(workspaceId);
-      return isWorkspaceMember(workspace) && isWorkspaceActive(workspace);
+      return !isDemoWorkspaceId(workspaceId)
+        && isWorkspaceMember(workspace)
+        && isWorkspaceActive(workspace);
     }
 
     function workspaceIsPro(workspace) {
@@ -40,7 +54,10 @@ service cloud.firestore {
       return (
           !('activeWorkspaceId' in data)
           || data.activeWorkspaceId == null
-          || data.activeWorkspaceId is string
+          || (
+            data.activeWorkspaceId is string
+            && !isDemoWorkspaceId(data.activeWorkspaceId)
+          )
         )
         && (
           !('quickLinksByWorkspace' in data)
@@ -78,8 +95,9 @@ service cloud.firestore {
 
     match /workspaces/{workspaceId} {
       allow create: if false;
-      allow read: if isWorkspaceMember(resource.data);
-      allow update: if isWorkspaceMember(resource.data)
+      allow read: if canReadWorkspace(workspaceId, resource.data);
+      allow update: if !isDemoWorkspaceId(workspaceId)
+        && isWorkspaceMember(resource.data)
         && isWorkspaceActive(resource.data)
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
           'milestoneTracking',
@@ -89,17 +107,29 @@ service cloud.firestore {
       allow delete: if false;
 
       match /financialYears/{year} {
-        allow read: if isWorkspaceMemberById(workspaceId);
+        allow read: if isSignedIn()
+          && (
+            isDemoWorkspaceId(workspaceId)
+            || isWorkspaceMemberById(workspaceId)
+          );
         allow write: if false;
       }
 
       match /achievements/{milestoneId} {
-        allow read: if isWorkspaceMemberById(workspaceId);
+        allow read: if isSignedIn()
+          && (
+            isDemoWorkspaceId(workspaceId)
+            || isWorkspaceMemberById(workspaceId)
+          );
         allow write: if canWriteWorkspaceData(workspaceId);
       }
 
       match /modelConfig/{configId} {
-        allow read: if isWorkspaceMemberById(workspaceId);
+        allow read: if isSignedIn()
+          && (
+            isDemoWorkspaceId(workspaceId)
+            || isWorkspaceMemberById(workspaceId)
+          );
         allow write: if canWriteWorkspaceData(workspaceId)
           && (
             configId != 'whatIfStrategies'
@@ -117,7 +147,11 @@ service cloud.firestore {
           || collectionId == 'modelExpenses'
           || collectionId == 'expenseTracking'
         )
-          && isWorkspaceMemberById(workspaceId);
+          && isSignedIn()
+          && (
+            isDemoWorkspaceId(workspaceId)
+            || isWorkspaceMemberById(workspaceId)
+          );
         allow write: if (
           collectionId == 'expenseTracking'
         )

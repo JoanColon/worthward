@@ -9,6 +9,7 @@ import { normalizeAnnualReturnPercent } from '../../shared/core/rates.js'
 import { roundMoneyOrZero } from '../../shared/core/money.js'
 import { calculateFrenchMortgagePaymentStep } from '../../shared/liabilities/mortgage.js'
 import { workspaceEntitlementIsPro } from '../../shared/billing/entitlements.js'
+import { assertMutableWorkspaceId } from '../../shared/workspaces/demo.js'
 import { currentMonth, currentYear, positionStartMonth } from '../financial-years/service.js'
 
 const MONTHS = [
@@ -68,6 +69,7 @@ async function mutateFinancialModel(
   },
 ) {
   assertText(workspaceId, 'A workspace is required')
+  assertMutableWorkspaceId(workspaceId)
   assertText(userId, 'Authentication is required')
   const definition = sectionDefinitions[section]
   if (!definition) throw new Error('A valid financial section is required')

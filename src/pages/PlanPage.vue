@@ -198,6 +198,12 @@ import { useWhatIfStore } from '@/stores/what-if-store'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import { formatCurrency } from '@/utils/formatters'
 import { getWorkspaceMembers } from '@/utils/workspace-members'
+import {
+  DEMO_REFERENCE_DATE,
+  financialMonthForWorkspace,
+  financialYearForWorkspace,
+  isDemoWorkspaceId,
+} from '@/domain/access/demo-workspace'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -207,7 +213,8 @@ const liabilitiesStore = useLiabilitiesStore()
 const whatIfStore = useWhatIfStore()
 const scopeStore = useFinancialScopeStore()
 const workspaceStore = useWorkspaceStore()
-const currentYear = currentFinancialYear()
+const routeWorkspaceId = String(route.params.workspaceId)
+const currentYear = financialYearForWorkspace(routeWorkspaceId, currentFinancialYear())
 const period = ref('monthly')
 const periodOptions = computed(() => [
   { value: 'annual', label: t('dashboard.costOfLife.annual') },
@@ -276,7 +283,10 @@ const activeScenario = computed(
     whatIfStore.config.scenarios[0],
 )
 const positionMonth = computed(() =>
-  findLatestObservedPositionMonth(financialYear.value, currentFinancialMonth()),
+  findLatestObservedPositionMonth(
+    financialYear.value,
+    financialMonthForWorkspace(workspaceId.value, currentFinancialMonth()),
+  ),
 )
 const startingPosition = computed(() =>
   buildStrategyStartingPosition(financialYear.value, positionMonth.value, selectedMemberId.value),
@@ -501,6 +511,7 @@ function debtOutcome(payoff, hasDebt, debtName, incremental = false) {
 }
 
 function localToday() {
+  if (isDemoWorkspaceId(workspaceId.value)) return DEMO_REFERENCE_DATE
   const now = new Date()
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(
     now.getDate(),

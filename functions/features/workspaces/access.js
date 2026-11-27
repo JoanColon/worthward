@@ -1,4 +1,5 @@
 import { resolveWorkspaceEntitlements } from '../../shared/billing/entitlements.js'
+import { isDemoWorkspaceId } from '../../shared/workspaces/demo.js'
 
 function workspaceOwnerId(workspace = {}) {
   return Object.entries(workspace.members || {}).find(([, member]) => member?.role === 'owner')?.[0] || null
@@ -13,6 +14,29 @@ async function getWorkspaceAccess(firestore, { workspaceId, userId }) {
   }
   if (!workspace.entitlement) {
     throw accessError('failed-precondition', 'The workspace entitlement is missing')
+  }
+
+  if (isDemoWorkspaceId(workspaceId)) {
+    return {
+      workspaceReference,
+      workspaceSnapshot,
+      workspace,
+      ownerId: workspaceOwnerId(workspace),
+      capabilities: {
+        tier: 'pro',
+        isPro: true,
+        isMember: false,
+        isOwner: false,
+        canRead: true,
+        canWrite: false,
+        canUsePlan: true,
+        canUseWhatIf: true,
+        canUseStrategy: true,
+        canUseAdvancedModels: true,
+        canInviteMembers: false,
+        maximumWorkspaceMembers: 0,
+      },
+    }
   }
 
   const ownerId = workspaceOwnerId(workspace)

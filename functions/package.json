@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "lint": "ESLINT_USE_FLAT_CONFIG=false eslint .",
+    "seed:demo": "node scripts/seed-demo.mjs",
     "serve": "firebase emulators:start --only functions",
     "shell": "firebase functions:shell",
     "start": "npm run shell",

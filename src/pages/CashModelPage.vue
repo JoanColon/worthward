@@ -57,7 +57,7 @@
           />
         </section>
 
-        <section class="model-parameters">
+        <section v-if="!readOnly" class="model-parameters">
           <q-expansion-item expand-icon="chevron_right" expanded-icon="expand_more">
             <template #header>
               <q-item-section avatar>
@@ -118,6 +118,7 @@ import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import CashProjectionChart from '@/components/assets/CashProjectionChart.vue'
 import AppPageHeader from '@/components/layout/AppPageHeader.vue'
+import { isDemoWorkspaceId } from '@/domain/access/demo-workspace'
 import { projectCashValue } from '../../functions/shared/assets/cash.js'
 import { normalizeAnnualReturnPercent } from '../../functions/shared/core/rates.js'
 import { useAssetsStore } from '@/stores/assets-store'
@@ -139,6 +140,7 @@ const horizonYears = ref(10)
 let preparationId = 0
 
 const workspaceId = computed(() => String(route.params.workspaceId))
+const readOnly = computed(() => isDemoWorkspaceId(workspaceId.value))
 const assetId = computed(() => String(route.params.assetId))
 const asset = computed(
   () => assetsStore.itemsForCategory('cash').find(({ id }) => id === assetId.value) || null,

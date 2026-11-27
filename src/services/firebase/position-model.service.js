@@ -16,6 +16,7 @@ import {
 import { canonicalCategories } from '@/domain/financial/model-categories'
 import { currentUserId } from '@/services/firebase/current-user'
 import { getModelConfig, modelConfigRef } from '@/services/firebase/model-config.service'
+import { assertMutableWorkspaceId } from '@/domain/access/demo-workspace'
 
 const definitions = {
   assets: { collection: 'modelAssets', singular: 'asset' },
@@ -34,6 +35,7 @@ export async function getCategoryPositionItems(workspaceId, section, categoryId)
 }
 
 export async function savePositionSetup(workspaceId, section, categories) {
+  assertMutableWorkspaceId(workspaceId)
   const userId = currentUserId()
   const batch = writeBatch(db)
   batch.set(modelConfigRef(workspaceId, section), {
@@ -49,6 +51,7 @@ export async function savePositionSetup(workspaceId, section, categories) {
 }
 
 export async function updatePositionCategories(workspaceId, section, categories) {
+  assertMutableWorkspaceId(workspaceId)
   const userId = currentUserId()
   const batch = writeBatch(db)
   batch.set(
@@ -66,6 +69,7 @@ export async function updatePositionCategories(workspaceId, section, categories)
 }
 
 export async function updateSimplePositionValue(workspaceId, section, categoryId, value) {
+  assertMutableWorkspaceId(workspaceId)
   const definition = definitionFor(section)
   const userId = currentUserId()
   const documentRef = modelConfigRef(workspaceId, section)
@@ -96,6 +100,7 @@ export async function updateSimplePositionOwnership(
   ownership,
   memberIds,
 ) {
+  assertMutableWorkspaceId(workspaceId)
   const definition = definitionFor(section)
   assertPositionOwnership(ownership, memberIds)
   const userId = currentUserId()

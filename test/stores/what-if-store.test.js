@@ -146,4 +146,16 @@ describe('What If store', () => {
     )
     expect(saveWhatIfStrategy.mock.calls[0][1]).not.toHaveProperty('results')
   })
+
+  it('keeps demo simulations interactive without persistence', async () => {
+    const store = useWhatIfStore()
+    await store.load('worthward_demo')
+
+    await store.saveSimulation('worthward_demo', { discretionaryReductionPercent: 40 })
+    await store.saveStrategy('worthward_demo', { activeScenarioId: 'custom' })
+
+    expect(store.config.discretionaryReductionPercent).toBe(40)
+    expect(saveWhatIfSimulation).not.toHaveBeenCalled()
+    expect(saveWhatIfStrategy).not.toHaveBeenCalled()
+  })
 })

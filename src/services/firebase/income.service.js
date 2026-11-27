@@ -18,6 +18,7 @@ import {
   updateFinancialModelItem,
 } from '@/services/firebase/financial-model-mutations.service'
 import { getModelConfig, modelConfigRef } from '@/services/firebase/model-config.service'
+import { assertMutableWorkspaceId } from '@/domain/access/demo-workspace'
 
 function configRef(workspaceId) {
   return modelConfigRef(workspaceId, 'income')
@@ -42,6 +43,7 @@ export async function getCategoryIncome(workspaceId, categoryId) {
 }
 
 export async function saveIncomeSetup(workspaceId, categories) {
+  assertMutableWorkspaceId(workspaceId)
   const userId = currentUserId()
   const batch = writeBatch(db)
   batch.set(
@@ -61,6 +63,7 @@ export async function saveIncomeSetup(workspaceId, categories) {
 }
 
 export async function updateIncomeCategories(workspaceId, categories) {
+  assertMutableWorkspaceId(workspaceId)
   const userId = currentUserId()
   const batch = writeBatch(db)
   batch.set(

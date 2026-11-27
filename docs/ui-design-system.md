@@ -14,7 +14,9 @@ src/css/
 │   ├── _typography.scss             Global semantic type roles
 │   └── _base.scss                   Document and responsive foundations
 ├── components/
+│   ├── _app-card.scss               Shared AppCard surface and variants
 │   ├── _buttons.scss                Shared q-btn conventions
+│   ├── _financial-overview.scss     Shared financial KPI composition
 │   └── _quasar-overrides.scss       Intentional global Quasar overrides
 ├── themes/
 │   └── _expense-categories.scss     Expense category palette mixin
@@ -54,7 +56,9 @@ Use the global roles directly in templates. Their responsive values are controll
 - Page: `app-page-title`, `app-page-title--hero`, `app-page-subtitle`.
 - Sections and cards: `app-section-title`, `app-section-label`, `app-card-title`, `app-card-subtitle`.
 - Financial data: `app-kpi-label`, `app-kpi-value`, `app-kpi-value-secondary`, `app-kpi-supporting`.
-- Financial results: `app-tone-positive`, `app-tone-negative`; add `app-result--negative` to a result surface when its primary result is adverse. Category colours must not override result meaning.
+- Financial results: `app-tone-positive`, `app-tone-negative`; add `app-result--negative` to a
+  contextual result surface when its primary result is adverse. Category colours must not override
+  result meaning.
 - Dense content: `app-row-title`, `app-row-value`, `app-table-header`.
 - Copy: `app-body`, `app-caption`.
 
@@ -127,7 +131,11 @@ Provides a consistent card-level empty state with contextual text and an optiona
 ### Existing components
 
 - `AppPageHeader` owns route-level title, subtitle, back navigation and actions.
-- `AppCard` owns the shared surface, padding, optional heading, icon, actions and tones.
+- `AppCard` owns the shared white default surface, padding, optional heading, icon and actions. Its
+  `tone` changes accents such as the icon, never the card background. An explicit shared semantic
+  or interaction state may change the surface when the content requires it—for example a negative
+  result, warning or selected card—but feature-scoped styles must not invent background variants
+  or gradients.
 - `DashboardCard` is a compatibility/domain composition built on `AppCard`.
 - `FinancialKpiOverview` owns the shared responsive KPI/chart split used by overview cards.
 - `OwnershipEditor`, `OwnershipAvatar`, `SimpleValueEditor`, `PositionCategorySetup` and `MilestoneBadge` remain domain components.

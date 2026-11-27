@@ -23,6 +23,10 @@ export function formatCurrency(value) {
   return currencyFormatter(activeCurrency.value).format(value)
 }
 
+export function formatPercentage(value, maximumFractionDigits = 1) {
+  return `${new Intl.NumberFormat('en-IE', { maximumFractionDigits }).format(Number(value) || 0)}%`
+}
+
 function currencyFormatter(currency) {
   if (!formatterCache.has(currency)) {
     formatterCache.set(

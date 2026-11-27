@@ -324,7 +324,7 @@
             </p>
           </section>
 
-          <div class="portfolio-actions">
+          <div v-if="!demoPortfolio" class="portfolio-actions">
             <q-btn
               flat
               no-caps
@@ -456,6 +456,7 @@ import {
   portfolioTableRows,
 } from '@/domain/financial/investment-portfolio'
 import { useAssetsStore } from '@/stores/assets-store'
+import { isDemoWorkspaceId } from '@/domain/access/demo-workspace'
 
 const templateCopyUrl =
   'https://docs.google.com/spreadsheets/d/1YZKLerZRbcNDryHZs-Zs5YeybJKSGVEoyb_4bKpnysg/copy'
@@ -499,7 +500,12 @@ const investment = computed(() =>
   assetsStore.itemsForCategory('investment').find((asset) => asset.id === assetId.value),
 )
 const portfolio = computed(() => investment.value?.detail?.portfolio || null)
-const configured = computed(() => Boolean(portfolio.value?.spreadsheetUrl))
+const demoPortfolio = computed(() => isDemoWorkspaceId(workspaceId.value))
+const configured = computed(() =>
+  demoPortfolio.value
+    ? Boolean(investmentPortfolioCache(portfolio.value))
+    : Boolean(portfolio.value?.spreadsheetUrl),
+)
 const loading = computed(
   () => preparing.value || assetsStore.loading || assetsStore.categoryLoading,
 )
@@ -763,6 +769,7 @@ async function readPortfolio(force = false) {
     sheetWarnings.value = cache.warnings || []
     sheetWarningCount.value = Number(cache.warningCount) || sheetWarnings.value.length
   }
+  if (demoPortfolio.value) return
   if (!force && !needsClassificationRefresh && investmentPortfolioCacheIsFresh(portfolio.value)) {
     return
   }

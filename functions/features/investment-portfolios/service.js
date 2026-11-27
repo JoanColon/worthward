@@ -3,6 +3,7 @@
  */
 import { FieldValue } from 'firebase-admin/firestore'
 import { roundMoneyOrNull } from '../../shared/core/money.js'
+import { assertMutableWorkspaceId } from '../../shared/workspaces/demo.js'
 import { currentYear, rebuildFinancialYear } from '../financial-years/service.js'
 import {
   PORTFOLIO_SCHEMA,
@@ -31,6 +32,7 @@ async function updateInvestmentPortfolio(
   nowImpl = Date.now,
 ) {
   assertRequest(workspaceId, userId, assetId)
+  assertMutableWorkspaceId(workspaceId)
   if (spreadsheetUrl == null) {
     return disconnectInvestmentPortfolio(firestore, { workspaceId, userId, assetId })
   }
@@ -57,6 +59,7 @@ async function syncInvestmentPortfolio(
   nowImpl = Date.now,
 ) {
   assertRequest(workspaceId, userId, assetId)
+  assertMutableWorkspaceId(workspaceId)
   return synchronizeInvestmentPortfolio(
     firestore,
     { workspaceId, userId, assetId, force: Boolean(force) },
@@ -77,6 +80,7 @@ async function syncWorkspaceInvestmentPortfolios(
   nowImpl = Date.now,
 ) {
   assertText(workspaceId, 'A workspace is required')
+  assertMutableWorkspaceId(workspaceId)
   const workspaceReference = firestore.collection('workspaces').doc(workspaceId)
   const workspaceSnapshot = await workspaceReference.get()
   const workspace = workspaceSnapshot.data()

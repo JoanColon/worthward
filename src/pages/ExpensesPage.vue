@@ -48,8 +48,12 @@
           icon="account_balance_wallet"
           :label="t('expenses.overview.annualCost')"
           :formatted-total="formatCurrency(totals.annualCostOfLife)"
-          :secondary-value="formatCurrency(totals.monthlyCostOfLife)"
-          :secondary-label="t('expenses.overview.averagePerMonth')"
+          :supporting-text="
+            t('expenses.overview.monthlyAverage', {
+              amount: formatCurrency(totals.monthlyCostOfLife),
+            })
+          "
+          :metrics="overviewMetrics"
           :scope-label="scopeLabel"
           :chart-title="t('expenses.overview.breakdownTitle')"
           :total-label="t('dashboard.year')"
@@ -97,7 +101,7 @@
                 :formatted-value="formatCurrency(categoryTableValue(category.id))"
                 :formatted-period="t(tablePeriodKey)"
                 :saving="isCategorySaving(category.id)"
-                :disabled="!canQuickEdit(category.id)"
+                :disabled="readOnly || !canQuickEdit(category.id)"
                 :aria-label="
                   t('expenses.quickEdit.editLabel', {
                     category: t(category.nameKey),
@@ -125,6 +129,7 @@
                       <q-item-section>{{ t('expenses.overview.viewDetails') }}</q-item-section>
                     </q-item>
                     <q-item
+                      v-if="!readOnly"
                       clickable
                       v-close-popup
                       class="text-negative"
@@ -139,7 +144,7 @@
             </div>
           </div>
 
-          <div class="category-actions">
+          <div v-if="!readOnly" class="category-actions">
             <q-btn
               flat
               no-caps
@@ -215,12 +220,14 @@ import AppPageHeader from '@/components/layout/AppPageHeader.vue'
 import AppConfirmDialog from '@/components/ui/AppConfirmDialog.vue'
 import AppPeriodSwitch from '@/components/ui/AppPeriodSwitch.vue'
 import { expenseCategories } from '@/config/expense-categories'
+import { isDemoWorkspaceId } from '@/domain/access/demo-workspace'
 import { CHART_COLORS, CHART_SERIES_COLORS } from '@/config/chart-theme'
 import {
   currentFinancialYear,
   financialYearFlowCategoryValue,
   financialYearFlowValue,
 } from '../../functions/shared/positions/annual-projection.js'
+import { calculateExpenseOverviewMetrics } from '../../functions/shared/positions/overview-metrics.js'
 import {
   createEqualMemberOwnership,
   createSingleMemberOwnership,
@@ -232,6 +239,7 @@ import { useFinancialScopeStore } from '@/stores/financial-scope-store'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import { formatCurrency } from '@/utils/formatters'
 import { getWorkspaceMembers } from '@/utils/workspace-members'
+import { financialYearForWorkspace } from '@/domain/access/demo-workspace'
 
 const $q = useQuasar()
 const { t } = useI18n()
@@ -251,7 +259,10 @@ const pendingSelection = ref(null)
 const deleteDialog = ref(false)
 const deletingCategory = ref(null)
 const tablePeriod = ref('annual')
-const currentYear = currentFinancialYear()
+const currentYear = financialYearForWorkspace(
+  String(route.params.workspaceId),
+  currentFinancialYear(),
+)
 const tablePeriodOptions = computed(() => [
   { label: t('dashboard.costOfLife.annual'), value: 'annual' },
   { label: t('dashboard.costOfLife.monthly'), value: 'monthly' },
@@ -268,6 +279,7 @@ const tableAmountHeading = computed(() =>
 )
 
 const workspaceId = computed(() => String(route.params.workspaceId))
+const readOnly = computed(() => isDemoWorkspaceId(workspaceId.value))
 const workspaceHomeRoute = computed(() => ({
   name: 'workspace-dashboard',
   params: { workspaceId: workspaceId.value },
@@ -307,6 +319,19 @@ const totals = computed(() => ({
   monthlyCostOfLife:
     financialYearFlowValue(financialYear.value, 'expenses', selectedMemberId.value) / 12,
 }))
+const overviewMetrics = computed(() => {
+  const metrics = calculateExpenseOverviewMetrics(financialYear.value, selectedMemberId.value)
+  return [
+    {
+      label: t('expenses.overview.essentialExpenses'),
+      value: formatCurrency(metrics.essential),
+    },
+    {
+      label: t('expenses.overview.lifestyleExpenses'),
+      value: formatCurrency(metrics.lifestyle),
+    },
+  ]
+})
 const breakdownEntries = computed(() => {
   const entries = enabledCategories.value
     .map((category) => ({

@@ -1,0 +1,91 @@
+@use '../mixins' as *;
+@use '../foundation/breakpoints' as bp;
+
+.q-card.app-card {
+  // AppCard uses the shared white surface by default. Tones only style accents;
+  // an explicit shared semantic or interaction state may change the surface.
+  @include dashboard-card;
+  min-width: 0;
+  color: var(--color-ink);
+}
+
+.app-card--padded {
+  padding: var(--card-padding);
+}
+
+.app-card--compact {
+  --card-padding: var(--space-4);
+}
+
+.app-card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--card-header-gap);
+}
+
+.app-card--has-header.app-card--padded .app-card__header {
+  margin-bottom: var(--card-gap);
+}
+
+.app-card__heading {
+  display: flex;
+  align-items: center;
+  gap: var(--card-header-gap);
+  min-width: 0;
+}
+
+.app-card__copy {
+  display: grid;
+  min-width: 0;
+  gap: var(--card-title-subtitle-gap);
+}
+
+.app-card__actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.app-card__icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 var(--icon-size-card);
+  width: var(--icon-size-card);
+  height: var(--icon-size-card);
+  border-radius: 50%;
+  background: var(--color-surface-muted);
+  color: var(--color-ink-soft);
+  font-size: clamp(1.2rem, calc(1rem + 0.7vw), 1.65rem);
+}
+
+.app-card--primary .app-card__icon {
+  background: var(--color-blue-soft);
+  color: var(--color-primary);
+}
+
+.app-card--positive .app-card__icon {
+  background: var(--color-green-soft);
+  color: var(--color-success-dark);
+}
+
+.app-card--negative .app-card__icon {
+  background: var(--color-red-soft);
+  color: var(--color-danger);
+}
+
+.app-card--purple .app-card__icon {
+  background: var(--color-purple-soft);
+  color: var(--color-purple);
+}
+
+@media (max-width: bp.$content-compact-max) {
+  .app-card__header {
+    flex-wrap: wrap;
+  }
+
+  .app-card__heading {
+    flex: 1 1 15rem;
+  }
+}

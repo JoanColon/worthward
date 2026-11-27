@@ -117,7 +117,7 @@ function renderChart() {
       series: [
         {
           type: 'pie',
-          radius: ['62%', '92%'],
+          radius: ['60%', '96%'],
           label: { show: false },
           labelLine: { show: false },
           itemStyle: { borderColor: CHART_COLORS.inverse, borderWidth: 3, borderRadius: 4 },
@@ -148,27 +148,19 @@ function escapeHtml(value) {
 </script>
 
 <style scoped lang="scss">
+@use '@/css/foundation/breakpoints' as bp;
 @use '@/css/mixins' as *;
 
 .breakdown-card {
-  @include dashboard-card;
   min-width: 0;
+}
+
+.breakdown-card:not(.embedded) {
+  @include dashboard-card;
   padding: var(--space-5);
 }
 
-.breakdown-card.embedded {
-  display: flex;
-  align-items: center;
-  border: 0;
-  border-radius: 0;
-  box-shadow: none;
-}
-
-.breakdown-card.embedded .breakdown-content {
-  width: 100%;
-}
-
-.breakdown-content {
+.breakdown-card:not(.embedded) .breakdown-content {
   display: grid;
   grid-template-columns: minmax(14rem, 0.95fr) minmax(14rem, 1.05fr);
   align-items: center;
@@ -179,6 +171,9 @@ function escapeHtml(value) {
 .chart-wrap {
   position: relative;
   min-width: 0;
+}
+
+.breakdown-card:not(.embedded) .chart-wrap {
   height: 13.25rem;
 }
 
@@ -282,18 +277,18 @@ function escapeHtml(value) {
   font-size: 2rem;
 }
 
-@media (max-width: 760px) {
-  .breakdown-card {
+@media (max-width: bp.$content-compact-max) {
+  .breakdown-card:not(.embedded) {
     padding: var(--space-4);
   }
 
-  .breakdown-content {
+  .breakdown-card:not(.embedded) .breakdown-content {
     grid-template-columns: minmax(8.5rem, 0.85fr) minmax(0, 1.15fr);
     gap: var(--space-3);
     min-height: 10rem;
   }
 
-  .chart-wrap {
+  .breakdown-card:not(.embedded) .chart-wrap {
     height: 10.5rem;
   }
 

@@ -26,7 +26,7 @@
           :back-to="{ name: 'plan', params: { workspaceId } }"
         />
 
-        <section class="simulator-card">
+        <AppCard class="simulator-card">
           <div class="simulator-controls">
             <div class="spending-summary">
               <div class="spending-label">
@@ -114,7 +114,7 @@
             </div>
           </div>
 
-          <div class="main-result">
+          <div class="main-result app-result--positive">
             <div>
               <span>{{ t('whatIf.result.label') }}</span>
               <strong
@@ -152,9 +152,9 @@
             </template>
             <template v-else>{{ t('whatIf.breakEven.notReachable') }}</template>
           </p>
-        </section>
+        </AppCard>
 
-        <section v-if="showScenarios" class="comparison-card">
+        <AppCard v-if="showScenarios" class="comparison-card">
           <div class="comparison-heading">
             <div>
               <h2>
@@ -165,7 +165,7 @@
           </div>
 
           <div class="scenario-grid">
-            <article class="scenario-card investment-card">
+            <AppCard tag="article" compact class="scenario-card investment-card">
               <span class="scenario-heading">
                 <span class="scenario-icon invest"><q-icon name="trending_up" /></span>
                 <span class="scenario-copy">
@@ -201,9 +201,9 @@
                   <strong>{{ formatCurrency(featuredInvestment.projectedValue) }}</strong>
                 </span>
               </span>
-            </article>
+            </AppCard>
 
-            <article v-if="selectedDebt" class="scenario-card debt-card">
+            <AppCard v-if="selectedDebt" tag="article" compact class="scenario-card debt-card">
               <span class="scenario-heading">
                 <span class="scenario-icon debt"><q-icon name="home" /></span>
                 <span class="scenario-copy">
@@ -240,9 +240,9 @@
                 <strong>{{ t('whatIf.debt.modelUnavailable') }}</strong>
                 <small>{{ t('whatIf.debt.fallbackInfo') }}</small>
               </span>
-            </article>
+            </AppCard>
 
-            <article v-if="safetyImpact" class="scenario-card cash-card">
+            <AppCard v-if="safetyImpact" tag="article" compact class="scenario-card cash-card">
               <span class="scenario-heading">
                 <span class="scenario-icon cash"><q-icon name="health_and_safety" /></span>
                 <span class="scenario-copy">
@@ -283,9 +283,9 @@
                   }}</span>
                 </span>
               </span>
-            </article>
+            </AppCard>
           </div>
-        </section>
+        </AppCard>
       </template>
     </main>
 
@@ -344,6 +344,7 @@ import { useQuasar } from 'quasar'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 import AppPageHeader from '@/components/layout/AppPageHeader.vue'
+import AppCard from '@/components/ui/AppCard.vue'
 import { getLiabilityCategory } from '@/config/liability-categories'
 import {
   calculateScopedCashAnnualReturn,
@@ -382,6 +383,11 @@ import { useWhatIfStore } from '@/stores/what-if-store'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import { currencySymbol, formatCurrency } from '@/utils/formatters'
 import { getWorkspaceMembers } from '@/utils/workspace-members'
+import {
+  DEMO_REFERENCE_DATE,
+  financialYearForWorkspace,
+  isDemoWorkspaceId,
+} from '@/domain/access/demo-workspace'
 
 const $q = useQuasar()
 const { t } = useI18n()
@@ -397,7 +403,10 @@ const unclassifiedInfoOpen = ref(false)
 const debtInfoOpen = ref(false)
 const pageError = ref(null)
 const reductionOptions = [0, 10, 25, 50]
-const currentYear = currentFinancialYear()
+const currentYear = financialYearForWorkspace(
+  String(route.params.workspaceId),
+  currentFinancialYear(),
+)
 const workspaceId = computed(() => String(route.params.workspaceId))
 const workspace = computed(
   () => workspaceStore.workspaces.find(({ id }) => id === workspaceId.value) || null,
@@ -598,6 +607,7 @@ function saveReduction(percentage) {
 }
 
 function localToday() {
+  if (isDemoWorkspaceId(workspaceId.value)) return DEMO_REFERENCE_DATE
   const now = new Date()
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(
     now.getDate(),
@@ -677,14 +687,6 @@ async function saveCustomScenario(value) {
 
 .comparison-card {
   margin-top: 1.25rem;
-}
-
-.simulator-card {
-  padding: 1.5rem;
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-card);
-  background: var(--color-surface);
-  box-shadow: var(--shadow-card);
 }
 
 .simulator-controls {
@@ -774,7 +776,6 @@ async function saveCustomScenario(value) {
   margin-top: 1rem;
   padding: 1.25rem 1.35rem;
   border-radius: var(--radius-md);
-  background: linear-gradient(105deg, var(--color-green-soft), #eefbf6);
   color: var(--color-success-dark);
 }
 
@@ -833,10 +834,6 @@ async function saveCustomScenario(value) {
 .comparison-card {
   display: grid;
   gap: 1rem;
-  padding: 1.35rem;
-  border: 1px solid color-mix(in srgb, var(--color-line) 72%, transparent);
-  border-radius: var(--radius-card);
-  background: linear-gradient(145deg, #f7faff 0%, #f1f5fa 100%);
 }
 
 .comparison-heading {
@@ -871,14 +868,9 @@ async function saveCustomScenario(value) {
   width: 100%;
   min-width: 0;
   min-height: 17rem;
-  padding: 1rem;
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-md);
-  background: white;
   color: var(--color-ink);
   font: inherit;
   text-align: left;
-  box-shadow: 0 0.35rem 1.2rem rgb(15 23 42 / 5%);
 }
 
 .scenario-heading {
@@ -1121,16 +1113,6 @@ async function saveCustomScenario(value) {
     margin-top: 0.9rem;
   }
 
-  .simulator-card {
-    padding: 0.75rem;
-    border-radius: 0.9rem;
-  }
-
-  .comparison-card {
-    padding: 0.75rem;
-    border-radius: 0.9rem;
-  }
-
   .simulator-controls {
     display: grid;
     gap: 0.8rem;
@@ -1199,10 +1181,6 @@ async function saveCustomScenario(value) {
 
   .scenario-card {
     min-height: 13rem;
-    padding: 0.9rem;
-    border: 1px solid var(--color-line);
-    border-radius: 0.8rem;
-    box-shadow: 0 0.25rem 0.8rem rgb(15 23 42 / 4%);
   }
 
   .scenario-heading {

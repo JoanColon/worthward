@@ -131,7 +131,7 @@
           />
         </section>
 
-        <section class="model-parameters">
+        <section v-if="!readOnly" class="model-parameters">
           <q-expansion-item expand-icon="chevron_right" expanded-icon="expand_more">
             <template #header>
               <q-item-section avatar>
@@ -218,6 +218,7 @@ import { useFinancialYearsStore } from '@/stores/financial-years-store'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import { currencySymbol, formatCurrency } from '@/utils/formatters'
 import { getWorkspaceMembers } from '@/utils/workspace-members'
+import { DEMO_REFERENCE_DATE, isDemoWorkspaceId } from '@/domain/access/demo-workspace'
 
 const $q = useQuasar()
 const { t, locale } = useI18n()
@@ -237,6 +238,7 @@ const saving = ref(false)
 let preparationId = 0
 
 const workspaceId = computed(() => String(route.params.workspaceId))
+const readOnly = computed(() => isDemoWorkspaceId(workspaceId.value))
 const assetId = computed(() => String(route.params.assetId))
 const asset = computed(
   () => assetsStore.itemsForCategory('real_estate').find(({ id }) => id === assetId.value) || null,
@@ -461,6 +463,7 @@ function formatPercentage(value) {
   return `${Number(value || 0).toLocaleString(locale.value, { maximumFractionDigits: 1 })}%`
 }
 function localToday() {
+  if (isDemoWorkspaceId(workspaceId.value)) return DEMO_REFERENCE_DATE
   const now = new Date()
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
 }

@@ -30,6 +30,7 @@ import {
 } from '../../../functions/shared/core/ownership.js'
 import { currentUserId } from '@/services/firebase/current-user'
 import { getModelConfig, modelConfigRef } from '@/services/firebase/model-config.service'
+import { assertMutableWorkspaceId } from '@/domain/access/demo-workspace'
 
 function trackingRef(workspaceId, period) {
   return doc(db, 'workspaces', workspaceId, 'expenseTracking', period)
@@ -83,6 +84,7 @@ export async function getExpenseTrackingPreferences(workspaceId) {
 }
 
 export async function saveExpenseTrackingPreferences(workspaceId, categoryIds) {
+  assertMutableWorkspaceId(workspaceId)
   const enabledSubcategories = normalizeEnabledCategories(categoryIds)
   const userId = currentUserId()
   await setDoc(
@@ -183,6 +185,7 @@ export async function saveTrackingReconciliations(
 }
 
 async function mutateMonth(workspaceId, period, userId, mutation) {
+  assertMutableWorkspaceId(workspaceId)
   assertPeriod(period)
   const documentRef = trackingRef(workspaceId, period)
   return runTransaction(db, async (transaction) => {

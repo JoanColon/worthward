@@ -1,5 +1,6 @@
 import { httpsCallable } from 'firebase/functions'
 import { functions } from '@/firebase/firebase'
+import { assertMutableWorkspaceId } from '@/domain/access/demo-workspace'
 
 const mutateFinancialModel = httpsCallable(functions, 'mutateFinancialModel')
 
@@ -22,6 +23,7 @@ export async function deleteFinancialModelCategory(workspaceId, section, categor
 }
 
 async function call(payload) {
+  assertMutableWorkspaceId(payload.workspaceId)
   const result = await mutateFinancialModel(payload)
   return result.data
 }

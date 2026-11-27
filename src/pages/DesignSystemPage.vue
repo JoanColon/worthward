@@ -91,8 +91,11 @@
           icon="account_balance_wallet"
           label="Total assets"
           formatted-total="€12,345,678.90"
-          secondary-value="+12.4%"
-          secondary-label="this year"
+          supporting-text="Current position"
+          :metrics="[
+            { label: 'Financial assets', value: '€9,870,000', supporting: '79.9% of assets' },
+            { label: 'Real estate', value: '€2,475,679', supporting: '20.1% of assets' },
+          ]"
           scope-label="All members"
           chart-title="Asset allocation"
           total-label="Current value"
@@ -104,7 +107,7 @@
             <span class="app-kpi-label">Positive result</span>
             <strong class="app-kpi-value-secondary app-tone-positive">+€4,000</strong>
           </AppCard>
-          <AppCard compact class="app-result--negative">
+          <AppCard compact>
             <span class="app-kpi-label">Negative result</span>
             <strong class="app-kpi-value-secondary app-tone-negative">−€13,076</strong>
           </AppCard>

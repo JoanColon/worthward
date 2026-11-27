@@ -24,7 +24,7 @@
         :in-progress-count="inProgressCount"
       />
 
-      <q-banner v-if="!trackingActive && !loading" rounded class="setup-banner">
+      <q-banner v-if="!readOnly && !trackingActive && !loading" rounded class="setup-banner">
         <template #avatar>
           <q-icon name="flag" />
         </template>
@@ -299,6 +299,7 @@ import MilestoneSummary from '@/components/milestones/MilestoneSummary.vue'
 import { milestoneBadgeAssets } from '@/config/milestone-badges'
 import { milestoneFamilies } from '@/config/milestone-families'
 import { calculateMilestoneProgress } from '@/domain/milestones/calculations'
+import { isDemoWorkspaceId } from '@/domain/access/demo-workspace'
 import { authUser } from '@/services/auth'
 import { useFinancialScopeStore } from '@/stores/financial-scope-store'
 import { useMilestonesStore } from '@/stores/milestones-store'
@@ -321,6 +322,7 @@ const milestonesStore = useMilestonesStore()
 const scopeStore = useFinancialScopeStore()
 const workspaceStore = useWorkspaceStore()
 const workspaceId = computed(() => String(route.params.workspaceId))
+const readOnly = computed(() => isDemoWorkspaceId(workspaceId.value))
 const {
   achievements,
   activationLoading,
@@ -455,6 +457,7 @@ function milestoneIsUnlocked(milestone) {
 }
 
 async function activateTracking() {
+  if (readOnly.value) return
   try {
     await milestonesStore.activateTracking()
     activationDialogOpen.value = false

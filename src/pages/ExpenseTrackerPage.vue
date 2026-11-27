@@ -67,6 +67,7 @@
         <ExpenseTrackingPanel
           v-if="tab === 'record'"
           :categories="enabledCategories"
+          :read-only="readOnly"
           @add="openAdd"
         />
 
@@ -75,6 +76,7 @@
           :groups="reviewGroups"
           :can-use-all-tracked="Boolean(categoriesWithTrackedItems.length)"
           :saving="decisionSaving"
+          :read-only="readOnly"
           @view-group="openReviewGroup"
           @use-all-tracked="requestApplyAllTracked"
         />
@@ -163,6 +165,11 @@ import {
   reviewExpenseTrackingCategories,
 } from '@/config/expense-tracking-categories'
 import { resolveExpenseTrackingValue } from '@/domain/financial/expense-tracking'
+import {
+  financialMonthForWorkspace,
+  financialYearForWorkspace,
+  isDemoWorkspaceId,
+} from '@/domain/access/demo-workspace'
 import { FINANCIAL_YEAR_TIME_ZONE } from '../../functions/shared/positions/annual-projection.js'
 import { normalizeNonNegativeMoneyOrNull } from '../../functions/shared/core/money.js'
 import { authUser } from '@/services/auth'
@@ -199,6 +206,7 @@ const draftDecisions = ref({})
 let loadRequestId = 0
 
 const activeWorkspaceId = computed(() => String(route.params.workspaceId))
+const readOnly = computed(() => isDemoWorkspaceId(activeWorkspaceId.value))
 const workspace = computed(
   () => workspaceStore.workspaces.find(({ id }) => id === activeWorkspaceId.value) || null,
 )
@@ -270,7 +278,9 @@ const reviewModelTotal = computed(() =>
 )
 const monthlySpent = computed(() => Number(trackingStore.month?.total || 0))
 const monthlyRemaining = computed(() => reviewModelTotal.value - monthlySpent.value)
-const canMutateActiveSubcategory = computed(() => isTrackingEnabled(activeSubcategory.value?.id))
+const canMutateActiveSubcategory = computed(
+  () => !readOnly.value && isTrackingEnabled(activeSubcategory.value?.id),
+)
 const categoriesWithTrackedItems = computed(() =>
   enabledCategories.value.filter(({ id }) => trackingStore.itemsFor(id).length),
 )
@@ -332,7 +342,7 @@ async function loadPage(force = false) {
 }
 
 function openAdd(subcategory) {
-  if (!subcategory) return
+  if (readOnly.value || !subcategory) return
   activeSubcategory.value = subcategory
   editingItem.value = null
   entryDialog.value = true
@@ -496,7 +506,7 @@ async function applyAllTracked() {
 }
 
 function requestApplyAllTracked() {
-  if (!categoriesWithTrackedItems.value.length || decisionSaving.value) return
+  if (readOnly.value || !categoriesWithTrackedItems.value.length || decisionSaving.value) return
   applyAllDialog.value = true
 }
 
@@ -514,6 +524,10 @@ async function persist(operation, notify = true) {
 }
 
 function currentPeriod() {
+  const workspaceId = String(route.params.workspaceId || '')
+  if (isDemoWorkspaceId(workspaceId)) {
+    return `${financialYearForWorkspace(workspaceId)}-${financialMonthForWorkspace(workspaceId)}`
+  }
   const parts = new Intl.DateTimeFormat('en-CA', {
     year: 'numeric',
     month: '2-digit',

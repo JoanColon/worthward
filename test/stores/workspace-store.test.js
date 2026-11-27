@@ -165,4 +165,21 @@ describe('workspace store', () => {
       members: { user: { displayName: 'Alex' } },
     })
   })
+
+  it('keeps demo selection session-local and excludes it from real workspace state', async () => {
+    getUserWorkspaces.mockResolvedValueOnce([
+      { id: 'workspace-a', name: 'Personal' },
+      { id: 'worthward_demo', name: 'Demo' },
+    ])
+    const store = useWorkspaceStore()
+    await store.load({ uid: 'user-a' })
+    saveActiveWorkspaceId.mockClear()
+
+    await store.setActiveWorkspace('worthward_demo')
+
+    expect(store.activeWorkspaceIsDemo).toBe(true)
+    expect(store.realWorkspaces.map(({ id }) => id)).toEqual(['workspace-a'])
+    expect(store.hasWorkspaces).toBe(true)
+    expect(saveActiveWorkspaceId).not.toHaveBeenCalled()
+  })
 })

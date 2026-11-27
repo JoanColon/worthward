@@ -1,7 +1,7 @@
 <template>
   <q-page class="global-home-page">
     <WorkspaceForm
-      v-if="!workspaceStore.hasWorkspaces"
+      v-if="!workspaceStore.hasWorkspaces && !workspaceStore.workspaces.length"
       first-workspace
       @created="workspaceCreated"
     />
@@ -42,6 +42,7 @@
           </button>
 
           <q-btn
+            v-if="!isDemoWorkspace(workspace)"
             flat
             round
             dense
@@ -174,6 +175,7 @@ import { createWorkspaceInvite } from '@/services/firebase/workspace.service'
 import { useFinancialYearsStore } from '@/stores/financial-years-store'
 import { useEntitlementsStore } from '@/stores/entitlements-store'
 import { useWorkspaceStore } from '@/stores/workspace-store'
+import { isDemoWorkspaceId } from '@/domain/access/demo-workspace'
 
 const $q = useQuasar()
 const { t } = useI18n()
@@ -200,10 +202,15 @@ async function openWorkspace(workspaceId) {
 }
 
 function workspaceDescription(workspace) {
+  if (isDemoWorkspace(workspace)) return t('workspace.demo.description')
   const memberCount = Object.keys(workspace.members || {}).length
   return memberCount > 1
     ? t('home.memberCount', { count: memberCount })
     : t('home.personalWorkspace')
+}
+
+function isDemoWorkspace(workspace) {
+  return isDemoWorkspaceId(workspace?.id)
 }
 
 function isSharedWorkspace(workspace) {

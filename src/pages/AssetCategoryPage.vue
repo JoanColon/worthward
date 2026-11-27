@@ -81,7 +81,7 @@
             >
               <q-menu anchor="bottom right" self="top right">
                 <q-list dense class="position-menu">
-                  <q-item clickable v-close-popup @click="edit(asset)">
+                  <q-item v-if="!readOnly" clickable v-close-popup @click="edit(asset)">
                     <q-item-section avatar><q-icon name="edit" /></q-item-section>
                     <q-item-section>{{ t('assets.editDetails') }}</q-item-section>
                   </q-item>
@@ -90,6 +90,7 @@
                     <q-item-section>{{ t('assets.model') }}</q-item-section>
                   </q-item>
                   <q-item
+                    v-if="!readOnly"
                     clickable
                     v-close-popup
                     class="text-negative"
@@ -103,7 +104,7 @@
             </q-btn>
           </article>
 
-          <button type="button" class="add-row" @click="add">
+          <button v-if="!readOnly" type="button" class="add-row" @click="add">
             <q-icon name="add" />
             <span>{{ t(category.addLabelKey) }}</span>
           </button>
@@ -114,7 +115,7 @@
           :icon="category.icon"
           :title="t('assets.empty.contextualTitle', { items: t(category.itemNamePluralKey) })"
           :description="t('assets.empty.description')"
-          :action-label="t(category.addLabelKey)"
+          :action-label="readOnly ? undefined : t(category.addLabelKey)"
           tone="positive"
           @action="add"
         />
@@ -163,6 +164,7 @@ import AppPageHeader from '@/components/layout/AppPageHeader.vue'
 import AppConfirmDialog from '@/components/ui/AppConfirmDialog.vue'
 import AppEmptyState from '@/components/ui/AppEmptyState.vue'
 import { getAssetCategory } from '@/config/asset-categories'
+import { isDemoWorkspaceId } from '@/domain/access/demo-workspace'
 import {
   currentFinancialMonth,
   currentFinancialYear,
@@ -182,6 +184,10 @@ import {
 } from '../../functions/shared/core/ownership.js'
 import { formatCurrency } from '@/utils/formatters'
 import { getWorkspaceMembers } from '@/utils/workspace-members'
+import {
+  financialMonthForWorkspace,
+  financialYearForWorkspace,
+} from '@/domain/access/demo-workspace'
 
 const $q = useQuasar()
 const { t } = useI18n()
@@ -200,10 +206,12 @@ const deletingAsset = ref(null)
 const confirmDelete = ref(false)
 const formSaving = ref(false)
 let preparationId = 0
-const currentYear = currentFinancialYear()
-const currentMonth = currentFinancialMonth()
+const routeWorkspaceId = String(route.params.workspaceId)
+const currentYear = financialYearForWorkspace(routeWorkspaceId, currentFinancialYear())
+const currentMonth = financialMonthForWorkspace(routeWorkspaceId, currentFinancialMonth())
 
 const workspaceId = computed(() => String(route.params.workspaceId))
+const readOnly = computed(() => isDemoWorkspaceId(workspaceId.value))
 const categoryId = computed(() => String(route.params.category))
 const assetsRoute = computed(() => ({ name: 'assets', params: { workspaceId: workspaceId.value } }))
 const category = computed(() => getAssetCategory(categoryId.value))
@@ -336,11 +344,13 @@ function assetSubcategoryLabel(asset) {
 }
 
 function add() {
+  if (readOnly.value) return
   editingAsset.value = null
   assetDialog.value = true
 }
 
 function edit(asset) {
+  if (readOnly.value) return
   editingAsset.value = asset
   assetDialog.value = true
 }

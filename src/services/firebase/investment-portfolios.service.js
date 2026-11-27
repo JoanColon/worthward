@@ -1,5 +1,6 @@
 import { httpsCallable } from 'firebase/functions'
 import { functions } from '@/firebase/firebase'
+import { assertMutableWorkspaceId } from '@/domain/access/demo-workspace'
 
 const updatePortfolio = httpsCallable(functions, 'updateInvestmentPortfolio')
 const syncPortfolioSheet = httpsCallable(functions, 'readInvestmentPortfolioSheet')
@@ -22,6 +23,7 @@ export function isGoogleSheetsUrl(value) {
 }
 
 export async function saveInvestmentPortfolio(workspaceId, assetId, spreadsheetUrl) {
+  assertMutableWorkspaceId(workspaceId)
   const normalizedUrl = String(spreadsheetUrl || '').trim()
   if (!isGoogleSheetsUrl(normalizedUrl)) throw new Error('A valid Google Sheets URL is required')
   const result = await updatePortfolio({ workspaceId, assetId, spreadsheetUrl: normalizedUrl })
@@ -29,16 +31,19 @@ export async function saveInvestmentPortfolio(workspaceId, assetId, spreadsheetU
 }
 
 export async function disconnectInvestmentPortfolio(workspaceId, assetId) {
+  assertMutableWorkspaceId(workspaceId)
   const result = await updatePortfolio({ workspaceId, assetId, spreadsheetUrl: null })
   return result.data
 }
 
 export async function syncInvestmentPortfolio(workspaceId, assetId, force = false) {
+  assertMutableWorkspaceId(workspaceId)
   const result = await syncPortfolioSheet({ workspaceId, assetId, force })
   return result.data
 }
 
 export async function syncWorkspaceInvestmentPortfolios(workspaceId, force = false) {
+  assertMutableWorkspaceId(workspaceId)
   const result = await syncWorkspacePortfolios({ workspaceId, force })
   return result.data
 }

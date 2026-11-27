@@ -2,6 +2,7 @@ import { serverTimestamp, setDoc } from 'firebase/firestore'
 import { normalizeWhatIfConfig } from '../../../functions/shared/plan/what-if.js'
 import { auth } from '@/firebase/firebase'
 import { getModelConfig, modelConfigRef } from '@/services/firebase/model-config.service'
+import { assertMutableWorkspaceId } from '@/domain/access/demo-workspace'
 
 export async function getWhatIfConfig(workspaceId, { includeStrategy = true } = {}) {
   if (!includeStrategy) {
@@ -16,6 +17,7 @@ export async function getWhatIfConfig(workspaceId, { includeStrategy = true } = 
 }
 
 export async function saveWhatIfSimulation(workspaceId, config) {
+  assertMutableWorkspaceId(workspaceId)
   const normalized = normalizeWhatIfConfig(config)
   await setDoc(modelConfigRef(workspaceId, 'whatIf'), {
     schemaVersion: 2,
@@ -28,6 +30,7 @@ export async function saveWhatIfSimulation(workspaceId, config) {
 }
 
 export async function saveWhatIfStrategy(workspaceId, config) {
+  assertMutableWorkspaceId(workspaceId)
   const normalized = normalizeWhatIfConfig(config)
   await setDoc(modelConfigRef(workspaceId, 'whatIfStrategies'), {
     schemaVersion: 2,

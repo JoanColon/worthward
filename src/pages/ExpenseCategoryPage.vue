@@ -111,7 +111,7 @@
                 <q-toggle
                   :model-value="subcategory.tracked"
                   color="negative"
-                  :disable="Boolean(trackingSavingId)"
+                  :disable="readOnly || Boolean(trackingSavingId)"
                   :aria-label="
                     t('expenses.categoryDetail.toggleTracking', { subcategory: subcategory.name })
                   "
@@ -136,7 +136,7 @@
               </q-btn>
             </article>
 
-            <div class="subcategory-actions">
+            <div v-if="!readOnly" class="subcategory-actions">
               <q-btn
                 flat
                 no-caps
@@ -162,7 +162,7 @@
             :icon="category.icon"
             :title="t('expenses.categoryDetail.noSubcategoriesTitle')"
             :description="t('expenses.categoryDetail.noSubcategoriesDescription')"
-            :action-label="t('expenses.categoryDetail.editSubcategories')"
+            :action-label="readOnly ? undefined : t('expenses.categoryDetail.editSubcategories')"
             tone="negative"
             @action="openSubcategoryEditor"
           />
@@ -233,11 +233,12 @@
                 <q-btn flat round dense icon="more_vert" color="grey-7" @click.stop>
                   <q-menu>
                     <q-list dense>
-                      <q-item clickable v-close-popup @click="edit(item)">
+                      <q-item v-if="!readOnly" clickable v-close-popup @click="edit(item)">
                         <q-item-section avatar><q-icon name="edit" /></q-item-section>
                         <q-item-section>{{ t('common.edit') }}</q-item-section>
                       </q-item>
                       <q-item
+                        v-if="!readOnly"
                         clickable
                         v-close-popup
                         class="text-negative"
@@ -255,7 +256,7 @@
               <p>{{ t('expenses.categoryDetail.noItems') }}</p>
             </div>
 
-            <footer class="item-panel-footer">
+            <footer v-if="!readOnly" class="item-panel-footer">
               <q-btn
                 flat
                 no-caps
@@ -353,6 +354,7 @@ import AppPageHeader from '@/components/layout/AppPageHeader.vue'
 import AppConfirmDialog from '@/components/ui/AppConfirmDialog.vue'
 import AppEmptyState from '@/components/ui/AppEmptyState.vue'
 import { expenseCategories, getExpenseCategory } from '@/config/expense-categories'
+import { isDemoWorkspaceId } from '@/domain/access/demo-workspace'
 import { expenseTrackingCategories } from '@/config/expense-tracking-categories'
 import {
   currentFinancialYear,
@@ -374,6 +376,7 @@ import { useLiabilitiesStore } from '@/stores/liabilities-store'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import { formatCurrency } from '@/utils/formatters'
 import { getWorkspaceMembers } from '@/utils/workspace-members'
+import { financialYearForWorkspace } from '@/domain/access/demo-workspace'
 
 const $q = useQuasar()
 const { t, locale } = useI18n()
@@ -403,9 +406,13 @@ const addingSubcategoryId = ref(null)
 const expenseReturnSubcategoryId = ref(null)
 const trackingSavingId = ref(null)
 let preparationId = 0
-const currentYear = currentFinancialYear()
+const currentYear = financialYearForWorkspace(
+  String(route.params.workspaceId),
+  currentFinancialYear(),
+)
 
 const workspaceId = computed(() => String(route.params.workspaceId))
+const readOnly = computed(() => isDemoWorkspaceId(workspaceId.value))
 const categoryId = computed(() => String(route.params.category))
 const expensesRoute = computed(() => ({
   name: 'expenses',
@@ -595,6 +602,7 @@ function closeSubcategoryDialog() {
 }
 
 function addExpense(subcategoryId = null) {
+  if (readOnly.value) return
   expenseReturnSubcategoryId.value = subcategoryDialog.value
     ? subcategoryId || activeSubcategoryId.value
     : null
@@ -605,6 +613,7 @@ function addExpense(subcategoryId = null) {
 }
 
 function edit(item) {
+  if (readOnly.value) return
   expenseReturnSubcategoryId.value = subcategoryDialog.value
     ? activeSubcategoryId.value || item.subcategoryId
     : null
@@ -632,6 +641,7 @@ function restoreSubcategoryContext() {
 }
 
 async function openSubcategoryEditor() {
+  if (readOnly.value) return
   if (loadingCategoryEditor.value) return
   loadingCategoryEditor.value = true
   try {
@@ -749,6 +759,7 @@ async function persistCategoryChanges(operation) {
 }
 
 async function toggleTracking(subcategory, enabled) {
+  if (readOnly.value) return
   if (trackingSavingId.value || !subcategory.trackingEligible) return
   trackingSavingId.value = subcategory.id
   const selected = new Set(trackingStore.enabledSubcategories)

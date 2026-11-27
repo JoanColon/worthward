@@ -33,11 +33,10 @@
           icon="payments"
           :label="t('income.totalIncome')"
           :formatted-total="formatCurrency(total)"
-          :secondary-value="formatCurrency(total / 12)"
-          :secondary-label="t('income.overview.averagePerMonth')"
-          :comparison-label="t('income.availableIncome')"
-          :comparison-value="formatCurrency(availableIncome)"
-          :comparison-help="t('income.availableIncomeDescription')"
+          :supporting-text="
+            t('income.overview.monthlyAverageSupport', { amount: formatCurrency(total / 12) })
+          "
+          :metrics="overviewMetrics"
           :scope-label="scopeLabel"
           :chart-title="t('income.overview.breakdownTitle')"
           :total-label="t('dashboard.year')"
@@ -83,7 +82,7 @@
                 :formatted-value="formatCurrency(categoryTableValue(category.id))"
                 :formatted-period="t(tablePeriodKey)"
                 :saving="isCategorySaving(category.id)"
-                :disabled="!canQuickEdit(category.id)"
+                :disabled="readOnly || !canQuickEdit(category.id)"
                 :aria-label="
                   t('income.quickEdit.editLabel', {
                     category: t(category.nameKey),
@@ -109,6 +108,7 @@
                       <q-item-section>{{ t('income.overview.viewDetails') }}</q-item-section>
                     </q-item>
                     <q-item
+                      v-if="!readOnly"
                       clickable
                       v-close-popup
                       class="text-negative"
@@ -123,7 +123,7 @@
             </div>
           </div>
 
-          <footer class="category-actions">
+          <footer v-if="!readOnly" class="category-actions">
             <q-btn
               flat
               no-caps
@@ -190,13 +190,14 @@ import AppPageHeader from '@/components/layout/AppPageHeader.vue'
 import AppConfirmDialog from '@/components/ui/AppConfirmDialog.vue'
 import AppPeriodSwitch from '@/components/ui/AppPeriodSwitch.vue'
 import { incomeCategories } from '@/config/income-categories'
+import { isDemoWorkspaceId } from '@/domain/access/demo-workspace'
 import { CHART_SERIES_COLORS } from '@/config/chart-theme'
 import {
   currentFinancialYear,
-  financialYearAvailableIncomeValue,
   financialYearFlowCategoryValue,
   financialYearFlowValue,
 } from '../../functions/shared/positions/annual-projection.js'
+import { calculateIncomeOverviewMetrics } from '../../functions/shared/positions/overview-metrics.js'
 import {
   createEqualMemberOwnership,
   createSingleMemberOwnership,
@@ -208,6 +209,7 @@ import { useFinancialYearsStore } from '@/stores/financial-years-store'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import { formatCurrency } from '@/utils/formatters'
 import { getWorkspaceMembers } from '@/utils/workspace-members'
+import { financialYearForWorkspace } from '@/domain/access/demo-workspace'
 
 const $q = useQuasar()
 const { t } = useI18n()
@@ -226,7 +228,10 @@ const confirmCategoryDelete = ref(false)
 const deletingCategory = ref(null)
 const pendingSelection = ref(null)
 const tablePeriod = ref('annual')
-const currentYear = currentFinancialYear()
+const currentYear = financialYearForWorkspace(
+  String(route.params.workspaceId),
+  currentFinancialYear(),
+)
 const tablePeriodOptions = computed(() => [
   { label: t('dashboard.costOfLife.annual'), value: 'annual' },
   { label: t('dashboard.costOfLife.monthly'), value: 'monthly' },
@@ -242,6 +247,7 @@ const tableAmountHeading = computed(() =>
     : t('income.overview.annualAmount'),
 )
 const workspaceId = computed(() => String(route.params.workspaceId))
+const readOnly = computed(() => isDemoWorkspaceId(workspaceId.value))
 const workspaceHomeRoute = computed(() => ({
   name: 'workspace-dashboard',
   params: { workspaceId: workspaceId.value },
@@ -274,9 +280,20 @@ const pageLoading = computed(
 const total = computed(() =>
   financialYearFlowValue(financialYear.value, 'income', selectedMemberId.value),
 )
-const availableIncome = computed(() =>
-  financialYearAvailableIncomeValue(financialYear.value, selectedMemberId.value),
-)
+const overviewMetrics = computed(() => {
+  const metrics = calculateIncomeOverviewMetrics(financialYear.value, selectedMemberId.value)
+  return [
+    {
+      label: t('income.availableIncome'),
+      value: formatCurrency(metrics.available),
+      help: t('income.availableIncomeDescription'),
+    },
+    {
+      label: t('income.reinvestedIncome'),
+      value: formatCurrency(metrics.reinvested),
+    },
+  ]
+})
 const breakdownEntries = computed(() => {
   const entries = enabledCategories.value
     .map((category) => ({

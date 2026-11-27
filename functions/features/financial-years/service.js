@@ -2,6 +2,7 @@
  * Persistence and orchestration layer for financial years. It loads source documents, invokes projection calculations, writes dated positions, and manages monthly close operations.
  */
 import { FieldPath, FieldValue } from 'firebase-admin/firestore'
+import { assertMutableWorkspaceId } from '../../shared/workspaces/demo.js'
 import {
   applyTrackingMonth,
   buildPositionMonth,
@@ -20,6 +21,7 @@ async function rebuildFinancialYear(
   { createOnly = false, sections = PROJECTION_SECTIONS, positionMonth = currentMonth() } = {},
 ) {
   assertWorkspaceId(workspaceId)
+  assertMutableWorkspaceId(workspaceId)
   assertYear(year)
   const workspace = firestore.collection('workspaces').doc(workspaceId)
   const target = workspace.collection('financialYears').doc(String(year))
@@ -99,6 +101,7 @@ async function rebuildFinancialYear(
  * Reapplies one persisted tracking period to its materialized financial-year month.
  */
 async function refreshFinancialYearTrackingMonth(firestore, workspaceId, period) {
+  assertMutableWorkspaceId(workspaceId)
   if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(period)) throw new Error('A valid period is required')
   const year = Number(period.slice(0, 4))
   const workspace = firestore.collection('workspaces').doc(workspaceId)
@@ -143,6 +146,7 @@ async function writeFinancialYearPositionMonth(
   { period, asOfDate, status },
 ) {
   assertWorkspaceId(workspaceId)
+  assertMutableWorkspaceId(workspaceId)
   assertPeriod(period)
   assertDate(asOfDate)
   if (!['current', 'closed'].includes(status)) {
@@ -221,6 +225,7 @@ async function writeFinancialYearPositionMonth(
  */
 async function synchronizeFinancialYearPositions(firestore, workspaceId, asOfDate) {
   assertWorkspaceId(workspaceId)
+  assertMutableWorkspaceId(workspaceId)
   assertDate(asOfDate)
   const year = Number(asOfDate.slice(0, 4))
   const month = asOfDate.slice(5, 7)
@@ -267,6 +272,7 @@ async function synchronizeFinancialYearPositions(firestore, workspaceId, asOfDat
  * Finalizes the previous calendar month as a closed financial position.
  */
 async function closePreviousFinancialPositionMonth(firestore, workspaceId, today) {
+  assertMutableWorkspaceId(workspaceId)
   assertDate(today)
   const period = previousPeriod(today.slice(0, 7))
   const request = {
@@ -293,6 +299,7 @@ async function refreshModeledPositions(
   asOfDate = madridToday(),
 ) {
   assertWorkspaceId(workspaceId)
+  assertMutableWorkspaceId(workspaceId)
   const workspace = firestore.collection('workspaces').doc(workspaceId)
   const assets = workspace.collection('modelAssets').where('categoryId', '==', 'real_estate')
   const mortgages = workspace

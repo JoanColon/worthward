@@ -140,4 +140,20 @@ describe('financial years store', () => {
     expect(store.errorFor('workspace-a', 2025)).toBe(failure)
     expect(store.errorFor('workspace-b', 2025)).toBeNull()
   })
+
+  it('reads the frozen demo year without requesting backend maintenance', async () => {
+    getFinancialYear.mockResolvedValueOnce({ id: '2026', months: {} })
+    const store = useFinancialYearsStore()
+
+    await store.load('worthward_demo', 2040)
+
+    expect(getFinancialYear).toHaveBeenCalledWith('worthward_demo', 2026)
+    expect(subscribeFinancialYear).toHaveBeenCalledWith(
+      'worthward_demo',
+      2026,
+      expect.any(Function),
+      expect.any(Function),
+    )
+    expect(ensureFinancialYear).not.toHaveBeenCalled()
+  })
 })

@@ -10,6 +10,7 @@ import {
   getActiveWorkspaceId,
   saveActiveWorkspaceId,
 } from '@/services/firebase/user-preferences.service'
+import { isDemoWorkspaceId } from '@/domain/access/demo-workspace'
 
 export const useWorkspaceStore = defineStore('workspace', () => {
   const workspaces = ref([])
@@ -18,7 +19,11 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   const error = ref(null)
   const initializedForUserId = ref(null)
 
-  const hasWorkspaces = computed(() => workspaces.value.length > 0)
+  const realWorkspaces = computed(() =>
+    workspaces.value.filter((workspace) => !isDemoWorkspaceId(workspace.id)),
+  )
+  const hasWorkspaces = computed(() => realWorkspaces.value.length > 0)
+  const activeWorkspaceIsDemo = computed(() => isDemoWorkspaceId(activeWorkspaceId.value))
   const ready = computed(() => initializedForUserId.value !== null)
   const activeWorkspace = computed(
     () => workspaces.value.find((workspace) => workspace.id === activeWorkspaceId.value) || null,
@@ -78,6 +83,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
 
     const previousWorkspaceId = activeWorkspaceId.value
     activeWorkspaceId.value = id
+    if (isDemoWorkspaceId(id)) return true
     try {
       await saveActiveWorkspaceId(id)
     } catch (saveError) {
@@ -90,6 +96,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   async function clearActiveWorkspace() {
     const previousWorkspaceId = activeWorkspaceId.value
     activeWorkspaceId.value = null
+    if (isDemoWorkspaceId(previousWorkspaceId)) return
     try {
       await saveActiveWorkspaceId(null)
     } catch (saveError) {
@@ -112,13 +119,13 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   }
 
   async function restoreActiveWorkspace(storedWorkspaceId) {
-    const storedWorkspaceExists = workspaces.value.some(
+    const storedWorkspaceExists = realWorkspaces.value.some(
       (workspace) => workspace.id === storedWorkspaceId,
     )
     const nextWorkspaceId = storedWorkspaceExists
       ? storedWorkspaceId
-      : workspaces.value.length === 1
-        ? workspaces.value[0].id
+      : realWorkspaces.value.length === 1
+        ? realWorkspaces.value[0].id
         : null
 
     activeWorkspaceId.value = nextWorkspaceId
@@ -126,13 +133,15 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   }
 
   async function selectOnlyWorkspace() {
-    if (workspaces.value.length === 1) await setActiveWorkspace(workspaces.value[0].id)
+    if (realWorkspaces.value.length === 1) await setActiveWorkspace(realWorkspaces.value[0].id)
   }
 
   return {
     workspaces,
     activeWorkspaceId,
     activeWorkspace,
+    activeWorkspaceIsDemo,
+    realWorkspaces,
     hasWorkspaces,
     ready,
     loading,

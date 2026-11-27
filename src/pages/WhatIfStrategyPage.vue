@@ -45,19 +45,19 @@
         </q-banner>
 
         <div class="strategy-overview">
-          <AppCard compact class="overview-available-panel">
+          <AppCard class="overview-available-panel">
             <div>
-              <span>{{ t('whatIf.strategy.available') }}</span>
-              <strong
+              <span class="app-kpi-supporting">{{ t('whatIf.strategy.available') }}</span>
+              <strong class="app-kpi-value-secondary overview-available-value"
                 >{{ formatCurrency(monthlySavings)
                 }}<small>{{ t('whatIf.perMonth') }}</small></strong
               >
-              <small>{{ t('whatIf.strategy.fromWhatIf') }}</small>
+              <small class="app-kpi-supporting">{{ t('whatIf.strategy.fromWhatIf') }}</small>
             </div>
             <q-icon name="signal_cellular_alt" />
           </AppCard>
 
-          <AppCard compact class="overview-allocation-panel">
+          <AppCard class="overview-allocation-panel">
             <div class="overview-section-heading">
               <div>
                 <h2 class="app-card-title">{{ t('whatIf.strategy.allocation') }}</h2>
@@ -106,7 +106,7 @@
             </div>
           </AppCard>
 
-          <AppCard compact class="overview-outcomes-panel">
+          <AppCard class="overview-outcomes-panel">
             <div class="overview-section-heading">
               <div>
                 <h2 class="app-card-title">{{ t('whatIf.strategy.projectedOutcomes') }}</h2>
@@ -144,7 +144,7 @@
         </div>
 
         <div class="desktop-projections">
-          <AppCard compact class="desktop-projection-panel">
+          <AppCard class="desktop-projection-panel">
             <template v-if="selectedDesktopOutcomeKind === 'cash'">
               <div class="desktop-projection-heading">
                 <div>
@@ -1108,6 +1108,7 @@ import { useQuasar } from 'quasar'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 import AppPageHeader from '@/components/layout/AppPageHeader.vue'
+import AppCard from '@/components/ui/AppCard.vue'
 import MortgageComparisonChart from '@/components/liabilities/MortgageComparisonChart.vue'
 import StrategyAllocationRow from '@/components/what-if/StrategyAllocationRow.vue'
 import StrategyHorizonSwitch from '@/components/what-if/StrategyHorizonSwitch.vue'
@@ -1153,6 +1154,11 @@ import { useWhatIfStore } from '@/stores/what-if-store'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import { formatCurrency } from '@/utils/formatters'
 import { getWorkspaceMembers } from '@/utils/workspace-members'
+import {
+  DEMO_REFERENCE_DATE,
+  financialYearForWorkspace,
+  isDemoWorkspaceId,
+} from '@/domain/access/demo-workspace'
 
 const $q = useQuasar()
 const { t } = useI18n()
@@ -1177,7 +1183,7 @@ const allocationSheetOpen = ref(false)
 const detailSheetOpen = ref(false)
 const detailSheetKind = ref('projection')
 const selectedDesktopOutcomeKind = ref('investment')
-const year = currentFinancialYear()
+const year = financialYearForWorkspace(String(route.params.workspaceId), currentFinancialYear())
 const workspaceId = computed(() => String(route.params.workspaceId))
 const workspace = computed(
   () => workspaceStore.workspaces.find(({ id }) => id === workspaceId.value) || null,
@@ -1782,9 +1788,12 @@ async function prepare(force = false) {
         ? liabilitiesStore.loadCategory(workspaceId.value, 'mortgage')
         : Promise.resolve(),
     ])
-    if (activeScenario.value.id === defaultStrategyScenario.id) {
+    const needsInitialScenario =
+      !isDemoWorkspaceId(workspaceId.value) &&
+      activeScenario.value.id === defaultStrategyScenario.id
+    initialScenarioDialogOpen.value = needsInitialScenario
+    if (needsInitialScenario) {
       initialScenarioName.value = ''
-      initialScenarioDialogOpen.value = true
     }
   } catch (loadError) {
     pageError.value = loadError
@@ -2012,6 +2021,7 @@ function reachEstimate(months) {
 }
 
 function localToday() {
+  if (isDemoWorkspaceId(workspaceId.value)) return DEMO_REFERENCE_DATE
   const now = new Date()
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(
     now.getDate(),
@@ -2082,7 +2092,7 @@ function liabilityCategoryName(categoryId) {
     'available available'
     'allocation outcomes';
   gap: 1rem;
-  align-items: start;
+  align-items: stretch;
   margin-top: 0.75rem;
 }
 .overview-available-panel {
@@ -2091,23 +2101,16 @@ function liabilityCategoryName(categoryId) {
   align-items: center;
   justify-content: space-between;
   min-height: 6rem;
-  background: linear-gradient(110deg, #fff, #edfbf6);
+  overflow: hidden;
 }
 .overview-available-panel > div {
   display: grid;
   gap: 0.15rem;
 }
-.overview-available-panel span,
-.overview-available-panel > div > small {
-  color: var(--color-copy);
-  font-size: 0.78rem;
-}
-.overview-available-panel strong {
+.overview-available-value {
   color: var(--color-success-dark);
-  font-size: 1.9rem;
-  line-height: 1.05;
 }
-.overview-available-panel strong small {
+.overview-available-value small {
   margin-left: 0.25rem;
   color: inherit;
   font-size: 0.52em;
@@ -2121,12 +2124,6 @@ function liabilityCategoryName(categoryId) {
 }
 .overview-outcomes-panel {
   grid-area: outcomes;
-}
-.overview-allocation-panel,
-.overview-outcomes-panel {
-  min-width: 0;
-  padding: 1rem;
-  border-radius: var(--radius-lg);
 }
 .overview-section-heading {
   display: flex;
@@ -2251,11 +2248,6 @@ function liabilityCategoryName(categoryId) {
   gap: 1rem;
   margin-top: 1rem;
 }
-.desktop-projection-panel {
-  min-width: 0;
-  padding: 1.15rem 1.25rem;
-  border-radius: var(--radius-lg);
-}
 .desktop-projection-heading {
   @include financial-chart-heading;
   gap: 1.5rem;
@@ -2287,11 +2279,7 @@ function liabilityCategoryName(categoryId) {
   padding: 1.55rem 1.65rem;
   border: 1px solid color-mix(in srgb, var(--milestone-accent) 18%, var(--color-line));
   border-radius: 1.15rem;
-  background: linear-gradient(
-    110deg,
-    color-mix(in srgb, var(--milestone-accent) 5%, var(--color-surface)) 0%,
-    var(--color-surface) 72%
-  );
+  background: var(--color-surface);
   box-shadow: 0 0.5rem 1.4rem rgb(15 61 102 / 9%);
 }
 .desktop-milestone-highlight.cash {
@@ -2441,11 +2429,7 @@ function liabilityCategoryName(categoryId) {
   padding: 1rem;
   border: 1px solid color-mix(in srgb, var(--milestone-accent) 20%, var(--color-line));
   border-radius: 1rem;
-  background: linear-gradient(
-    145deg,
-    color-mix(in srgb, var(--milestone-accent) 5%, var(--color-surface)) 0%,
-    var(--color-surface) 78%
-  );
+  background: var(--color-surface);
   box-shadow: 0 0.4rem 1.1rem rgb(15 61 102 / 8%);
 }
 .detail-milestone-highlight.cash {
@@ -2679,41 +2663,6 @@ function liabilityCategoryName(categoryId) {
 }
 .large-detail-values strong {
   font-size: 1.05rem;
-}
-.panel {
-  @include dashboard-card;
-  padding: 0.8rem 1rem;
-  border-radius: var(--radius-md);
-}
-.available-panel {
-  grid-area: available;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  min-height: 6rem;
-  background: linear-gradient(110deg, #fff, #f0fbf7);
-}
-.available-panel > div {
-  display: grid;
-}
-.available-panel span,
-.available-panel small {
-  color: var(--color-copy);
-  font-size: 0.78rem;
-}
-.available-panel strong {
-  color: var(--color-success-dark);
-  font-size: 1.75rem;
-  line-height: 1.1;
-}
-.available-panel strong small {
-  margin-left: 0.2rem;
-  color: inherit;
-  font-size: 0.55em;
-}
-.available-panel > .q-icon {
-  color: var(--color-success-dark);
-  font-size: 2rem;
 }
 .projection-heading h2 {
   margin: 0;
@@ -3216,9 +3165,6 @@ function liabilityCategoryName(categoryId) {
   }
   .overview-available-panel {
     min-height: 5.5rem;
-  }
-  .overview-available-panel strong {
-    font-size: 1.75rem;
   }
   .overview-section-heading {
     align-items: baseline;

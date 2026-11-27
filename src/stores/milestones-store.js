@@ -17,6 +17,11 @@ import { useAssetsStore } from '@/stores/assets-store'
 import { useFinancialYearsStore } from '@/stores/financial-years-store'
 import { useLiabilitiesStore } from '@/stores/liabilities-store'
 import { useWorkspaceStore } from '@/stores/workspace-store'
+import {
+  financialMonthForWorkspace,
+  financialYearForWorkspace,
+  isDemoWorkspaceId,
+} from '@/domain/access/demo-workspace'
 
 export const useMilestonesStore = defineStore('milestones', () => {
   const assetsStore = useAssetsStore()
@@ -89,8 +94,8 @@ export const useMilestonesStore = defineStore('milestones', () => {
   async function load(id, force = false) {
     if (!id) return
 
-    const year = currentFinancialYear()
-    const month = currentFinancialMonth()
+    const year = financialYearForWorkspace(id, currentFinancialYear())
+    const month = financialMonthForWorkspace(id, currentFinancialMonth())
     const key = `${id}:${year}-${month}`
     workspaceId.value = id
     currentYear.value = year
@@ -145,6 +150,7 @@ export const useMilestonesStore = defineStore('milestones', () => {
   }
 
   async function syncAchievements(currentProgress) {
+    if (isDemoWorkspaceId(workspaceId.value)) return
     if (!trackingActive.value || !currentProgress.length) return
     if (achievementSyncing.value) {
       achievementSyncPending = true
@@ -174,6 +180,7 @@ export const useMilestonesStore = defineStore('milestones', () => {
   }
 
   function revalidateAchievements() {
+    if (isDemoWorkspaceId(workspaceId.value)) return Promise.resolve()
     if (!workspaceId.value || !achievementsReady.value) return Promise.resolve()
     return syncAchievements(progress.value)
   }
@@ -181,7 +188,7 @@ export const useMilestonesStore = defineStore('milestones', () => {
   function schedulePendingConfirmation() {
     clearTimeout(confirmationTimer)
     confirmationTimer = null
-    if (!trackingActive.value) return
+    if (!trackingActive.value || isDemoWorkspaceId(workspaceId.value)) return
 
     const nextDueAt = achievements.value
       .filter(({ status }) => status === 'pending')
@@ -200,6 +207,7 @@ export const useMilestonesStore = defineStore('milestones', () => {
   }
 
   async function activateTracking() {
+    if (isDemoWorkspaceId(workspaceId.value)) return
     if (!workspaceId.value || trackingActive.value || activationLoading.value) return
 
     const activeWorkspaceId = workspaceId.value

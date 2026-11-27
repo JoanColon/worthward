@@ -9,6 +9,7 @@ import {
   getFinancialYear,
   subscribeFinancialYear,
 } from '@/services/firebase/financial-years.service'
+import { financialYearForWorkspace, isDemoWorkspaceId } from '@/domain/access/demo-workspace'
 
 export const useFinancialYearsStore = defineStore('financial-years', () => {
   const documents = ref({})
@@ -23,11 +24,14 @@ export const useFinancialYearsStore = defineStore('financial-years', () => {
   let latestLoadId = 0
 
   async function load(workspaceId, year = currentFinancialYear(), force = false) {
+    year = financialYearForWorkspace(workspaceId, year)
     const key = `${workspaceId}:${year}`
     const loadId = ++latestLoadId
     watchFinancialYear(workspaceId, year)
     if (!force && Object.hasOwn(documents.value, key)) {
-      if (year === currentFinancialYear()) refreshCurrentPeriod(workspaceId, year)
+      if (!isDemoWorkspaceId(workspaceId) && year === currentFinancialYear()) {
+        refreshCurrentPeriod(workspaceId, year)
+      }
       return documents.value[key]
     }
     const currentRequest = (requestIds.get(key) || 0) + 1
@@ -35,7 +39,9 @@ export const useFinancialYearsStore = defineStore('financial-years', () => {
     loadingKeys.add(key)
     loading.value = true
     setError(key, null)
-    if (year === currentFinancialYear()) refreshCurrentPeriod(workspaceId, year, force)
+    if (!isDemoWorkspaceId(workspaceId) && year === currentFinancialYear()) {
+      refreshCurrentPeriod(workspaceId, year, force)
+    }
     try {
       const value = await readFinancialYear(workspaceId, year, key)
       if (currentRequest !== requestIds.get(key)) return null
@@ -54,10 +60,12 @@ export const useFinancialYearsStore = defineStore('financial-years', () => {
   }
 
   function get(workspaceId, year = currentFinancialYear()) {
+    year = financialYearForWorkspace(workspaceId, year)
     return documents.value[`${workspaceId}:${year}`] || null
   }
 
   function errorFor(workspaceId, year = currentFinancialYear()) {
+    year = financialYearForWorkspace(workspaceId, year)
     return errors.value[`${workspaceId}:${year}`] || null
   }
 

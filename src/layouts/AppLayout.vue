@@ -118,7 +118,7 @@
 
       <q-separator class="q-my-sm" />
 
-      <div v-if="workspaceStore.hasWorkspaces" class="workspace-list">
+      <div v-if="workspaceStore.workspaces.length" class="workspace-list">
         <div class="workspace-list-label">{{ t('navigation.switchWorkspace') }}</div>
         <q-list dense>
           <q-item
@@ -134,7 +134,12 @@
             <q-item-section avatar>
               <q-icon :name="isSharedWorkspace(workspace) ? 'group' : 'person_outline'" />
             </q-item-section>
-            <q-item-section>{{ workspace.name }}</q-item-section>
+            <q-item-section>
+              {{ workspace.name }}
+              <q-item-label v-if="isDemoWorkspaceId(workspace.id)" caption>
+                {{ t('workspace.demo.readOnly') }}
+              </q-item-label>
+            </q-item-section>
             <q-item-section v-if="workspace.id === activeWorkspaceId" side>
               <q-icon name="check" color="primary" />
             </q-item-section>
@@ -144,7 +149,15 @@
 
       <template v-if="activeWorkspaceId">
         <q-separator class="q-my-sm" />
-        <div class="workspace-list-label">{{ activeWorkspace?.name }}</div>
+        <div class="workspace-list-label">
+          {{ activeWorkspace?.name }}
+          <q-badge
+            v-if="activeWorkspaceIsDemo"
+            outline
+            color="primary"
+            :label="t('workspace.demo.readOnly')"
+          />
+        </div>
         <nav class="workspace-navigation" :aria-label="t('navigation.financialWorkspace')">
           <q-tree
             v-model:expanded="expandedNavigationNodes"
@@ -224,6 +237,8 @@ import { useWorkspaceStore } from '@/stores/workspace-store'
 import { useWhatIfStore } from '@/stores/what-if-store'
 import { setWorkspaceCurrency } from '@/utils/formatters'
 import { getWorkspaceMembers } from '@/utils/workspace-members'
+import { isDemoWorkspaceId } from '@/domain/access/demo-workspace'
+import { financialYearForWorkspace } from '@/domain/access/demo-workspace'
 
 const $q = useQuasar()
 const { t } = useI18n()
@@ -252,6 +267,7 @@ let workspaceSyncId = 0
 const portfolioSyncStarted = new Set()
 const activeWorkspaceId = computed(() => workspaceStore.activeWorkspaceId)
 const activeWorkspace = computed(() => workspaceStore.activeWorkspace)
+const activeWorkspaceIsDemo = computed(() => workspaceStore.activeWorkspaceIsDemo)
 const ownedWorkspaceCount = computed(
   () =>
     workspaceStore.workspaces.filter(
@@ -322,7 +338,9 @@ const workspaceNavigationNodes = computed(() => {
     },
     navigationLeaf('plan', 'navigation.plan', 'route', 'plan'),
     navigationLeaf('progress', 'navigation.progress', 'bar_chart', 'progress'),
-    navigationLeaf('setup', 'navigation.setup', 'tune', 'setup'),
+    ...(activeWorkspaceIsDemo.value
+      ? []
+      : [navigationLeaf('setup', 'navigation.setup', 'tune', 'setup')]),
   ]
 })
 
@@ -477,10 +495,16 @@ async function synchronizeWorkspace(workspaceId) {
     return
   }
   const syncId = ++workspaceSyncId
-  const portfolioSync = workspaceHasPro.value ? syncPortfoliosOnOpen(workspaceId) : null
+  const portfolioSync =
+    workspaceHasPro.value && !isDemoWorkspaceId(workspaceId)
+      ? syncPortfoliosOnOpen(workspaceId)
+      : null
 
   try {
-    await financialYearsStore.load(workspaceId, currentFinancialYear())
+    await financialYearsStore.load(
+      workspaceId,
+      financialYearForWorkspace(workspaceId, currentFinancialYear()),
+    )
     if (!workspaceSyncIsCurrent(workspaceId, syncId)) return
     await Promise.all([
       assetsStore.refreshLoadedCategories(workspaceId),
@@ -521,6 +545,7 @@ async function syncPortfoliosOnOpen(workspaceId) {
 
 function revalidateMilestonesOnResume() {
   if (document.visibilityState !== 'visible' || !authUser.value) return
+  if (activeWorkspaceIsDemo.value) return
   milestonesStore.revalidateAchievements()
 }
 

@@ -250,6 +250,7 @@ import EvolutionChart from '@/components/progress/EvolutionChart.vue'
 import { assetCategories } from '@/config/asset-categories'
 import { CHART_COLORS, CHART_SERIES_COLORS } from '@/config/chart-theme'
 import { liabilityCategories } from '@/config/liability-categories'
+import { isDemoWorkspaceId } from '@/domain/access/demo-workspace'
 import {
   buildAnnualFlowSeries,
   buildNetWorthBreakdownSeries,
@@ -271,7 +272,7 @@ const router = useRouter()
 const milestonesStore = useMilestonesStore()
 const scopeStore = useFinancialScopeStore()
 const workspaceStore = useWorkspaceStore()
-const selectedPeriod = ref('1')
+const selectedPeriod = ref(isDemoWorkspaceId(String(route.params.workspaceId)) ? '5' : '1')
 
 const {
   currentMonth,
@@ -614,7 +615,14 @@ const coverageDescription = computed(() => {
   return t(`progress.evolution.coverage.${coverage}`)
 })
 
-watch(workspaceId, () => load(), { immediate: true })
+watch(
+  workspaceId,
+  (id, previousId) => {
+    if (id !== previousId) selectedPeriod.value = isDemoWorkspaceId(id) ? '5' : '1'
+    load()
+  },
+  { immediate: true },
+)
 
 function load(force = false) {
   return milestonesStore.load(workspaceId.value, force)

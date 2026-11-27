@@ -7,6 +7,7 @@
         type="button"
         class="tracking-button"
         :class="`tracking-category--${subcategory.categoryId}`"
+        :disabled="readOnly"
         @click="$emit('add', subcategory)"
       >
         <span class="tracking-icon"><q-icon :name="subcategory.icon" /></span>
@@ -14,7 +15,7 @@
           <strong>{{ t(subcategory.nameKey) }}</strong>
           <small>{{ t(subcategory.categoryNameKey) }}</small>
         </span>
-        <q-icon name="add_circle_outline" class="tracking-action" />
+        <q-icon v-if="!readOnly" name="add_circle_outline" class="tracking-action" />
       </button>
     </div>
 
@@ -29,7 +30,10 @@
 <script setup>
 import { useI18n } from 'vue-i18n'
 
-defineProps({ categories: { type: Array, required: true } })
+defineProps({
+  categories: { type: Array, required: true },
+  readOnly: { type: Boolean, default: false },
+})
 defineEmits(['add'])
 const { t } = useI18n()
 </script>
@@ -65,6 +69,16 @@ const { t } = useI18n()
   border-color: color-mix(in srgb, var(--tracking-color, var(--color-primary)) 45%, white);
   box-shadow: 0 8px 22px rgb(34 55 78 / 8%);
   transform: translateY(-1px);
+}
+
+.tracking-button:disabled {
+  cursor: default;
+}
+
+.tracking-button:disabled:hover {
+  border-color: var(--color-line);
+  box-shadow: none;
+  transform: none;
 }
 
 .tracking-icon {

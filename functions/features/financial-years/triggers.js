@@ -3,6 +3,7 @@
  */
 import { getFirestore } from 'firebase-admin/firestore'
 import { onDocumentWritten } from 'firebase-functions/firestore'
+import { isDemoWorkspaceId } from '../../shared/workspaces/demo.js'
 import {
   currentYear,
   rebuildFinancialYear,
@@ -21,6 +22,7 @@ const onModelConfigWritten = onDocumentWritten(
   { ...triggerOptions, document: 'workspaces/{workspaceId}/modelConfig/{section}' },
   (event) => {
     const { section, workspaceId } = event.params
+    if (isDemoWorkspaceId(workspaceId)) return
     if (!modelSections.has(section)) return
     return rebuildCurrentFinancialYear(workspaceId, [section])
   },
@@ -32,6 +34,7 @@ const onModelConfigWritten = onDocumentWritten(
 const onExpenseTrackingWritten = onDocumentWritten(
   { ...triggerOptions, document: 'workspaces/{workspaceId}/expenseTracking/{period}' },
   async (event) => {
+    if (isDemoWorkspaceId(event.params.workspaceId)) return
     if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(String(event.params.period))) return
     await refreshFinancialYearTrackingMonth(
       getFirestore(),

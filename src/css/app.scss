@@ -1,5 +1,7 @@
 @use './foundation/tokens';
 @use './foundation/base';
 @use './foundation/typography';
+@use './components/app-card';
 @use './components/buttons';
+@use './components/financial-overview';
 @use './components/quasar-overrides';

@@ -4,11 +4,8 @@
     :icon="icon"
     :label="label"
     :formatted-total="formattedTotal"
-    :secondary-value="secondaryValue"
-    :secondary-label="secondaryLabel"
-    :comparison-value="comparisonValue"
-    :comparison-label="comparisonLabel"
-    :comparison-help="comparisonHelp"
+    :supporting-text="supportingText"
+    :metrics="metrics"
     :badge-label="scopeLabel"
   >
     <ExpenseBreakdownChart
@@ -34,11 +31,8 @@ defineProps({
   icon: { type: String, required: true },
   label: { type: String, required: true },
   formattedTotal: { type: String, required: true },
-  secondaryValue: { type: String, default: '' },
-  secondaryLabel: { type: String, default: '' },
-  comparisonValue: { type: String, default: '' },
-  comparisonLabel: { type: String, default: '' },
-  comparisonHelp: { type: String, default: '' },
+  supportingText: { type: String, default: '' },
+  metrics: { type: Array, default: () => [] },
   scopeLabel: { type: String, default: '' },
   chartTitle: { type: String, required: true },
   totalLabel: { type: String, required: true },

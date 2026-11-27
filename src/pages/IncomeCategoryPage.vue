@@ -70,10 +70,11 @@
             <q-btn flat round dense icon="more_vert" color="grey-7" @click.stop
               ><q-menu
                 ><q-list dense
-                  ><q-item clickable v-close-popup @click="edit(item)"
+                  ><q-item v-if="!readOnly" clickable v-close-popup @click="edit(item)"
                     ><q-item-section avatar><q-icon name="edit" /></q-item-section
                     ><q-item-section>{{ t('income.editDetails') }}</q-item-section></q-item
                   ><q-item
+                    v-if="!readOnly"
                     clickable
                     v-close-popup
                     class="text-negative"
@@ -85,7 +86,7 @@
               ></q-btn
             >
           </article>
-          <button type="button" class="add-row" @click="add">
+          <button v-if="!readOnly" type="button" class="add-row" @click="add">
             <q-icon name="add" /><span>{{ t(category.addLabelKey) }}</span>
           </button>
         </section>
@@ -94,7 +95,7 @@
           :icon="category.icon"
           :title="t('income.empty.contextualTitle', { items: t(category.itemNamePluralKey) })"
           :description="t('income.empty.description')"
-          :action-label="t(category.addLabelKey)"
+          :action-label="readOnly ? undefined : t(category.addLabelKey)"
           tone="positive"
           @action="add"
         />
@@ -140,6 +141,7 @@ import AppPageHeader from '@/components/layout/AppPageHeader.vue'
 import AppConfirmDialog from '@/components/ui/AppConfirmDialog.vue'
 import AppEmptyState from '@/components/ui/AppEmptyState.vue'
 import { getIncomeCategory } from '@/config/income-categories'
+import { isDemoWorkspaceId } from '@/domain/access/demo-workspace'
 import {
   currentFinancialYear,
   financialYearFlowCategoryValue,
@@ -157,6 +159,7 @@ import { useFinancialYearsStore } from '@/stores/financial-years-store'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import { formatCurrency } from '@/utils/formatters'
 import { getWorkspaceMembers } from '@/utils/workspace-members'
+import { financialYearForWorkspace } from '@/domain/access/demo-workspace'
 
 const $q = useQuasar()
 const { t } = useI18n()
@@ -175,8 +178,12 @@ const deletingIncome = ref(null)
 const confirmDelete = ref(false)
 const formSaving = ref(false)
 let preparationId = 0
-const currentYear = currentFinancialYear()
+const currentYear = financialYearForWorkspace(
+  String(route.params.workspaceId),
+  currentFinancialYear(),
+)
 const workspaceId = computed(() => String(route.params.workspaceId))
+const readOnly = computed(() => isDemoWorkspaceId(workspaceId.value))
 const categoryId = computed(() => String(route.params.category))
 const incomeRoute = computed(() => ({ name: 'income', params: { workspaceId: workspaceId.value } }))
 const category = computed(() => getIncomeCategory(categoryId.value))
@@ -302,10 +309,12 @@ function incomeDisplayName(item) {
   return item?.itemName?.trim() || (item ? t(`income.subtypes.${item.subcategoryId}`) : '')
 }
 function add() {
+  if (readOnly.value) return
   editingIncome.value = null
   incomeDialog.value = true
 }
 function edit(item) {
+  if (readOnly.value) return
   editingIncome.value = item
   incomeDialog.value = true
 }

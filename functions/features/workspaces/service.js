@@ -7,6 +7,7 @@ import {
   resolveUserEntitlements,
   workspaceEntitlementProjection,
 } from '../../shared/billing/entitlements.js'
+import { assertMutableWorkspaceId } from '../../shared/workspaces/demo.js'
 
 // Workspace membership, invitations and deletion are persisted together in this feature service.
 const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000
@@ -111,6 +112,7 @@ function inviteHasExpired(invite, now) {
  * Creates a time-limited invitation whose secret token is stored only as a hash.
  */
 async function createWorkspaceInvite(firestore, { workspaceId, userId, now = Date.now() }) {
+  assertMutableWorkspaceId(workspaceId)
   const token = createInviteToken()
   const inviteReference = firestore.collection('workspaceInvites').doc(inviteDocumentId(token))
   const workspaceReference = firestore.collection('workspaces').doc(workspaceId)
@@ -152,6 +154,7 @@ async function getWorkspaceInvite(firestore, { token, userId = null, now = Date.
   }
 
   const invite = inviteSnapshot.data()
+  assertMutableWorkspaceId(invite.workspaceId)
   if (invite.status === 'accepted') {
     if (!userId || invite.acceptedBy !== userId) {
       throw workspaceError('failed-precondition', 'The invitation has already been used')
@@ -192,6 +195,7 @@ async function acceptWorkspaceInvite(
     }
 
     const invite = inviteSnapshot.data()
+    assertMutableWorkspaceId(invite.workspaceId)
     if (invite.status === 'accepted') {
       if (invite.acceptedBy === userId) {
         return { status: 'joined', workspaceId: invite.workspaceId }
@@ -247,6 +251,7 @@ async function updateWorkspaceSettings(
   firestore,
   { workspaceId, userId, currency, memberNames },
 ) {
+  assertMutableWorkspaceId(workspaceId)
   const workspaceReference = firestore.collection('workspaces').doc(workspaceId)
   return firestore.runTransaction(async (transaction) => {
     const workspaceSnapshot = await transaction.get(workspaceReference)
@@ -293,6 +298,7 @@ async function updateWorkspaceSettings(
  * Marks a workspace for deletion and recursively removes its invitations and data.
  */
 async function deleteWorkspaceData(firestore, workspaceReference) {
+  assertMutableWorkspaceId(workspaceReference.id)
   await workspaceReference.update({
     deletionPendingAt: FieldValue.serverTimestamp(),
     updatedAt: FieldValue.serverTimestamp(),

@@ -50,6 +50,7 @@ import { assetCategories } from '@/config/asset-categories'
 import { expenseCategories } from '@/config/expense-categories'
 import { incomeCategories } from '@/config/income-categories'
 import { getLiabilityCategory } from '@/config/liability-categories'
+import { DEMO_REFERENCE_DATE, isDemoWorkspaceId } from '@/domain/access/demo-workspace'
 import { liabilityCategories } from '@/config/liability-categories'
 import {
   extractPositionLiabilities,
@@ -637,6 +638,7 @@ function formatYears(value) {
 }
 
 function localToday() {
+  if (isDemoWorkspaceId(workspaceId.value)) return DEMO_REFERENCE_DATE
   const now = new Date()
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(
     now.getDate(),

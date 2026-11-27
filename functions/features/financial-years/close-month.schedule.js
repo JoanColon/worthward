@@ -4,6 +4,7 @@
 import { getFirestore } from 'firebase-admin/firestore'
 import * as logger from 'firebase-functions/logger'
 import { onSchedule } from 'firebase-functions/scheduler'
+import { isDemoWorkspaceId } from '../../shared/workspaces/demo.js'
 import {
   closePreviousFinancialPositionMonth,
   madridToday,
@@ -25,6 +26,7 @@ const closeMonthlyFinancialPositions = onSchedule(
     const workspaces = await firestore.collection('workspaces').get()
     const failures = []
     for (const workspace of workspaces.docs || []) {
+      if (isDemoWorkspaceId(workspace.id)) continue
       if (workspace.data()?.deletionPendingAt) continue
       const startedAt = Date.now()
       try {
