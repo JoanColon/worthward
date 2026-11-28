@@ -6,6 +6,7 @@ import {
   updateFinancialModelItem,
 } from '@/services/firebase/financial-model-mutations.service'
 import { normalizeNonNegativeMoneyOrNull } from '../../../functions/shared/core/money.js'
+import { isCanonicalDate } from '../../../functions/shared/core/dates.js'
 import { cloneOwnershipAllocation } from '../../../functions/shared/core/ownership.js'
 import {
   assertPositionOwnership,
@@ -117,11 +118,11 @@ function canonicalMortgageDetail(mortgage) {
   if (!Number.isInteger(termMonths) || termMonths <= 0 || termMonths > 1_200) {
     throw new Error('A valid mortgage term is required')
   }
-  if (!isIsoDate(startDate)) throw new Error('A valid mortgage start date is required')
+  if (!isCanonicalDate(startDate)) throw new Error('A valid mortgage start date is required')
 
   const amount = normalizeNonNegativeMoneyOrNull(mortgage.balanceAnchor?.amount)
   const date = String(mortgage.balanceAnchor?.date || '').trim()
-  if (amount === null || !isIsoDate(date)) {
+  if (amount === null || !isCanonicalDate(date)) {
     throw new Error('A valid mortgage balance anchor is required')
   }
 
@@ -136,17 +137,6 @@ function canonicalMortgageDetail(mortgage) {
     fixedRate: true,
     balanceAnchor: { amount, date },
   }
-}
-
-function isIsoDate(value) {
-  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/)
-  if (!match) return false
-  const date = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3])))
-  return (
-    date.getUTCFullYear() === Number(match[1]) &&
-    date.getUTCMonth() === Number(match[2]) - 1 &&
-    date.getUTCDate() === Number(match[3])
-  )
 }
 
 function normalizeOptionalId(value) {

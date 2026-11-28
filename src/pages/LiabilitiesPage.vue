@@ -330,7 +330,12 @@ const overviewMetrics = computed(() => {
     },
     {
       label: t('liabilities.overview.debtToAssets'),
-      value: formatPercentage(metrics.debtToAssetsPercent),
+      value:
+        metrics.debtToAssetsPercent == null ? '—' : formatPercentage(metrics.debtToAssetsPercent),
+      help:
+        metrics.debtToAssetsPercent == null
+          ? t('liabilities.overview.debtToAssetsUnavailable')
+          : '',
     },
   ]
 })

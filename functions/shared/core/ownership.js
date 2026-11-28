@@ -58,15 +58,6 @@ export function cloneOwnershipAllocation(ownership) {
   return { mode: ownership?.mode || (shares.length > 1 ? 'shared' : 'single'), shares }
 }
 
-/** Returns the single owner ID, `all` for shared ownership, or null for an empty allocation. */
-export function ownershipScopeId(ownership) {
-  const shares = (ownership?.shares || []).filter(
-    ({ memberId, percentage }) => memberId && Number(percentage) > 0,
-  )
-  if (ownership?.mode === 'shared' || shares.length > 1) return 'all'
-  return shares[0]?.memberId || null
-}
-
 /** Validates unique, allowed member shares that total 100 percent. */
 export function isValidOwnershipAllocation(ownership, memberIds = []) {
   if (!ownership?.shares?.length) return false

@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
   buildAnnualFlowSeries,
-  buildAssetAnnualSeries,
   buildMonthlyFlowSeries,
   buildNetWorthBreakdownSeries,
   buildNetWorthBridge,
@@ -211,34 +210,6 @@ describe('financial history series', () => {
 
     expect(Object.keys(result[0].months)).toEqual(['01', '02', '03'])
     expect(buildNetWorthSeries(result).at(-1)).toEqual({ period: '2026-03', value: 125 })
-  })
-
-  it('builds one annual history point for a specific asset', () => {
-    const annualDocument = (year, value) => ({
-      year,
-      months: {
-        12: {
-          assets: {
-            categories: {
-              investment: {
-                subcategories: {
-                  stocks: { items: { portfolio: { total: value }, other: { total: 10 } } },
-                },
-              },
-            },
-          },
-        },
-      },
-    })
-
-    expect(
-      buildAssetAnnualSeries([annualDocument(2026, 30_000), annualDocument(2025, 25_000)], {
-        assetId: 'portfolio',
-      }),
-    ).toEqual([
-      { year: 2025, value: 25_000 },
-      { year: 2026, value: 30_000 },
-    ])
   })
 
   it('flattens and sorts annual documents into monthly net worth points', () => {

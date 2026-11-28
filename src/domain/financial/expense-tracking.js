@@ -69,13 +69,6 @@ export function setTrackingDecision(month, subcategoryId, decision) {
   return { ...month, reconciliation }
 }
 
-export function setTrackingDecisions(month, subcategoryIds, decision) {
-  return [...new Set(subcategoryIds)].reduce(
-    (next, subcategoryId) => setTrackingDecision(next, subcategoryId, decision),
-    month,
-  )
-}
-
 export function resolveExpenseTrackingValue(modelValue, actualValue, decision) {
   return reconcileModeledAndTrackedExpense(modelValue, actualValue, decision)
 }

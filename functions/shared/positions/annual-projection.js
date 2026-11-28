@@ -188,14 +188,6 @@ export function financialYearMonthValue(financialYear, month, section, memberId 
   )
 }
 
-/** Reads an annual category value, using year-end for positions and annual sums for flows. */
-export function financialYearCategoryValue(financialYear, section, categoryId, memberId = 'all') {
-  if (POSITION_SECTIONS.has(section)) {
-    return financialYearMonthCategoryValue(financialYear, '12', section, categoryId, memberId)
-  }
-  return financialYearFlowCategoryValue(financialYear, section, categoryId, memberId)
-}
-
 /** Sums one flow category across all projected months. */
 export function financialYearFlowCategoryValue(
   financialYear,
@@ -272,20 +264,6 @@ export function financialYearCategoryItemCount(financialYear, section, categoryI
     (count, subcategory) => count + Object.keys(subcategory?.items || {}).length,
     0,
   )
-}
-
-/** Lists members with non-zero values in a category. */
-export function financialYearCategoryMemberIds(financialYear, section, categoryId, month = null) {
-  const category = month ?
-    financialYear?.months?.[month]?.[section]?.categories?.[categoryId] :
-    annualCategory(financialYear, section, categoryId)
-  const memberIds = new Set()
-  for (const subcategory of Object.values(category?.subcategories || {})) {
-    for (const [memberId, value] of Object.entries(subcategory.memberValues || {})) {
-      if (Number(value) !== 0) memberIds.add(memberId)
-    }
-  }
-  return [...memberIds]
 }
 
 /** Reads an annual subcategory value. */

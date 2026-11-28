@@ -27,33 +27,6 @@ const MONTHS = [
 ]
 
 /**
- * Creates a complete twelve-month projection from editable source models.
- */
-function buildFinancialYear({
-  year,
-  config = {},
-  assets = [],
-  liabilities = [],
-  expenses = [],
-  income = [],
-  trackingMonths = {},
-}) {
-  return updateFinancialYearProjection(
-    {},
-    {
-      year,
-      config,
-      assets,
-      liabilities,
-      expenses,
-      income,
-      trackingMonths,
-      sections: ['assets', 'liabilities', 'income', 'expenses'],
-    },
-  )
-}
-
-/**
  * Rebuilds requested year sections while preserving closed months and unaffected data.
  */
 function updateFinancialYearProjection(
@@ -576,6 +549,5 @@ function assertMonth(month) {
 export {
   applyTrackingMonth,
   buildPositionMonth,
-  buildFinancialYear,
   updateFinancialYearProjection,
 }

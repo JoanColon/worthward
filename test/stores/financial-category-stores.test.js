@@ -10,10 +10,14 @@ const mocks = vi.hoisted(() => ({
   getCategoryIncome: vi.fn(),
   getExpensesConfig: vi.fn(),
   getCategoryExpenses: vi.fn(),
+  createAsset: vi.fn(),
+  createLiability: vi.fn(),
+  createIncome: vi.fn(),
+  createExpense: vi.fn(),
 }))
 
 vi.mock('@/services/firebase/assets.service', () => ({
-  createAsset: vi.fn(),
+  createAsset: mocks.createAsset,
   deleteAsset: vi.fn(),
   deleteAssetCategory: vi.fn(),
   getAssetsConfig: mocks.getAssetsConfig,
@@ -26,7 +30,7 @@ vi.mock('@/services/firebase/assets.service', () => ({
 }))
 
 vi.mock('@/services/firebase/liabilities.service', () => ({
-  createLiability: vi.fn(),
+  createLiability: mocks.createLiability,
   deleteLiability: vi.fn(),
   deleteLiabilityCategory: vi.fn(),
   getCategoryLiabilities: mocks.getCategoryLiabilities,
@@ -39,7 +43,7 @@ vi.mock('@/services/firebase/liabilities.service', () => ({
 }))
 
 vi.mock('@/services/firebase/income.service', () => ({
-  createIncome: vi.fn(),
+  createIncome: mocks.createIncome,
   deleteIncome: vi.fn(),
   deleteIncomeCategory: vi.fn(),
   getCategoryIncome: mocks.getCategoryIncome,
@@ -50,7 +54,7 @@ vi.mock('@/services/firebase/income.service', () => ({
 }))
 
 vi.mock('@/services/firebase/expenses.service', () => ({
-  createExpense: vi.fn(),
+  createExpense: mocks.createExpense,
   deleteExpense: vi.fn(),
   deleteExpenseCategory: vi.fn(),
   getCategoryExpenses: mocks.getCategoryExpenses,
@@ -76,6 +80,9 @@ const storeCases = [
     useStore: useAssetsStore,
     getConfig: mocks.getAssetsConfig,
     getCategory: mocks.getCategoryAssets,
+    create: mocks.createAsset,
+    add: (store) => store.addAsset('workspace-a', { categoryId: 'first' }, []),
+    resultKey: 'asset',
     refreshesCategories: true,
   },
   {
@@ -83,6 +90,9 @@ const storeCases = [
     useStore: useLiabilitiesStore,
     getConfig: mocks.getLiabilitiesConfig,
     getCategory: mocks.getCategoryLiabilities,
+    create: mocks.createLiability,
+    add: (store) => store.addLiability('workspace-a', { categoryId: 'first' }, []),
+    resultKey: 'liability',
     refreshesCategories: true,
   },
   {
@@ -90,22 +100,29 @@ const storeCases = [
     useStore: useIncomeStore,
     getConfig: mocks.getIncomeConfig,
     getCategory: mocks.getCategoryIncome,
+    create: mocks.createIncome,
+    add: (store) => store.addIncome('workspace-a', { categoryId: 'first' }, []),
+    resultKey: 'income',
   },
   {
     name: 'expenses',
     useStore: useExpensesStore,
     getConfig: mocks.getExpensesConfig,
     getCategory: mocks.getCategoryExpenses,
+    create: mocks.createExpense,
+    add: (store) => store.addExpense('workspace-a', { categoryId: 'first' }, []),
+    resultKey: 'expense',
   },
 ]
 
 describe.each(storeCases)(
   '$name store category loading',
-  ({ useStore, getConfig, getCategory, refreshesCategories }) => {
+  ({ useStore, getConfig, getCategory, create, add, resultKey, refreshesCategories }) => {
     beforeEach(() => {
       setActivePinia(createPinia())
       getConfig.mockReset()
       getCategory.mockReset()
+      create.mockReset()
       getConfig.mockResolvedValue({
         schemaVersion: 1,
         setupCompleted: true,
@@ -275,6 +292,26 @@ describe.each(storeCases)(
 
       expect(getConfig).toHaveBeenCalledTimes(3)
       expect(store.error).toBeNull()
+    })
+
+    it('does not apply a completed mutation to a newly selected workspace', async () => {
+      let resolveMutation
+      create.mockReturnValueOnce(
+        new Promise((resolve) => {
+          resolveMutation = resolve
+        }),
+      )
+      const store = useStore()
+      await store.loadConfig('workspace-a')
+
+      const mutation = add(store)
+      await store.loadConfig('workspace-b')
+      resolveMutation({
+        [resultKey]: { id: 'workspace-a-item', categoryId: 'first' },
+      })
+      await mutation
+
+      expect(store.itemsForCategory('first')).toEqual([])
     })
   },
 )

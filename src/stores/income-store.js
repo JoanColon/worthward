@@ -118,6 +118,7 @@ export const useIncomeStore = defineStore('income', () => {
       memberIds,
     )
     await saveIncomeSetup(workspaceId, categories)
+    if (!isCurrentWorkspace(workspaceId)) return
     config.value = { setupCompleted: true, categories }
     loadedWorkspaceId.value = workspaceId
   }
@@ -130,11 +131,13 @@ export const useIncomeStore = defineStore('income', () => {
       memberIds,
     )
     await updateIncomeCategories(workspaceId, categories)
+    if (!isCurrentWorkspace(workspaceId)) return
     config.value = { ...(config.value || {}), setupCompleted: true, categories }
   }
 
   async function addIncome(workspaceId, income, memberIds) {
     const result = await createIncomeDocument(workspaceId, income, memberIds)
+    if (!isCurrentWorkspace(workspaceId)) return result.income
     incomeByCategory.value = {
       ...incomeByCategory.value,
       [income.categoryId]: [...itemsForCategory(income.categoryId), result.income],
@@ -147,6 +150,7 @@ export const useIncomeStore = defineStore('income', () => {
     const income = findLoadedIncome(incomeId)
     if (!income) throw new Error('Income source not found')
     const result = await updateIncomeDocument(workspaceId, incomeId, changes, memberIds)
+    if (!isCurrentWorkspace(workspaceId)) return result.income
     incomeByCategory.value = {
       ...incomeByCategory.value,
       [income.categoryId]: itemsForCategory(income.categoryId).map((candidate) =>
@@ -158,6 +162,7 @@ export const useIncomeStore = defineStore('income', () => {
   async function deleteIncome(workspaceId, incomeId) {
     if (!findLoadedIncome(incomeId)) throw new Error('Income source not found')
     const result = await deleteIncomeDocument(workspaceId, incomeId)
+    if (!isCurrentWorkspace(workspaceId)) return
     incomeByCategory.value = {
       ...incomeByCategory.value,
       [result.categoryId]: itemsForCategory(result.categoryId).filter(
@@ -168,6 +173,7 @@ export const useIncomeStore = defineStore('income', () => {
 
   async function deleteCategory(workspaceId, categoryId) {
     await deleteIncomeCategoryDocuments(workspaceId, categoryId)
+    if (!isCurrentWorkspace(workspaceId)) return
     const categories = { ...(config.value?.categories || {}) }
     delete categories[categoryId]
     config.value = { ...config.value, categories }
@@ -187,6 +193,10 @@ export const useIncomeStore = defineStore('income', () => {
     return Object.values(incomeByCategory.value)
       .flat()
       .find((income) => income.id === incomeId)
+  }
+
+  function isCurrentWorkspace(workspaceId) {
+    return loadedWorkspaceId.value === workspaceId
   }
 
   function reset() {

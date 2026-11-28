@@ -1,19 +1,23 @@
 /**
  * Portable date utilities for canonical ISO dates, calendar-safe month arithmetic, financial time-zone conversion, and anniversary calculations.
  */
+/** Reports whether a value is a real calendar date in canonical YYYY-MM-DD form. */
+export function isCanonicalDate(value) {
+  const date = String(value || '')
+  const match = date.match(/^(\d{4})-(\d{2})-(\d{2})$/)
+  if (!match) return false
+  const parsed = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3])))
+  return (
+    parsed.getUTCFullYear() === Number(match[1]) &&
+    parsed.getUTCMonth() === Number(match[2]) - 1 &&
+    parsed.getUTCDate() === Number(match[3])
+  )
+}
+
 /** Validates and returns a calendar date in YYYY-MM-DD form without a time-zone shift. */
 export function requireCanonicalDate(value, label = 'date') {
   const date = String(value || '')
-  const match = date.match(/^(\d{4})-(\d{2})-(\d{2})$/)
-  if (!match) throw new RangeError(`A valid ${label} is required`)
-  const parsed = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3])))
-  if (
-    parsed.getUTCFullYear() !== Number(match[1]) ||
-    parsed.getUTCMonth() !== Number(match[2]) - 1 ||
-    parsed.getUTCDate() !== Number(match[3])
-  ) {
-    throw new RangeError(`A valid ${label} is required`)
-  }
+  if (!isCanonicalDate(date)) throw new RangeError(`A valid ${label} is required`)
   return date
 }
 

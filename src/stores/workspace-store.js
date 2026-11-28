@@ -18,6 +18,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   const loading = ref(false)
   const error = ref(null)
   const initializedForUserId = ref(null)
+  let loadRequestId = 0
 
   const realWorkspaces = computed(() =>
     workspaces.value.filter((workspace) => !isDemoWorkspaceId(workspace.id)),
@@ -34,20 +35,23 @@ export const useWorkspaceStore = defineStore('workspace', () => {
 
     loading.value = true
     error.value = null
+    const requestId = ++loadRequestId
 
     try {
       const [loadedWorkspaces, storedWorkspaceId] = await Promise.all([
         getUserWorkspaces(),
         getActiveWorkspaceId(),
       ])
+      if (requestId !== loadRequestId) return
       workspaces.value = loadedWorkspaces
       initializedForUserId.value = user.uid
       await restoreActiveWorkspace(storedWorkspaceId)
     } catch (loadError) {
+      if (requestId !== loadRequestId) return
       error.value = loadError
       throw loadError
     } finally {
-      loading.value = false
+      if (requestId === loadRequestId) loading.value = false
     }
   }
 
@@ -118,10 +122,12 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   }
 
   function reset() {
+    loadRequestId += 1
     workspaces.value = []
     activeWorkspaceId.value = null
     error.value = null
     initializedForUserId.value = null
+    loading.value = false
   }
 
   async function restoreActiveWorkspace(storedWorkspaceId) {

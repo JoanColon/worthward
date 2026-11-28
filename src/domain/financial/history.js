@@ -184,29 +184,6 @@ export function buildNetWorthBridge(startPoint, endPoint) {
     .sort((first, second) => Math.abs(second.value) - Math.abs(first.value))
 }
 
-export function buildAssetAnnualSeries(
-  historyDocuments = [],
-  { assetId, categoryId = 'investment' } = {},
-) {
-  if (!assetId) return []
-
-  return historyDocuments
-    .map((history) => {
-      const year = Number(history.year || history.id)
-      if (!Number.isInteger(year)) return null
-
-      const subcategories =
-        history.months?.['12']?.assets?.categories?.[categoryId]?.subcategories || {}
-      const item = Object.values(subcategories)
-        .map((subcategory) => subcategory?.items?.[assetId])
-        .find(Boolean)
-      const value = Number(item?.total)
-      return Number.isFinite(value) ? { year, value } : null
-    })
-    .filter(Boolean)
-    .sort((first, second) => first.year - second.year)
-}
-
 function positionPeriods(historyDocuments, throughPeriod) {
   return positionHistoryDocuments(historyDocuments, { throughPeriod })
     .flatMap((history) => {

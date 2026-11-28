@@ -138,11 +138,6 @@ export function simulateAllocationStrategy({
   }
 }
 
-/** Returns only the net-worth points from a full strategy projection. */
-export function calculateStrategyNetWorthPoints(options = {}) {
-  return calculateStrategyNetWorthProjection(options).points
-}
-
 /**
  * Projects net worth while combining strategy assets, modeled real estate, and mortgage payoff.
  */

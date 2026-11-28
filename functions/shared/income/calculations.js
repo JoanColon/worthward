@@ -21,14 +21,6 @@ export function normalizeDisposableIncomePercent(value, fallback = null) {
   return Math.round((number + Number.EPSILON) * 1000) / 1000
 }
 
-/** Applies a disposable percentage to an income amount, returning null for invalid inputs. */
-export function calculateDisposableIncomeAmount(value, percentage = 100) {
-  const amount = normalizeNonNegativeMoneyOrNull(value)
-  const normalizedPercentage = normalizeDisposableIncomePercent(percentage, 100)
-  if (amount === null || normalizedPercentage === null) return null
-  return normalizeNonNegativeMoneyOrNull((amount * normalizedPercentage) / 100)
-}
-
 /** Validates and canonicalizes one supported income calculation model. */
 export function normalizeIncomeCalculationModel(calculation) {
   if (!INCOME_CALCULATION_MODES.includes(calculation?.mode)) return null

@@ -56,5 +56,3 @@ export const milestoneDefinitions = Object.freeze([
     target,
   })),
 ])
-
-export const milestoneIds = Object.freeze(milestoneDefinitions.map(({ id }) => id))

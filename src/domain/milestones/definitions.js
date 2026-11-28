@@ -1,4 +1,1 @@
-export {
-  milestoneDefinitions,
-  milestoneIds,
-} from '../../../functions/shared/milestones/definitions.js'
+export { milestoneDefinitions } from '../../../functions/shared/milestones/definitions.js'

@@ -498,6 +498,8 @@ export default {
       description: 'Start with estimates. Refine anytime.',
       progress: '{completed} of {total}',
       add: 'Add',
+      addDetails: 'Add details',
+      noneSelected: 'None selected',
       assets: { title: 'Assets', description: 'What you own' },
       liabilities: { title: 'Liabilities', description: 'What you owe' },
       income: { title: 'Income', description: 'What comes in' },
@@ -1718,6 +1720,7 @@ export default {
       modeledMonthlyPaymentsHelp:
         'Includes contractual payments from modeled mortgages. Simple debt balances have no payment schedule and are not included.',
       debtToAssets: 'Debt-to-assets ratio',
+      debtToAssetsUnavailable: 'Add asset values before calculating this ratio.',
       ofTotalAssetValue: 'Of total asset value',
       category: 'Category',
       currentBalance: 'Current balance',

@@ -4,7 +4,6 @@ import {
   moneyForOwnershipScope,
   createEqualMemberOwnership,
   isValidOwnershipAllocation,
-  ownershipScopeId,
 } from '../../../functions/shared/core/ownership.js'
 
 describe('ownership', () => {
@@ -46,17 +45,6 @@ describe('ownership', () => {
         ['a', 'b'],
       ),
     ).toBe(true)
-  })
-
-  it('uses one person for individual ownership and All for shared ownership', () => {
-    expect(ownershipScopeId(createEqualMemberOwnership(['a']))).toBe('a')
-    expect(ownershipScopeId(createEqualMemberOwnership(['a', 'b']))).toBe('all')
-    expect(
-      ownershipScopeId({
-        mode: 'shared',
-        shares: [{ memberId: 'a', percentage: 100 }],
-      }),
-    ).toBe('all')
   })
 
   it.each([

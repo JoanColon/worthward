@@ -103,6 +103,7 @@ import { useWorkspaceStore } from '@/stores/workspace-store'
 import { useWhatIfStore } from '@/stores/what-if-store'
 import { formatCurrency } from '@/utils/formatters'
 import { getWorkspaceMembers } from '@/utils/workspace-members'
+import { financialModuleSetupStatus } from '@/domain/financial/model-categories'
 
 const { t, locale } = useI18n()
 const route = useRoute()
@@ -232,6 +233,12 @@ const dashboardData = computed(() => {
     ),
   }
 })
+const workspaceSetupTotals = computed(() => ({
+  assets: financialYearMonthValue(financialYear.value, currentMonth.value, 'assets'),
+  liabilities: financialYearMonthValue(financialYear.value, currentMonth.value, 'liabilities'),
+  income: financialYear.value ? financialYearAvailableIncomeValue(financialYear.value) : 0,
+  expenses: financialYear.value ? financialYearFlowValue(financialYear.value, 'expenses') : 0,
+}))
 const progressData = computed(() => {
   const start = progressStartPoint.value
   const end = progressEndPoint.value
@@ -393,40 +400,52 @@ const setupItems = computed(() => [
     'assets',
     'inventory_2',
     'dashboard.setup.assets',
-    assetsStore.setupCompleted,
-    dashboardData.value.assets,
+    financialModuleSetupStatus({
+      setupCompleted: assetsStore.setupCompleted,
+      enabledCategories: assetsStore.enabledCategories,
+      total: workspaceSetupTotals.value.assets,
+    }),
+    workspaceSetupTotals.value.assets,
   ),
   setupItem(
     'liabilities',
     'request_quote',
     'dashboard.setup.liabilities',
-    liabilitiesStore.setupCompleted,
-    dashboardData.value.liabilities,
+    financialModuleSetupStatus({
+      setupCompleted: liabilitiesStore.setupCompleted,
+      enabledCategories: liabilitiesStore.enabledCategories,
+      total: workspaceSetupTotals.value.liabilities,
+    }),
+    workspaceSetupTotals.value.liabilities,
   ),
   setupItem(
     'income',
     'payments',
     'dashboard.setup.income',
-    incomeStore.setupCompleted,
-    dashboardData.value.income,
+    financialModuleSetupStatus({
+      setupCompleted: incomeStore.setupCompleted,
+      enabledCategories: incomeStore.enabledCategories,
+      total: workspaceSetupTotals.value.income,
+    }),
+    workspaceSetupTotals.value.income,
   ),
   setupItem(
     'expenses',
     'credit_card',
     'dashboard.setup.expenses',
-    expensesStore.setupCompleted,
-    dashboardData.value.annualCost,
+    financialModuleSetupStatus({
+      setupCompleted: expensesStore.setupCompleted,
+      enabledCategories: expensesStore.enabledCategories,
+      total: workspaceSetupTotals.value.expenses,
+    }),
+    workspaceSetupTotals.value.expenses,
   ),
 ])
 const showSetup = computed(
   () => !setupLoading.value && setupItems.value.some(({ completed }) => !completed),
 )
-const financialPositionReady = computed(
-  () => !setupLoading.value && assetsStore.setupCompleted && liabilitiesStore.setupCompleted,
-)
-const cashFlowReady = computed(
-  () => !setupLoading.value && incomeStore.setupCompleted && expensesStore.setupCompleted,
-)
+const financialPositionReady = computed(() => setupItemsReady(['assets', 'liabilities']))
+const cashFlowReady = computed(() => setupItemsReady(['income', 'expenses']))
 const setupComplete = computed(() => financialPositionReady.value && cashFlowReady.value)
 const quickLinkCandidates = computed(() => [
   ...generalQuickLinks(),
@@ -621,16 +640,24 @@ function itemName(item, subtypeNamespace, fallbackKey) {
   return t(fallbackKey)
 }
 
-function setupItem(key, icon, translationKey, completed, total) {
+function setupItem(key, icon, translationKey, status, total) {
   return {
     key,
     icon,
     title: t(`${translationKey}.title`),
     description: t(`${translationKey}.description`),
-    completed,
+    status,
+    completed: status === 'ready' || status === 'not-applicable',
     total,
     to: { name: key, params: { workspaceId: workspaceId.value } },
   }
+}
+
+function setupItemsReady(keys) {
+  return (
+    !setupLoading.value &&
+    keys.every((key) => setupItems.value.find((item) => item.key === key)?.completed)
+  )
 }
 
 async function loadDashboard(id) {

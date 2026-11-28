@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
 import {
-  calculateCashBufferScenario,
   calculateInvestmentContributionScenario,
   calculateProjectionDelta,
   calculateSafetyCoverageScenario,
@@ -55,36 +54,6 @@ describe('What If calculations', () => {
       simulatedSavingsCapacity: 802,
       simulatedCostOfLife: 2298,
     })
-  })
-
-  it('always compares the one-year emergency-fund milestone on both paths', () => {
-    expect(
-      calculateCashBufferScenario({
-        cash: 5_000,
-        currentMonthlyCost: 2_000,
-        simulatedMonthlyCost: 1_800,
-        currentMonthlySavings: 500,
-        simulatedMonthlySavings: 700,
-      }),
-    ).toMatchObject({
-      targetMonths: 12,
-      currentMonths: 38,
-      simulatedMonths: 24,
-      monthsSooner: 14,
-      achieved: false,
-    })
-  })
-
-  it('keeps the cash scenario visible when the one-year milestone is achieved', () => {
-    expect(
-      calculateCashBufferScenario({
-        cash: 25_000,
-        currentMonthlyCost: 2_000,
-        simulatedMonthlyCost: 2_000,
-        currentMonthlySavings: 500,
-        simulatedMonthlySavings: 700,
-      }),
-    ).toMatchObject({ targetMonths: 12, simulatedMonths: 0, achieved: true })
   })
 
   it('projects monthly investing and compares it with the current path', () => {

@@ -3,6 +3,7 @@ import {
   buildModelCategories,
   buildIncomeModelCategories,
   canonicalCategory,
+  financialModuleSetupStatus,
 } from '../../../src/domain/financial/model-categories'
 
 describe('model category construction', () => {
@@ -45,5 +46,36 @@ describe('model category construction', () => {
       ['a'],
     )
     expect(categories.employment).toEqual({ enabled: true })
+  })
+
+  it('distinguishes incomplete financial setup without adding persisted state', () => {
+    expect(
+      financialModuleSetupStatus({
+        setupCompleted: false,
+        enabledCategories: [],
+        total: 0,
+      }),
+    ).toBe('not-configured')
+    expect(
+      financialModuleSetupStatus({
+        setupCompleted: true,
+        enabledCategories: [],
+        total: 0,
+      }),
+    ).toBe('not-applicable')
+    expect(
+      financialModuleSetupStatus({
+        setupCompleted: true,
+        enabledCategories: ['cash'],
+        total: 0,
+      }),
+    ).toBe('empty')
+    expect(
+      financialModuleSetupStatus({
+        setupCompleted: true,
+        enabledCategories: ['cash'],
+        total: 1,
+      }),
+    ).toBe('ready')
   })
 })

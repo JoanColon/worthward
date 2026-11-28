@@ -5,7 +5,7 @@ import {
 } from '../../functions/features/financial-model/service.js'
 import { calculateMortgageBalanceFromAnchor } from '../../functions/shared/liabilities/mortgage.js'
 import { calculateAnniversaryRealEstateValuation } from '../../functions/shared/assets/real-estate.js'
-import { buildFinancialYear } from '../../functions/features/financial-years/projection.js'
+import { updateFinancialYearProjection } from '../../functions/features/financial-years/projection.js'
 import { currentYear } from '../../functions/features/financial-years/service.js'
 import {
   financialYearMonthValue,
@@ -975,7 +975,10 @@ function createFirestore({
   const writes = []
   let generatedId = 0
   const year = currentYear()
-  const financialYear = buildFinancialYear({ year })
+  const financialYear = updateFinancialYearProjection({}, {
+    year,
+    sections: ['assets', 'liabilities', 'income', 'expenses'],
+  })
 
   function reference(path, kind = 'document') {
     const value = {

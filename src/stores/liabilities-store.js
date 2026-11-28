@@ -124,6 +124,7 @@ export const useLiabilitiesStore = defineStore('liabilities', () => {
       memberIds,
     )
     await saveLiabilitiesSetup(workspaceId, categories)
+    if (!isCurrentWorkspace(workspaceId)) return
     config.value = { setupCompleted: true, categories }
     loadedWorkspaceId.value = workspaceId
   }
@@ -136,25 +137,30 @@ export const useLiabilitiesStore = defineStore('liabilities', () => {
       memberIds,
     )
     await updateLiabilityCategories(workspaceId, categories)
+    if (!isCurrentWorkspace(workspaceId)) return
     config.value = { ...(config.value || {}), setupCompleted: true, categories }
   }
 
   async function updateSimpleCategoryValue(workspaceId, categoryId, value) {
-    replaceCategory(
-      categoryId,
-      await updateSimpleLiabilityValueDocument(workspaceId, categoryId, value),
-    )
+    const category = await updateSimpleLiabilityValueDocument(workspaceId, categoryId, value)
+    if (!isCurrentWorkspace(workspaceId)) return
+    replaceCategory(categoryId, category)
   }
 
   async function updateSimpleCategoryOwnership(workspaceId, categoryId, ownership, memberIds) {
-    replaceCategory(
+    const category = await updateSimpleLiabilityOwnershipDocument(
+      workspaceId,
       categoryId,
-      await updateSimpleLiabilityOwnershipDocument(workspaceId, categoryId, ownership, memberIds),
+      ownership,
+      memberIds,
     )
+    if (!isCurrentWorkspace(workspaceId)) return
+    replaceCategory(categoryId, category)
   }
 
   async function addLiability(workspaceId, liability, memberIds) {
     const result = await createLiabilityDocument(workspaceId, liability, memberIds)
+    if (!isCurrentWorkspace(workspaceId)) return result.liability
     liabilitiesByCategory.value = {
       ...liabilitiesByCategory.value,
       [liability.categoryId]: [...itemsForCategory(liability.categoryId), result.liability],
@@ -173,6 +179,7 @@ export const useLiabilitiesStore = defineStore('liabilities', () => {
       memberIds,
       options,
     )
+    if (!isCurrentWorkspace(workspaceId)) return result.liability
     liabilitiesByCategory.value = {
       ...liabilitiesByCategory.value,
       [liability.categoryId]: itemsForCategory(liability.categoryId).map((candidate) =>
@@ -184,6 +191,7 @@ export const useLiabilitiesStore = defineStore('liabilities', () => {
   async function deleteLiability(workspaceId, liabilityId) {
     if (!findLoadedLiability(liabilityId)) throw new Error('Liability not found')
     const result = await deleteLiabilityDocument(workspaceId, liabilityId)
+    if (!isCurrentWorkspace(workspaceId)) return
     liabilitiesByCategory.value = {
       ...liabilitiesByCategory.value,
       [result.categoryId]: itemsForCategory(result.categoryId).filter(
@@ -194,6 +202,7 @@ export const useLiabilitiesStore = defineStore('liabilities', () => {
 
   async function deleteCategory(workspaceId, categoryId) {
     await deleteLiabilityCategoryDocuments(workspaceId, categoryId)
+    if (!isCurrentWorkspace(workspaceId)) return
     const categories = { ...(config.value?.categories || {}) }
     delete categories[categoryId]
     config.value = { ...config.value, categories }
@@ -223,6 +232,10 @@ export const useLiabilitiesStore = defineStore('liabilities', () => {
     return Object.values(liabilitiesByCategory.value)
       .flat()
       .find((liability) => liability.id === liabilityId)
+  }
+
+  function isCurrentWorkspace(workspaceId) {
+    return loadedWorkspaceId.value === workspaceId
   }
 
   function reset() {

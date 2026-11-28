@@ -3,7 +3,6 @@ import {
   calculateAnnualExpenseScheduleAmount,
   calculateAnnualExpenseAmount,
   buildMonthlyExpenseSchedule,
-  calculateAverageMonthlyExpenseAmount,
   normalizeExpenseClassification,
   normalizeExpenseEstimateModel,
   EXPENSE_FREQUENCIES,
@@ -29,10 +28,6 @@ describe('expense calculations', () => {
     ['irregular', 600, 600],
   ])('normalizes %s estimates to an annual value', (frequency, amount, expected) => {
     expect(calculateAnnualExpenseAmount({ amount, frequency })).toBe(expected)
-  })
-
-  it('derives the monthly equivalent from the annual total', () => {
-    expect(calculateAverageMonthlyExpenseAmount({ amount: 600, frequency: 'yearly' })).toBe(50)
   })
 
   it('generates an editable Jan-Dec schedule from the estimate', () => {

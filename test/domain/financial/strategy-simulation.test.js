@@ -6,7 +6,6 @@ import {
   projectStrategyAssetPath,
   simulateAllocationStrategy,
   calculateStrategyNetWorthProjection,
-  calculateStrategyNetWorthPoints,
   buildStrategyStartingPosition,
 } from '../../../functions/shared/plan/strategy-simulation.js'
 
@@ -179,7 +178,7 @@ describe('strategy simulation', () => {
   })
 
   it('keeps unmodeled debt frozen in net worth projections', () => {
-    const points = calculateStrategyNetWorthPoints({
+    const points = calculateStrategyNetWorthProjection({
       currentNetWorth: 5_000,
       strategy: {
         startingValue: 10_000,
@@ -191,7 +190,7 @@ describe('strategy simulation', () => {
       },
       monthlyDebtContribution: 500,
       debtBalance: 8_000,
-    })
+    }).points
 
     expect(points).toEqual([
       { month: 0, value: 5_000 },
@@ -201,7 +200,7 @@ describe('strategy simulation', () => {
   })
 
   it('projects net worth from modeled property appreciation and mortgage amortization', () => {
-    const points = calculateStrategyNetWorthPoints({
+    const points = calculateStrategyNetWorthProjection({
       currentNetWorth: 110_000,
       currentAssets: 160_000,
       currentLiabilities: 50_000,
@@ -243,7 +242,7 @@ describe('strategy simulation', () => {
         },
       ],
       asOfDate: '2026-01-01',
-    })
+    }).points
 
     expect(points[0]).toEqual({
       month: 0,

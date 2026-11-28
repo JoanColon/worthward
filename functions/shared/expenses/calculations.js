@@ -41,12 +41,6 @@ export function calculateAnnualExpenseAmount(estimate) {
   return normalizeNonNegativeMoneyOrNull(normalized.amount * ANNUAL_MULTIPLIERS[normalized.frequency])
 }
 
-/** Calculates the average monthly amount represented by an expense estimate. */
-export function calculateAverageMonthlyExpenseAmount(estimate) {
-  const annualValue = calculateAnnualExpenseAmount(estimate)
-  return annualValue === null ? null : normalizeNonNegativeMoneyOrNull(annualValue / 12)
-}
-
 /** Expands a recurring estimate into its twelve scheduled calendar-month amounts. */
 export function buildMonthlyExpenseSchedule(estimate) {
   const normalized = normalizeExpenseEstimateModel(estimate)

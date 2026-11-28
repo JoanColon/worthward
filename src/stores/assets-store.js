@@ -122,6 +122,7 @@ export const useAssetsStore = defineStore('assets', () => {
   async function completeSetup(workspaceId, selectedCategoryIds, memberIds) {
     const categories = buildModelCategories(assetCategoryIds, selectedCategoryIds, {}, memberIds)
     await saveAssetsSetup(workspaceId, categories)
+    if (!isCurrentWorkspace(workspaceId)) return
     config.value = { setupCompleted: true, categories }
     loadedWorkspaceId.value = workspaceId
   }
@@ -134,11 +135,13 @@ export const useAssetsStore = defineStore('assets', () => {
       memberIds,
     )
     await updateAssetsCategories(workspaceId, categories)
+    if (!isCurrentWorkspace(workspaceId)) return
     config.value = { ...(config.value || {}), setupCompleted: true, categories }
   }
 
   async function updateSimpleCategoryValue(workspaceId, categoryId, value) {
     const category = await updateSimpleCategoryValueDocument(workspaceId, categoryId, value)
+    if (!isCurrentWorkspace(workspaceId)) return
     replaceCategory(categoryId, category)
   }
 
@@ -149,11 +152,13 @@ export const useAssetsStore = defineStore('assets', () => {
       ownership,
       memberIds,
     )
+    if (!isCurrentWorkspace(workspaceId)) return
     replaceCategory(categoryId, category)
   }
 
   async function addAsset(workspaceId, asset, memberIds) {
     const result = await createAssetDocument(workspaceId, asset, memberIds)
+    if (!isCurrentWorkspace(workspaceId)) return result.asset
     const categoryAssets = itemsForCategory(asset.categoryId)
     assetsByCategory.value = {
       ...assetsByCategory.value,
@@ -168,6 +173,7 @@ export const useAssetsStore = defineStore('assets', () => {
     if (!asset) throw new Error('Asset not found')
 
     const result = await updateAssetDocument(workspaceId, assetId, changes, memberIds)
+    if (!isCurrentWorkspace(workspaceId)) return result.asset
     assetsByCategory.value = {
       ...assetsByCategory.value,
       [asset.categoryId]: itemsForCategory(asset.categoryId).map((candidate) =>
@@ -181,6 +187,7 @@ export const useAssetsStore = defineStore('assets', () => {
     if (!asset) throw new Error('Asset not found')
 
     const result = await deleteAssetDocument(workspaceId, assetId)
+    if (!isCurrentWorkspace(workspaceId)) return
     assetsByCategory.value = {
       ...assetsByCategory.value,
       [result.categoryId]: itemsForCategory(result.categoryId).filter(
@@ -194,6 +201,7 @@ export const useAssetsStore = defineStore('assets', () => {
     if (!asset || asset.categoryId !== 'investment') throw new Error('Investment not found')
 
     const result = await saveInvestmentPortfolioDocument(workspaceId, assetId, spreadsheetUrl)
+    if (!isCurrentWorkspace(workspaceId)) return result
     replaceAsset(assetId, {
       ...asset,
       currentValue: result.currentValue,
@@ -207,6 +215,7 @@ export const useAssetsStore = defineStore('assets', () => {
     if (!asset || asset.categoryId !== 'investment') throw new Error('Investment not found')
 
     await disconnectInvestmentPortfolioDocument(workspaceId, assetId)
+    if (!isCurrentWorkspace(workspaceId)) return
     const detail = { ...(asset.detail || {}) }
     delete detail.portfolio
     replaceAsset(assetId, { ...asset, detail })
@@ -229,6 +238,7 @@ export const useAssetsStore = defineStore('assets', () => {
 
   async function deleteCategory(workspaceId, categoryId) {
     await deleteAssetCategoryDocuments(workspaceId, categoryId)
+    if (!isCurrentWorkspace(workspaceId)) return
 
     const categories = { ...(config.value?.categories || {}) }
     delete categories[categoryId]
@@ -260,6 +270,10 @@ export const useAssetsStore = defineStore('assets', () => {
     return Object.values(assetsByCategory.value)
       .flat()
       .find((asset) => asset.id === assetId)
+  }
+
+  function isCurrentWorkspace(workspaceId) {
+    return loadedWorkspaceId.value === workspaceId
   }
 
   function replaceAsset(assetId, nextAsset) {

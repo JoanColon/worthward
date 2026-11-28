@@ -59,6 +59,46 @@ describe('workspace store', () => {
     expect(store.workspaces).toEqual([])
   })
 
+  it('does not restore a stale workspace response after reset', async () => {
+    let resolveWorkspaces
+    getUserWorkspaces.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveWorkspaces = resolve
+      }),
+    )
+    const store = useWorkspaceStore()
+
+    const pendingLoad = store.load({ uid: 'user-a' })
+    store.reset()
+    resolveWorkspaces([{ id: 'workspace-a', name: 'Private' }])
+    await pendingLoad
+
+    expect(store.ready).toBe(false)
+    expect(store.workspaces).toEqual([])
+    expect(store.activeWorkspaceId).toBeNull()
+  })
+
+  it('keeps the newest user when workspace loads finish out of order', async () => {
+    let resolveFirstUser
+    getUserWorkspaces
+      .mockReturnValueOnce(
+        new Promise((resolve) => {
+          resolveFirstUser = resolve
+        }),
+      )
+      .mockResolvedValueOnce([{ id: 'workspace-b', name: 'Current' }])
+    const store = useWorkspaceStore()
+
+    const firstLoad = store.load({ uid: 'user-a' })
+    await store.load({ uid: 'user-b' })
+    resolveFirstUser([{ id: 'workspace-a', name: 'Stale' }])
+    await firstLoad
+
+    expect(store.workspaces).toEqual([{ id: 'workspace-b', name: 'Current' }])
+    expect(store.ready).toBe(true)
+    expect(store.activeWorkspaceId).toBe('workspace-b')
+  })
+
   it('automatically activates and persists the only workspace', async () => {
     getUserWorkspaces.mockResolvedValueOnce([{ id: 'workspace-a', name: 'Family' }])
     const store = useWorkspaceStore()

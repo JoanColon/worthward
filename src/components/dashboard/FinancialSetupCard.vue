@@ -26,12 +26,17 @@
           <strong>{{ item.title }}</strong>
           <small>{{ item.description }}</small>
         </span>
-        <span v-if="item.completed" class="setup-value">
+        <span v-if="item.status === 'ready'" class="setup-value">
           <q-icon name="check_circle" />
           <strong>{{ formatCurrency(item.total) }}</strong>
         </span>
+        <span v-else-if="item.status === 'not-applicable'" class="setup-value">
+          <q-icon name="check_circle" />
+          <strong>{{ t('dashboard.setup.noneSelected') }}</strong>
+        </span>
         <span v-else class="setup-action">
-          {{ t('dashboard.setup.add') }} <q-icon name="arrow_forward" />
+          {{ item.status === 'empty' ? t('dashboard.setup.addDetails') : t('dashboard.setup.add') }}
+          <q-icon name="arrow_forward" />
         </span>
       </router-link>
     </div>

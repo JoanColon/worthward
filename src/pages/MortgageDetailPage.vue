@@ -100,7 +100,9 @@
                   outlined
                   type="date"
                   lazy-rules
-                  :rules="[(value) => isIsoDate(value) || t('liabilities.mortgage.invalidDate')]"
+                  :rules="[
+                    (value) => isCanonicalDate(value) || t('liabilities.mortgage.invalidDate'),
+                  ]"
                 />
               </div>
               <div class="term-fields">
@@ -356,7 +358,7 @@
                       type="date"
                       lazy-rules
                       :rules="[
-                        (value) => isIsoDate(value) || t('liabilities.mortgage.invalidDate'),
+                        (value) => isCanonicalDate(value) || t('liabilities.mortgage.invalidDate'),
                       ]"
                     />
                   </div>
@@ -514,6 +516,7 @@ import {
   normalizeNonNegativeMoneyOrNull,
   roundMoneyOrZero,
 } from '../../functions/shared/core/money.js'
+import { isCanonicalDate } from '../../functions/shared/core/dates.js'
 import { currentFinancialYear } from '../../functions/shared/positions/annual-projection.js'
 import { useAssetsStore } from '@/stores/assets-store'
 import { useLiabilitiesStore } from '@/stores/liabilities-store'
@@ -880,17 +883,6 @@ function monthPartRule(value) {
   return (
     (Number.isInteger(number) && number >= 0 && number <= 11 && total > 0) ||
     t('liabilities.mortgage.invalidTerm')
-  )
-}
-
-function isIsoDate(value) {
-  const match = String(value || '').match(/^(\d{4})-(\d{2})-(\d{2})$/)
-  if (!match) return false
-  const date = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3])))
-  return (
-    date.getUTCFullYear() === Number(match[1]) &&
-    date.getUTCMonth() === Number(match[2]) - 1 &&
-    date.getUTCDate() === Number(match[3])
   )
 }
 

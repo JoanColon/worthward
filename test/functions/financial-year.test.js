@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
   applyTrackingMonth,
-  buildFinancialYear,
   updateFinancialYearProjection,
 } from '../../functions/features/financial-years/projection.js'
 import {
@@ -12,8 +11,15 @@ import {
 
 const ownership = { mode: 'single', shares: [{ memberId: 'member-a', percentage: 100 }] }
 
+function buildCompleteProjection(options) {
+  return updateFinancialYearProjection({}, {
+    ...options,
+    sections: ['assets', 'liabilities', 'income', 'expenses'],
+  })
+}
+
 function projection() {
-  return buildFinancialYear({
+  return buildCompleteProjection({
     year: 2026,
     config: {
       assets: { categories: { cash: { enabled: true } } },
@@ -103,7 +109,7 @@ describe('server financial year projection', () => {
   })
 
   it('uses simple asset values and ignores obsolete income values in model configuration', () => {
-    const result = buildFinancialYear({
+    const result = buildCompleteProjection({
       year: 2026,
       config: {
         assets: { categories: { cash: { enabled: true, manualValue: 2500, ownership } } },
@@ -123,7 +129,7 @@ describe('server financial year projection', () => {
   })
 
   it('distributes annual income cents without changing the annual amount', () => {
-    const result = buildFinancialYear({
+    const result = buildCompleteProjection({
       year: 2026,
       config: { income: { categories: { employment: { enabled: true } } } },
       income: [
@@ -229,7 +235,7 @@ describe('server financial year projection', () => {
   })
 
   it('stops a linked mortgage expense after payoff without changing its model amount', () => {
-    const result = buildFinancialYear({
+    const result = buildCompleteProjection({
       year: 2026,
       config: {
         expenses: { categories: { housing: { enabled: true } } },

@@ -57,7 +57,8 @@ export function calculateLiabilityOverviewMetrics(financialYear, month, memberId
   const liabilities = financialYearMonthValue(financialYear, month, 'liabilities', memberId)
   const assets = financialYearMonthValue(financialYear, month, 'assets', memberId)
   return {
-    debtToAssetsPercent: calculateFinancialSharePercent(liabilities, assets),
+    debtToAssetsPercent:
+      assets > 0 ? calculateFinancialSharePercent(liabilities, assets) : null,
   }
 }
 

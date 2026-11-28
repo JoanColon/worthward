@@ -49,6 +49,13 @@ export function buildIncomeModelCategories(
   )
 }
 
+/** Distinguishes untouched setup, selected-but-empty modules, populated modules, and explicit none. */
+export function financialModuleSetupStatus({ setupCompleted, enabledCategories, total }) {
+  if (!setupCompleted) return 'not-configured'
+  if (!enabledCategories?.length) return 'not-applicable'
+  return Number(total) > 0 ? 'ready' : 'empty'
+}
+
 export function canonicalCategory(category = {}) {
   const value = { ...category }
   delete value.itemCount

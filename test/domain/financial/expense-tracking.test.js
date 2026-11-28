@@ -12,7 +12,6 @@ import {
   normalizeTrackingMonth,
   resolveExpenseTrackingValue,
   setTrackingDecision,
-  setTrackingDecisions,
   updateTrackedItem,
 } from '../../../src/domain/financial/expense-tracking'
 
@@ -210,17 +209,6 @@ describe('expense tracking month', () => {
     expect(combined.reconciliation.groceries).toEqual({ decision: 'combined' })
     expect(normalizeTrackingMonth(combined, '2026-10').reconciliation.groceries).toEqual({
       decision: 'combined',
-    })
-  })
-
-  it('updates multiple decisions together in the monthly document', () => {
-    let month = addTrackedItem(emptyExpenseTrackingMonth('2026-10'), 'groceries', item('a', 10))
-    month = addTrackedItem(month, 'entertainment', item('b', 20))
-
-    const tracked = setTrackingDecisions(month, ['groceries', 'entertainment'], 'tracked')
-    expect(tracked.reconciliation).toEqual({
-      groceries: { decision: 'tracked' },
-      entertainment: { decision: 'tracked' },
     })
   })
 

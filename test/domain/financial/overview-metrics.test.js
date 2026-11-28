@@ -74,6 +74,29 @@ describe('financial overview metrics', () => {
     })
   })
 
+  it('does not report a zero debt-to-assets ratio when assets are unavailable', () => {
+    expect(calculateLiabilityOverviewMetrics(null, '01')).toEqual({
+      debtToAssetsPercent: null,
+    })
+    expect(
+      calculateLiabilityOverviewMetrics(
+        {
+          months: {
+            '01': {
+              assets: { categories: {} },
+              liabilities: {
+                categories: {
+                  loan: { subcategories: { personal: positionItem(500) } },
+                },
+              },
+            },
+          },
+        },
+        '01',
+      ),
+    ).toEqual({ debtToAssetsPercent: null })
+  })
+
   it('separates available and reinvested income', () => {
     expect(calculateIncomeOverviewMetrics(financialYear)).toEqual({
       available: 800,

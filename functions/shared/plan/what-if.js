@@ -176,34 +176,6 @@ export function calculateSavingsCapacityScenario({
   }
 }
 
-/** Calculates time-to-cash-buffer changes between current and simulated paths. */
-export function calculateCashBufferScenario({
-  cash = 0,
-  currentMonthlyCost = 0,
-  simulatedMonthlyCost = 0,
-  currentMonthlySavings = 0,
-  simulatedMonthlySavings = 0,
-} = {}) {
-  if (!(currentMonthlyCost > 0)) return null
-  const targetMonths = 12
-  const currentTarget = money(currentMonthlyCost * targetMonths)
-  const simulatedTarget = money(simulatedMonthlyCost * targetMonths)
-  const currentMonths = monthsToTarget(cash, currentTarget, currentMonthlySavings)
-  const simulatedMonths = monthsToTarget(cash, simulatedTarget, simulatedMonthlySavings)
-  return {
-    targetMonths,
-    currentTarget,
-    simulatedTarget,
-    currentMonths,
-    simulatedMonths,
-    achieved: cash >= simulatedTarget,
-    monthsSooner:
-      currentMonths == null || simulatedMonths == null ?
-        null :
-        Math.max(0, currentMonths - simulatedMonths),
-  }
-}
-
 /** Compares investment outcomes across the supported planning horizons. */
 export function calculateInvestmentContributionScenario({
   monthlyContribution = 0,
@@ -344,15 +316,6 @@ function breakEvenReduction(currentSavings, discretionary) {
   if (currentSavings >= 0) return 0
   if (!(discretionary > 0)) return null
   return Math.ceil(((-currentSavings / discretionary) * 100 + Number.EPSILON) * 10) / 10
-}
-
-/**
- * Returns contribution months required to reach a target, or null when unreachable.
- */
-function monthsToTarget(current, target, monthlyContribution) {
-  if (current >= target) return 0
-  if (!(monthlyContribution > 0)) return null
-  return Math.ceil((target - current) / monthlyContribution)
 }
 
 /**

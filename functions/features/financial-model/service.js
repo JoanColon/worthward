@@ -8,6 +8,7 @@ import { calculateAnniversaryRealEstateValuation } from '../../shared/assets/rea
 import { normalizeAnnualReturnPercent } from '../../shared/core/rates.js'
 import { roundMoneyOrZero } from '../../shared/core/money.js'
 import { calculateFrenchMortgagePaymentStep } from '../../shared/liabilities/mortgage.js'
+import { isCanonicalDate } from '../../shared/core/dates.js'
 import { workspaceEntitlementIsPro } from '../../shared/billing/entitlements.js'
 import { assertMutableWorkspaceId } from '../../shared/workspaces/demo.js'
 import { currentMonth, currentYear, positionStartMonth } from '../financial-years/service.js'
@@ -496,7 +497,7 @@ function assertCanonicalMortgage(mortgage, currentBalance) {
   ) {
     throw new Error('A valid mortgage term is required')
   }
-  if (!isCanonicalIsoDate(mortgage.startDate)) {
+  if (!isCanonicalDate(mortgage.startDate)) {
     throw new Error('A valid mortgage start date is required')
   }
   if (mortgage.amortizationType !== 'french' || mortgage.fixedRate !== true) {
@@ -510,7 +511,7 @@ function assertCanonicalMortgage(mortgage, currentBalance) {
     'A valid mortgage balance anchor is required',
   )
   if (
-    !isCanonicalIsoDate(mortgage.balanceAnchor.date) ||
+    !isCanonicalDate(mortgage.balanceAnchor.date) ||
     mortgage.balanceAnchor.date < mortgage.startDate ||
     mortgage.balanceAnchor.amount > mortgage.originalPrincipal
   ) {
@@ -555,7 +556,7 @@ function assertCanonicalRealEstate(realEstate, asset) {
   }
   if (realEstate.schemaVersion === 2) {
     assertNonNegativeMoney(realEstate.purchasePrice, 'A valid purchase price is required')
-    if (!isCanonicalIsoDate(realEstate.purchaseDate)) {
+    if (!isCanonicalDate(realEstate.purchaseDate)) {
       throw new Error('A valid purchase date is required')
     }
     calculateAnniversaryRealEstateValuation(realEstate, madridToday())
@@ -573,20 +574,6 @@ function assertCanonicalCash(cash, asset) {
   ) {
     throw new Error('A canonical Cash model is required')
   }
-}
-
-/**
- * Reports whether a value is a canonical ISO calendar date.
- */
-function isCanonicalIsoDate(value) {
-  const match = String(value || '').match(/^(\d{4})-(\d{2})-(\d{2})$/)
-  if (!match) return false
-  const date = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3])))
-  return (
-    date.getUTCFullYear() === Number(match[1]) &&
-    date.getUTCMonth() === Number(match[2]) - 1 &&
-    date.getUTCDate() === Number(match[3])
-  )
 }
 
 /**

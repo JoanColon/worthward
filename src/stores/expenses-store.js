@@ -118,6 +118,7 @@ export const useExpensesStore = defineStore('expenses', () => {
       memberIds,
     )
     await saveExpensesSetup(workspaceId, categories)
+    if (!isCurrentWorkspace(workspaceId)) return
     config.value = { setupCompleted: true, categories }
     loadedWorkspaceId.value = workspaceId
   }
@@ -130,11 +131,13 @@ export const useExpensesStore = defineStore('expenses', () => {
       memberIds,
     )
     await updateExpensesCategories(workspaceId, categories)
+    if (!isCurrentWorkspace(workspaceId)) return
     config.value = { ...(config.value || {}), setupCompleted: true, categories }
   }
 
   async function addExpense(workspaceId, expense, memberIds) {
     const result = await createExpenseDocument(workspaceId, expense, memberIds)
+    if (!isCurrentWorkspace(workspaceId)) return result.expense
     expensesByCategory.value = {
       ...expensesByCategory.value,
       [expense.categoryId]: [...itemsForCategory(expense.categoryId), result.expense],
@@ -147,6 +150,7 @@ export const useExpensesStore = defineStore('expenses', () => {
     const expense = findLoadedExpense(expenseId)
     if (!expense) throw new Error('Expense not found')
     const result = await updateExpenseDocument(workspaceId, expenseId, changes, memberIds)
+    if (!isCurrentWorkspace(workspaceId)) return result.expense
     expensesByCategory.value = {
       ...expensesByCategory.value,
       [expense.categoryId]: itemsForCategory(expense.categoryId).map((candidate) =>
@@ -158,6 +162,7 @@ export const useExpensesStore = defineStore('expenses', () => {
   async function deleteExpense(workspaceId, expenseId) {
     if (!findLoadedExpense(expenseId)) throw new Error('Expense not found')
     const result = await deleteExpenseDocument(workspaceId, expenseId)
+    if (!isCurrentWorkspace(workspaceId)) return
     expensesByCategory.value = {
       ...expensesByCategory.value,
       [result.categoryId]: itemsForCategory(result.categoryId).filter(
@@ -168,6 +173,7 @@ export const useExpensesStore = defineStore('expenses', () => {
 
   async function deleteCategory(workspaceId, categoryId) {
     await deleteExpenseCategoryDocuments(workspaceId, categoryId)
+    if (!isCurrentWorkspace(workspaceId)) return
     const categories = { ...(config.value?.categories || {}) }
     delete categories[categoryId]
     config.value = { ...config.value, categories }
@@ -187,6 +193,10 @@ export const useExpensesStore = defineStore('expenses', () => {
     return Object.values(expensesByCategory.value)
       .flat()
       .find((expense) => expense.id === expenseId)
+  }
+
+  function isCurrentWorkspace(workspaceId) {
+    return loadedWorkspaceId.value === workspaceId
   }
 
   function reset() {
