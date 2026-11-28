@@ -1,5 +1,9 @@
 # Worthward — Product Vision
 
+> **Documento histórico y no normativo.** Conservado como evidencia de la visión y planificación
+> anterior a la reorganización del 28 de noviembre de 2026. Para producto vigente consulta
+> [`../PRODUCT.md`](../PRODUCT.md); para decisiones, [`../DECISIONS.md`](../DECISIONS.md).
+
 ## Document status
 
 This document describes the intended product direction, core domain rules, and

@@ -1,5 +1,8 @@
 # Firestore demo fixture validation
 
+> **Evidencia histórica y no normativa.** Registra la validación realizada el 27 de noviembre de 2026. El contrato vigente está en [`../ACCESS_CONTROL.md`](../ACCESS_CONTROL.md) y el procedimiento
+> operativo en [`../operations/DEMO.md`](../operations/DEMO.md).
+
 Validated on 2026-11-27 against the current repository using the supplied
 `worthward-demo-10y.json` and `README-demo-10y.md`. The referenced generator was not supplied and
 was not recreated. After emulator validation and a user-confirmed deployment, the fixture was

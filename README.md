@@ -1,82 +1,57 @@
 # Worthward
 
-Aplicación web _mobile-first_ para entender la posición financiera de una persona o un hogar: patrimonio neto, coste real de vida, capacidad de ahorro y progreso hacia hitos financieros.
+Worthward es un workspace de finanzas personales, mobile-first, para comprender patrimonio neto,
+Cost of Life, capacidad de ahorro y progreso hacia objetivos financieros. Permite trabajar de forma
+individual o compartir un workspace manteniendo ownership por miembro.
 
-Este README es la puerta de entrada técnica al proyecto y debe mantenerse como fuente primaria para desarrolladores y agentes de código. Describe lo que existe hoy. La visión de producto, las decisiones abiertas y las hojas de ruta de funcionalidades todavía no implementadas viven en [`docs/PRODUCT_VISION.md`](docs/PRODUCT_VISION.md).
+Este README es la entrada al repositorio. Los contratos y decisiones detallados viven en `docs/`;
+el código, Firestore Rules y los tests determinan el comportamiento implementado.
 
-## Estado actual
+## Capacidades actuales
 
-La aplicación permite:
+- autenticación con email/contraseña y Google;
+- workspaces personales y compartidos mediante invitaciones de un solo uso;
+- activos, pasivos, ingresos y gastos con ownership porcentual;
+- proyección anual materializada en `financialYears`;
+- Expense Tracker y reconciliación con el modelo estimado;
+- historial, Progress y milestones;
+- modelos de Cash, inmueble e hipoteca;
+- portfolios sincronizados desde Google Sheets mediante un enlace accesible;
+- What If gratuito y Strategy Pro;
+- aplicación web y Android mediante Capacitor;
+- suscripción anual de Google Play y trial promocional gestionado por Worthward;
+- workspace demo compartido y de solo lectura.
 
-- autenticarse con email/contraseña o Google;
-- crear espacios financieros personales y compartirlos mediante invitaciones de un solo uso;
-- modelar activos, pasivos, ingresos y gastos por categorías;
-- repartir cada importe entre miembros del espacio mediante porcentajes de propiedad;
-- consultar patrimonio neto, coste de vida y capacidad de ahorro para todo el hogar o un miembro;
-- registrar gastos reales por mes y reconciliarlos con el modelo estimado;
-- conservar snapshots financieros anuales e historial de patrimonio;
-- activar seguimiento y confirmar hitos de seguridad, patrimonio, deuda y libertad financiera;
-- modelar hipotecas de amortización francesa y vincularlas con un inmueble y un gasto;
-- proyectar el valor y el equity de inmuebles;
-- modelar una rentabilidad anual opcional para saldos Cash sin alterar sus balances observados;
-- conectar una inversión con Google Sheets para sincronizar posiciones, valoración y dividendos;
-- simular recortes de gasto, ahorro adicional y estrategias guardadas de efectivo, inversión y deuda;
-- comparar la evolución histórica de patrimonio, activos, deuda, ingresos y coste de vida.
+La interfaz está actualmente en inglés. La aplicación usa EUR como moneda inicial, permite cambiar
+el código mostrado y no convierte divisas.
 
-La implementación comparte una SPA JavaScript entre web y una aplicación Android generada con Capacitor. Tanto la aplicación como Functions usan ES Modules. Aunque la visión de producto menciona TypeScript y funcionalidades futuras, no se debe asumir que estén implementados.
+## Stack
 
-## Modelo mental del producto
-
-Un usuario puede pertenecer a uno o más **workspaces**. Cada workspace representa una economía personal o compartida y contiene dos capas de información:
-
-1. **Modelo financiero editable**: configuración de categorías e ítems de activos, pasivos, ingresos y gastos.
-2. **Proyección anual derivada**: documento materializado por año con doce meses desglosados por categoría, ítem y miembro. Los agregados anuales se calculan al leerlo.
-
-El dashboard, Progress, Plan y los hitos leen principalmente la proyección anual. Las pantallas de edición leen además los documentos fuente. Las simulaciones son cálculos puros en el cliente: persisten sus inputs y la configuración de Strategy, nunca los resultados.
-
-Las magnitudes principales son:
-
-```text
-patrimonio neto = activos - pasivos
-capacidad de ahorro anual = ingresos anuales disponibles - coste de vida anual
-meses de seguridad = efectivo / (coste de vida anual / 12)
-años financiados = activos invertibles / coste de vida anual
-```
-
-Los activos y pasivos representan una posición observada en un mes. Los ingresos y gastos son flujos distribuidos por los doce meses. El huso horario financiero es `Europe/Madrid`; el workspace nace en EUR, pero su código de moneda de tres letras se puede cambiar en Setup. La interfaz usa locale `en-IE` y no hace conversión de divisas: cambiar la moneda solo cambia la unidad/formato que se muestra.
-
-## Stack y decisiones activas
-
-| Área           | Implementación                                                 |
-| -------------- | -------------------------------------------------------------- |
-| UI             | Vue 3 Composition API + Quasar 2                               |
-| Estado         | Pinia 4, stores de composición                                 |
-| Navegación     | Vue Router 5, rutas explícitas, modo `hash`                    |
-| Backend        | Firebase Authentication, Cloud Firestore y Cloud Functions v2  |
-| Gráficos       | ECharts 6                                                      |
-| Traducciones   | Vue I18n; por ahora solo `en-US`                               |
-| Estilos        | SCSS, tokens y mixins propios sobre componentes Quasar         |
-| Tests          | Vitest 5 para dominio, stores, servicios y lógica de Functions |
-| Calidad        | ESLint + Prettier                                              |
-| Hosting        | Firebase Hosting desde `dist/spa`                              |
-| Android        | Capacitor 8, API 36, package `com.worthward.app`               |
-| Región backend | `europe-west1`                                                 |
-
-El cliente está conectado directamente al proyecto Firebase `cost-of-life-f23b2` desde [`src/firebase/firebase.js`](src/firebase/firebase.js). No hacen falta variables de entorno para arrancar la SPA. `VITE_APP_URL` es opcional y solo se usa como origen de los enlaces de invitación en una build Capacitor; si no existe, se usa la URL pública de Firebase Hosting.
-
-La identidad comercial es **Worthward**. La SPA centraliza el nombre y la URL operativa en `src/config/brand.js`; la landing mantiene una configuración equivalente e independiente en `landing/src/config/brand.js`. Los dominios previstos `worthward.com` y `app.worthward.com` aún no están activos: producción debe continuar utilizando los sitios actuales de Firebase Hosting hasta completar la configuración descrita en [`docs/BRAND_MIGRATION.md`](docs/BRAND_MIGRATION.md).
+| Área               | Implementación                                          |
+| ------------------ | ------------------------------------------------------- |
+| UI                 | Vue 3 Composition API y Quasar 2                        |
+| Estado             | Pinia 4                                                 |
+| Navegación         | Vue Router, rutas explícitas y modo hash                |
+| Backend            | Firebase Authentication, Firestore y Cloud Functions v2 |
+| Dominio compartido | JavaScript ES Modules en `functions/shared/`            |
+| Gráficos           | ECharts 6                                               |
+| Traducciones       | Vue I18n                                                |
+| Tests              | Vitest y Firebase Rules Unit Testing                    |
+| Calidad            | ESLint y Prettier                                       |
+| Android            | Capacitor 8, API 36, package `com.worthward.app`        |
+| Región Firebase    | `europe-west1`                                          |
 
 ## Puesta en marcha
 
-### Requisitos
+Requisitos principales:
 
-- Node.js `^22.12`, `^24` o `>=26`, tal como exige `package.json` (el runtime desplegado de Functions es Node 24).
-- Yarn Classic para el frontend. Functions conserva su propio `package-lock.json` y se instala con npm.
-- Google Chrome para el flujo local de Google Auth; `yarn dev` intenta abrirlo automáticamente.
-- Java 21, Android Studio y Android SDK 36 para compilar la aplicación Android.
-- Firebase CLI solo para emuladores o despliegue.
+- Node.js `^22.12`, `^24` o `>=26`; Functions se despliega con Node 24;
+- Yarn Classic para la instalación de la SPA y Capacitor;
+- npm para `functions/`;
+- Firebase CLI para emuladores y despliegues;
+- Java 21, Android Studio y Android SDK 36 para Android.
 
-Instala por separado las dependencias del frontend y de Functions:
+Instalación:
 
 ```bash
 yarn install --frozen-lockfile
@@ -85,446 +60,92 @@ npm --prefix functions ci
 yarn dev
 ```
 
-La aplicación se sirve en el host local que muestre Quasar. Firebase Auth debe tener ese origen autorizado. El proyecto no conecta actualmente el SDK cliente a los emuladores, por lo que iniciar el emulador de Functions no redirige por sí solo las llamadas de la SPA: añade explícitamente la conexión a emuladores antes de basar un flujo local en ella.
+La raíz conserva `yarn.lock` y `package-lock.json`. Hasta resolver esa duplicidad, no regeneres
+lockfiles ni cambies de gestor dentro de una tarea no relacionada.
 
-### Comandos
+### Comandos habituales
 
-| Comando                             | Efecto                                                          |
-| ----------------------------------- | --------------------------------------------------------------- |
-| `yarn dev`                          | Arranca Quasar/Vite en desarrollo.                              |
-| `yarn test`                         | Ejecuta toda la suite Vitest una vez.                           |
-| `yarn lint:check`                   | Comprueba formato y lint del frontend y Functions sin corregir. |
-| `yarn lint`                         | Reescribe formato y aplica autofix; es un comando mutante.      |
-| `yarn build`                        | Genera la SPA de producción en `dist/spa`.                      |
-| `yarn android:dev`                  | Abre la app Android con HMR mediante Capacitor.                 |
-| `yarn android:sync`                 | Sincroniza plugins y assets con el proyecto Android.            |
-| `yarn android:build`                | Compila la aplicación Android release mediante Quasar/Gradle.   |
-| `yarn android:bundle`               | Genera el Android App Bundle release para Google Play.          |
-| `npm --prefix functions run serve`  | Arranca únicamente el emulador de Functions.                    |
-| `npm --prefix functions run shell`  | Abre Firebase Functions Shell.                                  |
-| `npm --prefix functions run deploy` | Despliega todas las Functions.                                  |
-| `npm --prefix functions run logs`   | Consulta logs de Functions.                                     |
+| Comando                                       | Efecto                                             |
+| --------------------------------------------- | -------------------------------------------------- |
+| `npm run dev`                                 | Arranca la SPA con Quasar/Vite.                    |
+| `npm test`                                    | Ejecuta la suite Vitest.                           |
+| `npm run test:rules`                          | Ejecuta los tests de Firestore Rules con emulador. |
+| `npm run lint:check`                          | Comprueba Prettier y ESLint sin reescribir.        |
+| `npm run build`                               | Genera la SPA en `dist/spa`.                       |
+| `npm run emulators:start`                     | Arranca Auth, Firestore y Functions locales.       |
+| `npm run emulators:seed-demo -- --input PATH` | Carga un fixture demo en el emulador.              |
+| `npm run dev:emulators`                       | Arranca la SPA conectada a los emuladores.         |
+| `npm run android:dev`                         | Abre Android con HMR mediante Capacitor.           |
+| `npm run android:sync`                        | Sincroniza plugins y assets de Capacitor.          |
+| `npm run android:build`                       | Compila una release Android.                       |
+| `npm run android:bundle`                      | Genera el Android App Bundle.                      |
 
-Comandos habituales de despliegue que requieren Firebase CLI:
+`npm run lint` aplica formato y autofix: es mutante y no debe usarse como verificación.
 
-```bash
-yarn build
-firebase deploy --only hosting
-firebase deploy --only firestore:rules,firestore:indexes
-npm --prefix functions run deploy
-```
+Consulta [desarrollo local](docs/operations/DEVELOPMENT.md),
+[despliegue](docs/operations/DEPLOYMENT.md) y [operación del demo](docs/operations/DEMO.md) para los
+procedimientos completos.
 
-El proyecto Firebase por defecto está fijado en [`.firebaserc`](.firebaserc). Revisa siempre el proyecto activo antes de desplegar.
-
-### Android
-
-El proyecto nativo vive en `src-capacitor/android`, apunta a Android 16/API 36 y está registrado en Firebase como `com.worthward.app`. El login de Google usa el plugin nativo de Firebase Authentication y entrega su credencial al SDK JavaScript, de modo que Firestore y Functions conservan una única sesión.
-
-El proyecto Android incluye `@capgo/native-purchases` y el permiso `com.android.vending.BILLING`. La compra anual se verifica en el servidor y las suscripciones guardadas se reconcilian periódicamente con Google Play; el cliente nunca se concede acceso Pro por sí solo.
-
-La huella del certificado debug está registrada en Firebase. Antes de publicar se debe crear una clave de subida fuera del repositorio, configurar el firmado release y añadir a Firebase las huellas de la clave de subida y de Play App Signing. Los archivos `*.jks` y `*.keystore` están ignorados.
-
-Los enlaces HTTPS `https://cost-of-life-f23b2.web.app/invite/:token` abren directamente la invitación en Android. `public/.well-known/assetlinks.json` contiene por ahora la huella debug; debe añadirse la huella de Play App Signing antes de producción y desplegarse Firebase Hosting.
-
-Gradle requiere JDK 21. Confirma `java -version` antes de compilar y, si existe otra versión activa, selecciona Java 21:
-
-```bash
-export JAVA_HOME=$(/usr/libexec/java_home -v 21)
-yarn android:bundle
-```
-
-### Billing, Free y Pro
-
-El acceso comercial tiene dos proyecciones distintas y deliberadamente pequeñas:
-
-- `users/{uid}/private/subscription` representa la suscripción de la cuenta autenticada. Solo el usuario puede leerla; únicamente Admin SDK puede escribirla.
-- `workspaces/{workspaceId}.entitlement` contiene el tier efectivo del owner (`free` o `pro`) y `expiresAt`. Todos los miembros heredan ese tier para las capacidades del workspace.
-
-El cliente escucha la suscripción privada para presentar el estado de compra, pero nunca se concede Pro a sí mismo. `verifyGooglePlaySubscription` valida el purchase token contra Google Play, comprueba producto y cuenta ofuscada, evita que un token se asigne a dos usuarios, persiste la compra autoritativa y proyecta el entitlement sobre todos los workspaces del owner. `reconcileGooglePlaySubscriptions` repite esa verificación cada seis horas. La expiración también se comprueba al resolver capacidades, de modo que un documento con `tier: 'pro'` caducado no concede acceso.
-
-Las operaciones sobre un workspace existente usan exclusivamente su `entitlement`; no vuelven a leer la suscripción privada del owner ni aplican fallbacks por cuenta. Esto permite que los miembros compartidos hereden el acceso correcto y evita lecturas adicionales. La suscripción de cuenta solo interviene donde corresponde, por ejemplo al comprar/restaurar Pro o al decidir si el usuario puede crear otro workspace.
-
-Capacidades actuales:
-
-| Capacidad                                                 | Free | Pro                      |
-| --------------------------------------------------------- | ---- | ------------------------ |
-| Workspace principal, Plan y “What if you saved more”      | Sí   | Sí                       |
-| Workspaces adicionales                                    | No   | Sí                       |
-| Nuevas invitaciones y miembros compartidos                | No   | Sí; hasta cinco miembros |
-| “Your strategy”                                           | No   | Sí                       |
-| Modelos avanzados de Cash, inmueble, hipoteca y portfolio | No   | Sí                       |
-
-Las rutas premium usan `meta.requiresPro` y `AppLayout` muestra el gate correspondiente. Esa comprobación es UX, no la frontera de seguridad: Firestore Rules protege `whatIfStrategies`, y `mutateFinancialModel` verifica dentro de su transacción cualquier `detail` avanzado o cambio de relaciones. Creación de workspaces e invitaciones se autorizan en sus callables con las mismas capacidades compartidas de `functions/shared/billing/entitlements.js`.
-
-Perder Pro no borra workspaces, miembros ni datos existentes. El workspace pasa a capacidades Free: conserva lectura y escritura ordinaria para sus miembros, pero bloquea nuevas invitaciones, nuevos workspaces, Strategy y mutaciones de modelos avanzados hasta recuperar un entitlement vigente.
-
-## Organización del repositorio
+## Organización
 
 ```text
-worthward/
-├── src/
-│   ├── boot/                    Plugins de arranque de Quasar (i18n)
-│   ├── components/              UI reutilizable agrupada por dominio
-│   ├── config/                  Catálogos canónicos de categorías e hitos
-│   ├── css/                     Estilos globales, tokens y mixins
-│   ├── domain/
-│   │   ├── access/              Resolución cliente de acceso por workspace
-│   │   ├── financial/           Cálculos puros y normalización financiera
-│   │   └── milestones/          Definición y cálculo de hitos
-│   ├── firebase/                Inicialización de los SDK de Firebase
-│   ├── i18n/                    Diccionario de interfaz
-│   ├── layouts/                 Shell autenticado y navegación
-│   ├── pages/                   Una vista por ruta visible
-│   ├── router/                  Tabla de rutas y guard de autenticación
-│   ├── services/
-│   │   ├── auth.js              API de Firebase Auth
-│   │   └── firebase/            Lecturas y escrituras remotas
-│   ├── stores/                  Estado, caché y coordinación con servicios
-│   └── utils/                   Formato y utilidades de miembros
-├── functions/
-│   ├── features/                Features backend con callable/service/trigger/schedule
-│   │   ├── accounts/            Borrado de cuenta
-│   │   ├── billing/             Verificación y reconciliación de Google Play
-│   │   ├── financial-model/     Mutación transaccional del modelo detallado
-│   │   ├── financial-years/     Proyección, triggers y cierre mensual
-│   │   ├── investment-portfolios/ Integración con Google Sheets
-│   │   └── workspaces/          Creación, settings, invitaciones y borrado
-│   ├── shared/                  Motor financiero puro compartido con el frontend
-│   │   ├── billing/             Suscripciones y capacidades provider-independent
-│   │   ├── core/                Dinero, tasas, fechas, meses y ownership
-│   │   ├── assets/              Valoración y proyección de activos
-│   │   ├── liabilities/         Amortización y balances de deuda
-│   │   ├── income/              Normalización y periodicidad de ingresos
-│   │   ├── expenses/            Normalización y periodicidad de gastos
-│   │   ├── milestones/          Contratos puros de progreso de hitos
-│   │   ├── positions/           Posiciones, proyección anual y métricas
-│   │   ├── plan/                What If y simulaciones Strategy
-│   │   └── progress/            Métricas puras de progreso financiero
-│   └── index.js                 Registro de exports de Functions
-├── test/                        Tests Vitest, reflejando las capas del código
-├── docs/PRODUCT_VISION.md       Visión, decisiones y hojas de ruta futuras
-├── references/                 Proyectos externos de consulta: solo lectura
-├── firestore.rules             Autorización y contratos de escritura cliente
-├── firestore.indexes.json      Configuración de índices de Firestore
-├── firebase.json               Functions, Firestore, Hosting y emuladores
-├── quasar.config.js            Build, plugins y servidor de desarrollo
-└── vitest.config.js            Configuración de tests y alias `@`
+src/                    SPA: pages, componentes, stores, servicios y dominio cliente
+functions/features/     Callables, triggers, schedules y servicios privilegiados
+functions/shared/       Motor financiero portable y capacidades compartidas
+test/                   Tests de dominio, stores, servicios, Functions y Rules
+landing/                Landing estática, con configuración y build propios
+src-capacitor/           Wrapper y proyecto Android
+docs/                   Contratos, decisiones, operaciones, planes e historia
+references/             Referencias externas de solo lectura
+firestore.rules          Autorización de clientes
+firestore.indexes.json   Índices Firestore
+firebase.json            Hosting, Functions, Firestore y emuladores
 ```
 
-### Responsabilidad de cada capa
-
-- **Pages** ensamblan una pantalla, leen parámetros de ruta y coordinan stores.
-- **Components** encapsulan formularios, tarjetas y editores reutilizables; no deberían conocer la estructura completa de navegación o Firestore.
-- **Stores** mantienen caché, estados de carga/error y coordinan llamadas a servicios. No son la capa donde deben vivir los cálculos financieros puros.
-- **Services** traducen operaciones de aplicación a Auth, Firestore o callables.
-- **Domain** contiene cálculos deterministas y validaciones sin Vue ni acceso remoto. Es la primera opción para lógica financiera nueva y debe cubrirse con tests.
-- **Config** define IDs estables de categorías, subtipos, valores sugeridos y familias de hitos. Esos IDs forman parte del contrato persistido.
-- **Functions** concentra las operaciones que requieren privilegios, acceso externo, borrado recursivo o atomicidad entre el modelo y su proyección.
-- **Functions/features** agrupa cada capacidad backend. Los archivos `callable.js`, `triggers.js` y `*.schedule.js` son fronteras pequeñas; `service.js` contiene la lógica testeable.
-- **Functions/shared** contiene dominio portable compartido entre navegador y servidor: motor financiero, hitos y capacidades de billing independientes del proveedor. Sus funciones deben ser deterministas y no pueden depender de Firebase, Vue, estado remoto ni IDs de workspace.
-
-Se usa el alias `@` para `src`. Mantén la dirección de dependencias `page/component → store → service → Firebase` y extrae la lógica pura a `domain`.
-
-### Mapa de estado y acceso remoto
-
-| Área              | Store principal                                    | Servicio / fuente                                      |
-| ----------------- | -------------------------------------------------- | ------------------------------------------------------ |
-| Sesión            | estado reactivo en `services/auth.js`              | Firebase Auth: email/password, Google popup y observer |
-| Suscripción       | `entitlements-store.js`                            | listener a `users/{uid}/private/subscription`          |
-| Workspaces        | `workspace-store.js`                               | `workspace.service.js` y `user-preferences.service.js` |
-| Año materializado | `financial-years-store.js`                         | callable de ensure + listener Firestore en tiempo real |
-| Activos y pasivos | `assets-store.js`, `liabilities-store.js`          | config directo; ítems mediante callable de modelo      |
-| Ingresos y gastos | `income-store.js`, `expenses-store.js`             | config directo; ítems mediante callable de modelo      |
-| Gasto real        | `expense-tracking-store.js`                        | documentos mensuales Firestore                         |
-| Hitos             | `milestones-store.js`                              | año/historial + batches directos de achievements       |
-| Plan              | `what-if-store.js`                                 | dos documentos `modelConfig` + cálculos puros cliente  |
-| Scope y accesos   | `financial-scope-store.js`, `quick-links-store.js` | memoria local + preferencias de usuario                |
-
-Los stores de modelo cachean por workspace/categoría y exponen `reset()`. El año financiero es la excepción importante: mantiene una suscripción viva para el workspace/año activo. Antes de crear otro store, revisa el ciclo de carga y limpieza de `AppLayout.vue`.
-
-## Navegación
-
-Las rutas se declaran manualmente en [`src/router/routes.js`](src/router/routes.js); los nombres de archivo no generan rutas. Usa siempre rutas con nombre:
-
-```js
-router.push({ name: 'assets', params: { workspaceId } })
-```
-
-No construyas URLs de workspace a mano. El mapa funcional es:
-
-| Ruta con nombre                                                               | URL                                           | Pantalla                                               |
-| ----------------------------------------------------------------------------- | --------------------------------------------- | ------------------------------------------------------ |
-| `login`                                                                       | `/`                                           | Acceso y registro. Redirige a `home` si ya hay sesión. |
-| `workspace-invite`                                                            | `/invite/:token`                              | Consulta y aceptación de invitación.                   |
-| `home`                                                                        | `/home`                                       | Lista y creación inicial de workspaces.                |
-| `pro`                                                                         | `/home/pro`                                   | Estado y compra de Worthward Pro.                      |
-| `account`                                                                     | `/home/account`                               | Gestión de la cuenta autenticada.                      |
-| `create-workspace`                                                            | `/home/workspaces/new`                        | Creación de workspace.                                 |
-| `workspace-dashboard`                                                         | `/home/workspaces/:workspaceId`               | Resumen financiero e hitos.                            |
-| `setup`                                                                       | `.../setup`                                   | Moneda y nombres de miembros.                          |
-| `assets`, `liabilities`, `income`, `expenses`                                 | `.../:section`                                | Configuración y resumen por categorías.                |
-| `asset-category`, `liability-category`, `income-category`, `expense-category` | `.../:section/:category`                      | Edición detallada de una categoría.                    |
-| `investment-portfolio`                                                        | `.../assets/investment/:assetId/portfolio`    | Portfolio conectado a Google Sheets.                   |
-| `real-estate-model`                                                           | `.../assets/real-estate/:assetId/model`       | Valor, hipoteca y equity del inmueble.                 |
-| `cash-model`                                                                  | `.../assets/cash/:assetId/model`              | Rentabilidad y proyección de un saldo Cash.            |
-| `mortgage-detail`                                                             | `.../liabilities/mortgage/:liabilityId/model` | Modelo y amortización de hipoteca.                     |
-| `expense-tracker`                                                             | `.../expenses/tracker`                        | Registro y reconciliación mensual.                     |
-| `progress`                                                                    | `.../progress`                                | Comparación temporal de métricas financieras.          |
-| `achievements`                                                                | `.../achievements`                            | Redirect a la pestaña Achievements de Progress.        |
-| `plan`                                                                        | `.../plan`                                    | Resumen del plan y acceso a simulaciones.              |
-| `what-if`                                                                     | `.../what-if`                                 | Ajuste de gasto y ahorro adicional.                    |
-| `what-if-strategy`                                                            | `.../what-if/strategy`                        | Escenarios Pro de efectivo, inversión y deuda.         |
-
-`achievements` no mantiene una página independiente: redirige a `progress?tab=achievements`. Todo `/home` exige autenticación. El guard espera a que Firebase resuelva el estado de sesión y conserva un `?redirect=` local seguro al enviar al login. Las rutas `investment-portfolio`, `real-estate-model`, `cash-model`, `mortgage-detail` y `what-if-strategy` declaran `requiresPro`; el layout bloquea su contenido si el workspace no tiene un entitlement Pro vigente.
-
-[`src/layouts/AppLayout.vue`](src/layouts/AppLayout.vue) carga los workspaces y la preferencia de workspace activo, aplica su moneda, asegura/suscribe el año financiero actual, sincroniza portfolios conectados y reinicia stores al cerrar sesión. También revalida hitos al recuperar foco y cambia de periodo financiero sin recargar la app. En móvil, [`src/components/dashboard/MobileBottomNav.vue`](src/components/dashboard/MobileBottomNav.vue) actúa como navegación principal.
-
-## Modelo de datos de Firestore
+La dirección habitual de dependencias es:
 
 ```text
-users/{uid}
-└── private/subscription
-
-workspaces/{workspaceId}
-├── modelConfig/{assets|liabilities|income|expenses|expenseTracking|whatIf|whatIfStrategies}
-├── modelAssets/{itemId}
-├── modelLiabilities/{itemId}
-├── modelIncome/{itemId}
-├── modelExpenses/{itemId}
-├── expenseTracking/{YYYY-MM}
-├── financialYears/{YYYY}
-└── achievements/{milestoneId}
-
-workspaceInvites/{sha256(token)}
-billingPurchases/{sha256(purchaseToken)}
+page/component -> store -> service -> Firebase
+                         \
+                          -> domain/functions/shared (lógica pura)
 ```
 
-### `users/{uid}`
+Las mutaciones del modelo financiero pasan por `mutateFinancialModel` para actualizar de forma
+atómica el documento fuente y su proyección anual. What If, Strategy, achievements y Expense Tracker
+tienen fronteras de persistencia específicas descritas en la documentación técnica.
 
-El documento raíz guarda `activeWorkspaceId` y `quickLinksByWorkspace`. Solo el propio usuario puede leerlo o escribirlo; las reglas limitan las claves y exigen `updatedAt == request.time`. `private/subscription` contiene la proyección de billing que escucha `entitlements-store`: el usuario puede leerla, pero no escribirla. Ninguno de los dos documentos concede por sí mismo acceso a un workspace.
+## Documentación
 
-### `billingPurchases/{purchaseTokenHash}`
+| Necesidad                                    | Referencia                                      |
+| -------------------------------------------- | ----------------------------------------------- |
+| Visión, módulos y política funcional         | [PRODUCT.md](docs/PRODUCT.md)                   |
+| Capas, flujos y mapa del código              | [ARCHITECTURE.md](docs/ARCHITECTURE.md)         |
+| Colecciones, contratos e IDs                 | [DATA_MODEL.md](docs/DATA_MODEL.md)             |
+| Fórmulas e invariantes financieras           | [FINANCIAL_ENGINE.md](docs/FINANCIAL_ENGINE.md) |
+| Autenticación, demo, Free/Pro y autorización | [ACCESS_CONTROL.md](docs/ACCESS_CONTROL.md)     |
+| Tokens y componentes de interfaz             | [DESIGN_SYSTEM.md](docs/DESIGN_SYSTEM.md)       |
+| Estrategia y matriz de validación            | [TESTING.md](docs/TESTING.md)                   |
+| Decisiones aceptadas y pendientes            | [DECISIONS.md](docs/DECISIONS.md)               |
+| Desarrollo, despliegue, demo y marca         | [operations/](docs/operations/)                 |
+| Planes persistentes                          | [plans/README.md](docs/plans/README.md)         |
+| Evidencia no normativa                       | [archive/](docs/archive/)                       |
 
-Registro autoritativo de Google Play administrado exclusivamente por Functions. El ID es el SHA-256 del purchase token; el token completo se conserva solo para poder reconciliar la compra con Google Play. Guarda usuario, producto, base plan, estado del proveedor, expiración, acknowledgement y relaciones de reemplazo. Firestore Rules no permiten acceso cliente.
+`functions/shared/README.md` documenta el contrato local del motor portable y `landing/README.md` el
+subproyecto de la landing.
 
-### `workspaces/{workspaceId}`
+## Contribución
 
-Documento raíz con `name`, `type`, `currency`, `createdBy`, timestamps, `isPrimaryWorkspace`, `milestoneTracking`, `memberIds`, un mapa `members` y la proyección obligatoria `entitlement`. Cada miembro tiene rol `owner` o `member`; solo el owner puede borrar el workspace. `memberIds` existe además del mapa para consultas `array-contains` y comprobaciones de reglas. `entitlement` contiene únicamente el tier efectivo del owner y su caducidad, por lo que la UI resuelve el acceso del workspace sin otra llamada. La configuración de moneda y nombres pasa por `updateWorkspaceSettings`, que exige un código de tres letras y un nombre no vacío para cada miembro.
+Antes de modificar una zona, consulta [AGENTS.md](AGENTS.md) y solo los documentos relacionados con
+la tarea. Mantén los cambios dentro del alcance, preserva datos e identificadores existentes y
+actualiza la documentación canónica si cambia un contrato.
 
-El primer workspace de la cuenta se marca como principal y también está permitido en Free; crear otro exige Pro. Una invitación dura siete días, tiene rol `member`, es de un solo uso y guarda únicamente el hash SHA-256 del token como ID. Crear y aceptar invitaciones requiere que el workspace continúe siendo Pro. `workspaceInvites` solo es accesible desde Functions.
-
-### `modelConfig/{section}`
-
-Guarda `setupCompleted` y el mapa de categorías activas. En Expenses e Income, las subcategorías se derivan de los items guardados en `modelExpenses` y `modelIncome`; los catálogos de sugerencias no se persisten ni crean filas automáticamente. Cada item usa `categoryId` y `subcategoryId`, mientras que su `itemId` estable es el ID del documento. `expenseTracking` guarda las subcategorías habilitadas.
-
-La planificación se divide en dos documentos que el cliente lee y escribe directamente con permisos distintos:
-
-- `whatIf`: reducción discrecional y ahorro extra, disponible para cualquier miembro también en Free;
-- `whatIfStrategies`: hasta diez escenarios, el activo y su configuración (asignación cash/invest/debt, mix y rentabilidades, inflación, horizonte, colchón objetivo y deuda elegida); Firestore Rules exige un entitlement Pro vigente para escribirlo.
-
-No se guardan resultados calculados. Las cards de Plan reutilizan esos inputs persistidos y las proyecciones se recomputan siempre en el cliente con `functions/shared/plan/what-if.js` y `strategy-simulation.js`. Guardar una estrategia no modifica ni elimina el documento Free `whatIf`.
-
-Cambiar un documento de configuración de `assets`, `liabilities`, `income` o `expenses` dispara `onModelConfigWritten`, que reconstruye esa sección del año actual.
-
-### Colecciones `model*`
-
-Son la fuente editable de ítems detallados. Todos los ítems contienen categoría, ownership y campos de auditoría. Sus valores canónicos dependen de la sección:
-
-- activos: `currentValue`, `valueSource: 'manual'`, detalle y, si aplica, relación con hipoteca;
-- pasivos: `balance` y, para hipotecas, el modelo dentro de `detail.mortgage`;
-- ingresos: subtipo, porcentaje disponible, cálculo (`annual_salary`, `monthly_schedule`, `recurring` o `one_time`) y vínculo opcional de dividendos con un portfolio;
-- gastos: `categoryId`, `subcategoryId`, nombre del ítem, notas, estimación/frecuencia, importes mensuales, variabilidad, recurrencia y necesidad.
-
-Cada gasto detallado tiene un ID estable generado por Firestore. Varias entradas pueden compartir `subcategoryId`, como Netflix, Spotify y ChatGPT dentro de Subscriptions.
-
-No escribas directamente en estas colecciones desde el cliente. Las reglas permiten leerlas, pero las mutaciones pasan por `mutateFinancialModel` para que el ítem y `financialYears/{añoActual}` cambien en la misma transacción.
-
-#### Relaciones y modelos especiales
-
-- Una hipoteca solo soporta tipo francés, interés fijo y cuota capaz de cubrir los intereses. Su esquema actual incluye principal original, saldo/ancla de saldo, tasa, cuota, plazo y fecha inicial.
-- La relación hipoteca–inmueble y la relación hipoteca–gasto se gestionan desde la mutación de la hipoteca, no editando los otros documentos. Son uno-a-uno. El gasto enlazado debe ser `housing/mortgage_rent`; su estimación mensual se mantiene alineada con la cuota y deja de proyectarse al terminar la deuda.
-- Un modelo inmobiliario vive en `modelAssets/{id}.detail.realEstate`: precio y fecha de compra, apreciación anual y schema version. Su valoración efectiva se actualiza al abrir/asegurar el año y antes del cierre mensual.
-- Un modelo Cash opcional vive en `modelAssets/{id}.detail.cash`: schema version y rentabilidad anual. Solo proyecta valores futuros; `currentValue` continúa siendo el saldo observado y nunca se actualiza desde el modelo.
-- Un portfolio vive embebido en `modelAssets/{id}.detail.portfolio`; no existe una colección de portfolios. Puede enlazarse como máximo a una fuente `investments/dividends`. Al sincronizar, la Function actualiza `currentValue`, el ingreso anual por dividendos y las secciones afectadas del año financiero.
-
-Los borrados limpian relaciones: borrar una inversión desvincula su ingreso; borrar una hipoteca desvincula inmueble y gasto; borrar gastos retira sus IDs de tracking. `deleteCategory` hace todo dentro del límite transaccional de 500 escrituras y falla si lo excede.
-
-### Ownership
-
-[`functions/shared/core/ownership.js`](functions/shared/core/ownership.js) define el contrato. Una asignación referencia exclusivamente miembros del workspace y sus porcentajes deben sumar 100. Los cálculos pueden pedir el valor agregado (`all`) o aplicar las participaciones de un miembro concreto.
-
-### `expenseTracking/{YYYY-MM}`
-
-Contiene gastos reales agrupados por `subcategoryId` y decisiones de reconciliación. Cada movimiento conserva su propio ID, ownership y referencia mediante `itemId` a un ítem de Expenses de la misma subcategoría. La decisión es `model`, `tracked` o `combined`: usa la estimación, la sustituye por lo registrado o suma ambos valores. Al escribir un mes, `onExpenseTrackingWritten` actualiza ese mes dentro del snapshot anual correspondiente.
-
-### `financialYears/{YYYY}`
-
-Es una vista materializada de solo lectura para clientes y la única fuente del histórico financiero mensual. `schemaVersion: 1` contiene `months`, `projectionState`, estado y metadatos. Cada mes descompone las cuatro secciones por categoría, subcategoría, ítem y `memberValues`. El año actual se crea bajo demanda con `ensureFinancialYear`; ese callable solo acepta el año actual. Las escrituras de configuración, modelo o tracking mantienen la proyección al día.
-
-Los años anteriores se leen como historial y no se regeneran automáticamente desde la interfaz. Activos y pasivos conservan su último valor observado hacia los meses siguientes; ingresos y gastos se proyectan como flujos mensuales. Un mes cerrado no se reescribe al reproyectar. Cada posición mensual puede guardar `positionStatus`, `positionAsOf` y `positionCalculatedAt`. La función programada cierra el mes anterior usando la valoración del último día y sincroniza antes los portfolios. Los gráficos ignoran meses anteriores a la primera posición observada y meses futuros proyectados.
-
-### `achievements/{milestoneId}`
-
-El progreso se deriva del año financiero, posiciones actuales e historial. Al activar por primera vez el seguimiento, el cliente guarda en un batch los hitos ya cumplidos como `achieved` y activa `workspace.milestoneTracking`. Después, una nueva calificación se guarda como `pending` y se convierte en `achieved` si continúa cumpliéndose tras 24 horas. Si el valor vuelve a quedar por debajo del objetivo, el documento desaparece independientemente de su estado. El servicio cliente calcula el diff y no hace commit si no hay cambios; Firestore Rules limita estas escrituras a miembros de un workspace activo. Los hitos son datos personales editables, no acreditaciones externas.
-
-### Portfolio conectado a Google Sheets
-
-La hoja se lee únicamente desde Functions mediante endpoints CSV de Google. Debe ser accesible por enlace y contener pestañas exactas `Portfolio` y `Summary`. El parser y sus columnas/aliases canónicos viven en `functions/features/investment-portfolios/schema.js`; si cambia la plantilla, cambia primero ese contrato y sus tests.
-
-La caché schema v2 dura 15 minutos. Guarda holdings, resumen, warnings, tiempos y estado de sincronización dentro del activo; tiene límites de tamaño y conserva el último error. Se sincroniza al abrir el workspace, manualmente y antes del cierre mensual. No hay OAuth de Google ni conversión entre la `baseCurrency` de la hoja y la moneda del workspace.
-
-La sincronización admite resultados parciales. Los errores de fórmula de Sheets nunca se convierten en cero: los campos válidos se importan, los opcionales inválidos generan warnings y, cuando existe una caché anterior identificable por ticker, se conserva el último valor válido. Un fallo de dividendos no bloquea la valoración ni actualiza el ingreso enlazado; un valor total inválido solo puede reutilizar el anterior y bloquea una conexión nueva si aún no existe una valoración fiable.
-
-## Flujo de datos y escrituras
-
-```text
-Vista → Store → Service
-                  ├─ lectura Firestore → estado Pinia → Vista
-                  ├─ config/tracking Firestore → trigger → financialYears
-                  ├─ What If/Strategy/achievements → Firestore directo
-                  └─ callable mutateFinancialModel
-                         └─ transacción: model* + financialYears
-
-Google Sheet → callable de portfolio → modelAssets/modelIncome → financialYears
-```
-
-Los caminos de escritura no son intercambiables:
-
-1. **Configuración simple**: el cliente escribe `modelConfig`; un trigger reconstruye la sección afectada.
-2. **Ítems detallados**: el cliente llama `mutateFinancialModel`; la Function valida membresía y actualiza fuente y proyección atómicamente.
-3. **Tracking mensual**: el cliente actualiza `expenseTracking/{period}`; un trigger integra el mes en `financialYears/{year}`.
-4. **Preferencias personales**: el cliente escribe `users/{uid}`.
-5. **What If e hitos**: el cliente escribe directamente; Rules controla membresía, workspace activo y, solo para Strategy, Pro. Los cálculos y diffs viven en el cliente.
-6. **Workspace, membresía, billing y portfolio**: usan callables por sus privilegios, límites comerciales, relaciones, verificación externa o acceso a Google Sheets.
-
-Antes de mutar ítems detallados debe existir el documento del año actual. [`src/stores/financial-years-store.js`](src/stores/financial-years-store.js) se encarga de solicitarlo y mantener una suscripción en tiempo real para el workspace activo.
-
-## Cloud Functions
-
-| Export                              | Tipo              | Responsabilidad                                                                       |
-| ----------------------------------- | ----------------- | ------------------------------------------------------------------------------------- |
-| `ensureFinancialYear`               | Callable          | Crea/refresca el año actual, modelos con valor temporal y posiciones.                 |
-| `mutateFinancialModel`              | Callable          | Muta ítems/categorías y proyección atómicamente; exige Pro para detalles avanzados.   |
-| `onModelConfigWritten`              | Firestore trigger | Reproyecta assets, liabilities, income o expenses tras cambiar su configuración.      |
-| `onExpenseTrackingWritten`          | Firestore trigger | Inserta el mes registrado en la proyección anual.                                     |
-| `closeMonthlyFinancialPositions`    | Scheduler         | A las 00:05 del día 1 (Madrid), sincroniza portfolios y cierra el mes anterior.       |
-| `updateInvestmentPortfolio`         | Callable          | Conecta, cambia o desconecta el Google Sheet de una inversión.                        |
-| `readInvestmentPortfolioSheet`      | Callable          | Refresca una inversión conectada respetando caché o `force`.                          |
-| `syncWorkspaceInvestmentPortfolios` | Callable          | Sincroniza todos los portfolios conectados de un workspace.                           |
-| `verifyGooglePlaySubscription`      | Callable          | Verifica la compra y actualiza atómicamente suscripción y entitlements de workspaces. |
-| `reconcileGooglePlaySubscriptions`  | Scheduler         | Revalida cada seis horas el purchase token autoritativo de cada suscripción.          |
-| `createWorkspace`                   | Callable          | Crea el workspace y aplica atómicamente el límite Free/Pro.                           |
-| `createWorkspaceInvite`             | Callable          | Permite al owner Pro crear una invitación de siete días.                              |
-| `getWorkspaceInvite`                | Callable          | Valida token/estado y devuelve metadatos seguros; no exige login para consultar.      |
-| `acceptWorkspaceInvite`             | Callable          | Añade un miembro si el workspace sigue siendo Pro y consume la invitación.            |
-| `updateWorkspaceSettings`           | Callable          | Valida moneda y nombres y actualiza el workspace sin abrir cambios de membresía.      |
-| `deleteWorkspace`                   | Callable          | Verifica ownership, marca borrado y elimina workspace e invitaciones recursivamente.  |
-| `deleteAccount`                     | Callable          | Elimina cuenta, datos privados, memberships y workspaces personales.                  |
-
-Todas se despliegan en `europe-west1`; las opciones globales limitan cada export a diez instancias salvo override local. `functions/index.js` inicializa Admin SDK una vez y expone únicamente los entry points de la tabla. What If, Strategy y achievements no tienen callables. La lógica transaccional testeable vive junto a su feature; los wrappers de entrada deben permanecer pequeños.
-
-## Seguridad
-
-[`firestore.rules`](firestore.rules) aplica denegación por defecto:
-
-- solo miembros autenticados leen un workspace y sus subcolecciones permitidas;
-- cada usuario solo accede a sus propias preferencias y puede leer, pero no escribir, su suscripción privada;
-- la creación, membresía, settings y eliminación de workspaces pasan por Admin SDK; desde el cliente el documento raíz solo permite cambiar `milestoneTracking` y `updatedAt`;
-- los ítems `model*` y los años financieros no admiten escritura cliente;
-- la configuración financiera simple y el tracking permiten escritura a miembros de un workspace activo;
-- `whatIf` es escribible por miembros también en Free; `whatIfStrategies` añade la comprobación de entitlement Pro vigente;
-- achievements permite escritura a miembros de un workspace activo; el cliente gestiona sus transiciones y timestamps;
-- invitaciones no tienen acceso directo desde el cliente;
-- `billingPurchases` queda cubierto por la denegación global y solo lo usa Admin SDK;
-- el borrado de workspaces solo ocurre mediante Admin SDK.
-
-Las reglas priorizan autorización: quién puede acceder, si el workspace sigue activo y las fronteras críticas de Pro. No duplican todo el esquema ni la lógica financiera. La consistencia entre documentos, los secretos de billing, las relaciones del modelo y las operaciones privilegiadas continúan en Functions. No conviertas una restricción crítica en una responsabilidad exclusiva de la UI.
-
-`firestore.indexes.json` no declara índices compuestos. Desactiva índices para los mapas grandes `financialYears.months` y `financialYears.totals`; si una consulta nueva exige índice, añádelo explícitamente y despliega el archivo junto con las reglas.
-
-## Dónde implementar cada cambio
-
-| Si necesitas cambiar…              | Empieza por…                                                                                                                    |
-| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| Rutas o acceso autenticado         | `src/router/routes.js`, `src/router/index.js`                                                                                   |
-| Navegación y ciclo del workspace   | `src/layouts/AppLayout.vue`                                                                                                     |
-| Catálogos o IDs financieros        | `src/config/*-categories.js`                                                                                                    |
-| Fórmulas financieras               | `functions/shared/<dominio>/` y sus tests                                                                                       |
-| Definición/cálculo de hitos        | `src/domain/milestones/`, `src/config/milestone-families.js`                                                                    |
-| Estado y caché de una sección      | `src/stores/<sección>-store.js`                                                                                                 |
-| Acceso cliente a Firebase          | `src/services/firebase/`                                                                                                        |
-| Mutaciones atómicas del modelo     | `functions/features/financial-model/`                                                                                           |
-| Construcción del snapshot anual    | `functions/features/financial-years/projection.js`, `service.js`                                                                |
-| Callable o endpoint HTTP           | `functions/features/<funcionalidad>/callable.js`                                                                                |
-| Trigger de Firestore               | `functions/features/financial-years/triggers.js`                                                                                |
-| Tarea programada                   | `functions/features/financial-years/close-month.schedule.js`                                                                    |
-| Hipoteca o valoración inmobiliaria | `src/domain/financial/mortgage-amortization.js`, `real-estate-*`; materialización en `financial-years/position-calculations.js` |
-| Simulación y escenarios            | `functions/shared/plan/what-if.js`, `strategy-simulation.js`; adaptación en `src/domain/financial/calculation-context.js`       |
-| Persistencia de What If/Strategy   | `src/stores/what-if-store.js`, `src/services/firebase/what-if.service.js` y `firestore.rules`                                   |
-| Billing y capacidades Free/Pro     | `functions/shared/billing/entitlements.js`, `functions/features/billing/`, `src/stores/entitlements-store.js`                   |
-| Persistencia y sync de hitos       | `src/services/firebase/achievements.service.js`, `src/stores/milestones-store.js` y `firestore.rules`                           |
-| Portfolio de Google Sheets         | `functions/features/investment-portfolios/`                                                                                     |
-| Membresía, settings o borrado      | `functions/features/workspaces/`                                                                                                |
-| Permisos                           | `firestore.rules` y tests de la operación afectada                                                                              |
-| Texto visible                      | `src/i18n/en-US/index.js`                                                                                                       |
-| Diseño global                      | `src/css/foundation/_tokens.scss`, `src/css/_mixins.scss`, `src/css/app.scss`                                                   |
-| Convenciones del sistema de UI     | `docs/ui-design-system.md`                                                                                                      |
-
-Las categorías e IDs de hitos son persistidos. Renombrarlos no es un cambio cosmético: requiere compatibilidad o migración de datos.
-
-## Convenciones de desarrollo
-
-- Usa Composition API con `<script setup>` y JavaScript, que es el estándar actual del repositorio.
-- Mantén cálculos financieros deterministas en `functions/shared/` y sin dependencias de Vue/Firebase.
-- Normaliza y valida datos antes de persistir. No confíes en que un formulario sea el único llamador.
-- Añade estados explícitos de carga, error y vacío en páginas que lean datos remotos.
-- Usa rutas con nombre y el alias `@`; no acoples componentes a URLs literales.
-- Todo texto visible debe pasar por Vue I18n, aunque solo exista `en-US` hoy.
-- Reutiliza tokens CSS y mixins antes de introducir valores globales nuevos.
-- Al cerrar sesión o cambiar de usuario, cualquier store nuevo con estado por workspace debe integrarse en el reseteo de `AppLayout`.
-- No escribas `model*`, `financialYears`, relaciones de hipoteca o caché de portfolio desde la UI: usa el servicio/callable propietario.
-- Cada regla financiera debe tener una única implementación en `functions/shared/`; `src/domain` y `functions/domain` conservan solo adaptadores que traduzcan datos de aplicación u orquesten varias reglas.
-- Importa directamente módulos granulares de `functions/shared/<dominio>/`; no añadas facades ni barrels para reenviar sus exports.
-- Si una mutación afecta métricas del dashboard, comprueba también la proyección anual y los hitos.
-- Añade tests junto a la capa modificada. La suite usa archivos `test/**/*.test.js`.
-- Ejecuta `yarn lint:check`, no `yarn lint`, cuando solo quieras verificar sin reescribir archivos.
-
-## Referencias: solo lectura
-
-Todo lo que haya bajo `references/` pertenece a otros proyectos copiados para consultar patrones. Se puede leer para entender arquitectura, Firebase, UI o cálculos, pero nunca se debe:
-
-- editar, borrar, renombrar, mover o formatear contenido de `references/`;
-- ejecutar migraciones o actualizaciones de dependencias dentro de esos proyectos;
-- importar código de `references/` desde la aplicación activa;
-- incluir cambios destinados a esos proyectos en un commit de Worthward.
-
-Si una idea resulta útil, reimplémentala dentro de `src/` o `functions/` con los contratos de este proyecto.
-
-## Checklist antes de entregar un cambio
+Como validación transversal de referencia:
 
 ```bash
-yarn test
-yarn lint:check
-yarn build
+npm run lint:check
+npm test
+npm run build
 ```
 
-Además:
-
-- prueba el flujo afectado con un workspace personal y, si interviene ownership, con uno compartido;
-- comprueba permisos y reglas si cambia una ruta de escritura;
-- verifica que el año financiero derivado se actualiza, no solo el documento fuente;
-- revisa responsive móvil si se modifica una página o navegación;
-- actualiza este README en el mismo cambio si varían arquitectura, comandos, esquema, rutas o invariantes.
-
-## Límites y asuntos pendientes conocidos
-
-- La interfaz está únicamente en inglés. La moneda es configurable, pero no existe conversión de importes ni validación contra una lista ISO cerrada.
-- No hay conexión cliente configurada a Auth/Firestore/Functions Emulator.
-- No hay una estrategia offline implementada; Firestore usa su comportamiento web por defecto.
-- La SPA web usa modo hash. Android/Capacitor está configurado y tiene scripts propios; Electron, PWA y Cordova no forman parte del producto activo.
-- `docs/PRODUCT_VISION.md` contiene visión y decisiones futuras; el estado implementado de Android, billing y Free/Pro lo determina el código y este README.
-- El historial depende de snapshots `financialYears`; no se reconstruyen años cerrados desde la UI.
-- La integración de portfolios depende de una hoja accesible por enlace, de nombres/columnas concretos y de Google GViz; no usa OAuth ni detecta automáticamente cambios de plantilla.
-- No hay tests de Firestore Rules ni de integración contra emuladores en la suite actual; los tests existentes ejercitan dominio y servicios con dobles de Firestore.
-
-Cuando el código y este documento diverjan, corrige ambos en el mismo trabajo: el objetivo es que este README siga siendo el mapa fiable desde el que una persona o un agente pueda continuar el desarrollo.
+Añade tests de Rules, emuladores y comprobaciones manuales responsive cuando el cambio lo requiera.
+No hagas deploys ni operaciones sobre producción sin autorización explícita.

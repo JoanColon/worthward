@@ -26,7 +26,7 @@ Se mantienen sin cambios:
 - Android application ID, namespace y esquema `com.worthward.app`;
 - identificador de Electron reservado `cost-of-life`;
 - host de App Links `cost-of-life-f23b2.web.app`;
-- producto de suscripción previsto `worthward_pro`;
+- producto de suscripción `worthward_pro` y base plan `annual`;
 - nombres de Functions, rutas, colecciones, campos e IDs persistidos.
 
 ## Acciones manuales pendientes
@@ -36,7 +36,7 @@ Se mantienen sin cambios:
 3. Tras comprobar propagación TLS y Auth, cambiar `VITE_APP_URL` a `https://app.worthward.com` en los entornos de producción correspondientes.
 4. Añadir `app.worthward.com` como host adicional de App Links en Android, publicar su `/.well-known/assetlinks.json` y conservar el host Firebase durante la transición.
 5. Revisar los enlaces de login/registro de la landing frente al router `hash` de la SPA antes de activar los dominios nuevos.
-6. Actualizar el nombre visible y la ficha comercial en Google Play. El package definitivo es `com.worthward.app` mientras la aplicación todavía no se haya publicado con otra identidad.
+6. Actualizar el nombre visible y la ficha comercial en Google Play. El package estable es `com.worthward.app` y no debe cambiarse por una actualización de marca.
 7. Si se incorpora iOS, configurar `CFBundleDisplayName` como `Worthward` sin cambiar el Bundle Identifier registrado.
 8. Sustituir los favicon, iconos de launcher y splash genéricos de Quasar/Capacitor por recursos oficiales de Worthward. No se generaron recursos ficticios durante esta migración.
 9. Sustituir `hello@example.com` en la landing por la dirección oficial de soporte.
