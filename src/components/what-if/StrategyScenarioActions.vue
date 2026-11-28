@@ -16,7 +16,7 @@
       outline
       no-caps
       icon="add"
-      class="scenario-secondary-action"
+      class="scenario-secondary-action scenario-add-action"
       :label="t('whatIf.strategy.newScenario')"
       :disable="scenarioCount >= 10"
       @click="emit('add')"
@@ -68,6 +68,11 @@ const { t } = useI18n()
 
 .scenario-select {
   width: 13rem;
+}
+
+.scenario-select :deep(.q-field__control),
+.scenario-add-action {
+  background: var(--color-surface);
 }
 
 @media (max-width: 760px) {

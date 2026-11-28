@@ -1,16 +1,28 @@
 <template>
-  <article class="allocation-card">
+  <article :class="['allocation-card', tone, { 'has-actions': $slots.actions }]">
     <span :class="['allocation-icon', tone]"><q-icon :name="icon" /></span>
     <div class="allocation-identity">
-      <strong>{{ title }}</strong>
-      <small>{{ description }}</small>
+      <span class="allocation-title-line">
+        <strong class="app-row-title">{{ title }}</strong>
+        <button
+          v-if="expandable"
+          type="button"
+          class="allocation-expand"
+          :aria-expanded="expanded"
+          :aria-label="title"
+          @click="emit('toggle')"
+        >
+          <q-icon :name="expanded ? 'expand_less' : 'expand_more'" />
+        </button>
+      </span>
+      <small class="app-caption">{{ description }}</small>
       <span class="allocation-track" aria-hidden="true">
         <i :class="tone" :style="{ width: `${percent}%` }" />
       </span>
     </div>
     <button type="button" class="allocation-values" :aria-label="`Edit ${title} allocation`">
-      <strong>{{ percent }}%</strong>
-      <small>{{ formatCurrency(amount) }} / month</small>
+      <strong class="app-row-value">{{ percent }}%</strong>
+      <small class="app-caption">{{ formatCurrency(amount) }} / month</small>
       <q-popup-edit
         :model-value="percent"
         buttons
@@ -39,6 +51,12 @@
         </template>
       </q-popup-edit>
     </button>
+    <div v-if="$slots.actions" class="allocation-actions">
+      <slot name="actions" />
+    </div>
+    <div v-if="$slots.default && (!expandable || expanded)" class="allocation-details">
+      <slot />
+    </div>
   </article>
 </template>
 
@@ -53,9 +71,11 @@ defineProps({
   description: { type: String, required: true },
   percent: { type: Number, required: true },
   amount: { type: Number, required: true },
+  expandable: Boolean,
+  expanded: Boolean,
 })
 
-const emit = defineEmits(['change'])
+const emit = defineEmits(['change', 'toggle'])
 const { t } = useI18n()
 
 function save(value) {
@@ -65,6 +85,8 @@ function save(value) {
 
 <style scoped lang="scss">
 .allocation-card {
+  --allocation-color: var(--color-primary);
+  --allocation-soft: var(--color-blue-soft);
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
@@ -75,28 +97,46 @@ function save(value) {
   background: white;
 }
 
+.allocation-card.has-actions {
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+}
+
+.allocation-card.cash,
+.allocation-card.fixed-income {
+  --allocation-color: var(--color-success-dark);
+  --allocation-soft: var(--color-green-soft);
+}
+
+.allocation-card.debt,
+.allocation-card.real-estate {
+  --allocation-color: var(--color-warning);
+  --allocation-soft: var(--color-warning-soft);
+}
+
+.allocation-card.crypto {
+  --allocation-color: var(--color-purple);
+  --allocation-soft: var(--color-purple-soft);
+}
+
+.allocation-card.business {
+  --allocation-color: var(--color-success);
+  --allocation-soft: var(--color-green-soft);
+}
+
+.allocation-card.other {
+  --allocation-color: var(--color-copy);
+  --allocation-soft: var(--color-surface-muted);
+}
+
 .allocation-icon {
   display: grid;
   place-items: center;
   width: 2.5rem;
   height: 2.5rem;
   border-radius: 50%;
+  background: var(--allocation-soft);
+  color: var(--allocation-color);
   font-size: 1.3rem;
-}
-
-.allocation-icon.cash {
-  background: var(--color-green-soft);
-  color: var(--color-success-dark);
-}
-
-.allocation-icon.invest {
-  background: var(--color-blue-soft);
-  color: var(--color-primary);
-}
-
-.allocation-icon.debt {
-  background: var(--color-warning-soft);
-  color: var(--color-warning);
 }
 
 .allocation-identity,
@@ -108,14 +148,29 @@ function save(value) {
   gap: 0.1rem;
 }
 
-.allocation-identity strong {
-  font-size: 0.9rem;
+.allocation-title-line {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
 }
 
-.allocation-identity small,
-.allocation-values small {
+.allocation-expand {
+  display: inline-grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
   color: var(--color-copy);
-  font-size: 0.72rem;
+  cursor: pointer;
+}
+
+.allocation-expand:hover,
+.allocation-expand:focus-visible {
+  background: var(--color-surface-soft);
+  color: var(--color-primary);
+  outline: 2px solid var(--color-primary-focus);
 }
 
 .allocation-values {
@@ -136,11 +191,6 @@ function save(value) {
   outline: 0;
 }
 
-.allocation-values strong {
-  font-size: 1.1rem;
-  line-height: 1.1;
-}
-
 .allocation-track {
   width: 100%;
   height: 0.42rem;
@@ -154,18 +204,20 @@ function save(value) {
   display: block;
   height: 100%;
   border-radius: inherit;
+  background: var(--allocation-color);
 }
 
-.allocation-track i.cash {
-  background: var(--color-success-dark);
+.allocation-actions {
+  display: flex;
+  align-items: center;
 }
 
-.allocation-track i.invest {
-  background: var(--color-primary);
-}
-
-.allocation-track i.debt {
-  background: var(--color-warning);
+.allocation-details {
+  grid-column: 1 / -1;
+  min-width: 0;
+  margin-top: var(--space-1);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-line);
 }
 
 @media (max-width: 520px) {
@@ -184,6 +236,15 @@ function save(value) {
     grid-row: 2;
     min-width: 0;
     justify-items: start;
+  }
+
+  .allocation-card.has-actions {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
+  .allocation-actions {
+    grid-column: 3;
+    grid-row: 1 / span 2;
   }
 }
 </style>

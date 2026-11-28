@@ -6,21 +6,6 @@
 
     <div ref="chartElement" class="breakdown-chart" :style="{ height: `${chartHeight}px` }" />
 
-    <button
-      v-if="entries.length > initialLimit"
-      type="button"
-      class="breakdown-toggle"
-      :aria-expanded="expanded"
-      @click="expanded = !expanded"
-    >
-      <span>{{
-        expanded
-          ? t('financial.categoryBreakdown.showFewer')
-          : t('financial.categoryBreakdown.showMore', { count: hiddenEntryCount })
-      }}</span>
-      <q-icon :name="expanded ? 'expand_less' : 'expand_more'" />
-    </button>
-
     <div v-if="!entries.length" class="empty-copy">
       <q-icon name="bar_chart" />
       <span>{{ emptyLabel }}</span>
@@ -49,19 +34,15 @@ const props = defineProps({
   emptyLabel: { type: String, required: true },
   entries: { type: Array, default: () => [] },
   total: { type: Number, default: 0 },
-  initialLimit: { type: Number, default: 5 },
+  maxEntries: { type: Number, default: 4 },
 })
 
-const { t, locale } = useI18n()
+const { locale } = useI18n()
 const chartElement = ref(null)
-const expanded = ref(false)
-const hiddenEntryCount = computed(() => Math.max(0, props.entries.length - props.initialLimit))
 const barColor = computed(() =>
   ['liabilities', 'expenses'].includes(props.tone) ? CHART_COLORS.danger : CHART_COLORS.primary,
 )
-const visibleEntries = computed(() =>
-  expanded.value ? props.entries : props.entries.slice(0, props.initialLimit),
-)
+const visibleEntries = computed(() => props.entries.slice(0, props.maxEntries))
 const chartHeight = computed(() => {
   if (!visibleEntries.value.length) return 132
   return visibleEntries.value.length * 36 + 8
@@ -197,7 +178,6 @@ function escapeHtml(value) {
 </script>
 
 <style scoped lang="scss">
-@use '@/css/mixins' as *;
 @use '@/css/foundation/breakpoints' as bp;
 
 .category-breakdown {
@@ -216,36 +196,6 @@ function escapeHtml(value) {
 .breakdown-chart {
   width: 100%;
   transition: height 220ms ease;
-}
-
-.breakdown-toggle {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.25rem;
-  min-height: 1.8rem;
-  width: 100%;
-  margin: var(--space-2) auto 0;
-  padding: 0.25rem;
-  border: 0;
-  background: transparent;
-  color: var(--color-primary);
-  font: inherit;
-  font-size: 0.75rem;
-  font-weight: var(--font-weight-semibold);
-  cursor: pointer;
-}
-
-.breakdown-toggle:hover {
-  text-decoration: underline;
-}
-
-.breakdown-toggle:focus-visible {
-  @include focus-ring;
-}
-
-.breakdown-toggle .q-icon {
-  font-size: 1rem;
 }
 
 .empty-copy {

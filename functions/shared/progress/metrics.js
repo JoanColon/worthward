@@ -33,6 +33,15 @@ export function calculateDebtReductionProgress(currentBalance, startingBalance) 
 }
 
 /**
+ * Converts a progress ratio to a whole percentage without presenting an
+ * unreached target as complete because of rounding.
+ */
+export function displayProgressPercent(progress, reached = false) {
+  const rounded = Math.round(Math.min(1, Math.max(0, Number(progress) || 0)) * 100)
+  return reached ? 100 : Math.min(99, rounded)
+}
+
+/**
  * Returns a finite ratio clamped between zero and one.
  */
 function boundedRatio(value, target) {

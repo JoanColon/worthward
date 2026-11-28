@@ -7,7 +7,10 @@
     <header class="financial-kpi-overview__heading">
       <span class="financial-kpi-overview__icon"><q-icon :name="icon" /></span>
       <span class="app-kpi-label">{{ label }}</span>
-      <span v-if="badgeLabel" class="financial-kpi-overview__badge">{{ badgeLabel }}</span>
+      <div v-if="badgeLabel || $slots.actions" class="financial-kpi-overview__tools">
+        <span v-if="badgeLabel" class="financial-kpi-overview__badge">{{ badgeLabel }}</span>
+        <slot name="actions" />
+      </div>
     </header>
 
     <div class="financial-kpi-overview__body">

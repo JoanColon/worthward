@@ -29,6 +29,11 @@ export const defaultStrategyScenario = Object.freeze({
   investmentMix: Object.freeze({
     stockMarket: Object.freeze({ allocation: 100, annualReturnPercent: 7 }),
   }),
+  investmentReturns: Object.freeze(
+    Object.fromEntries(
+      investmentTypeDefinitions.map(({ id, returnPercent }) => [id, returnPercent]),
+    ),
+  ),
   inflationAnnualPercent: 2,
   horizonYears: 20,
   cashTargetMonths: 12,
@@ -68,6 +73,10 @@ export function normalizeStrategyScenario(scenario = {}) {
   if (!id) return null
   const allocation = normalizeStrategy(scenario.allocation)
   const investmentMix = normalizeInvestmentMix(scenario.investmentMix)
+  const investmentReturns = normalizeInvestmentReturns(
+    scenario.investmentReturns,
+    scenario.investmentMix,
+  )
   const horizon = Number(scenario.horizonYears)
   const cashTarget = Number(scenario.cashTargetMonths)
   return {
@@ -78,6 +87,7 @@ export function normalizeStrategyScenario(scenario = {}) {
         .slice(0, 80) || 'Strategy',
     allocation: allocation || { ...defaultStrategyScenario.allocation },
     investmentMix,
+    investmentReturns,
     ...normalizedCashReturnOverride(scenario),
     inflationAnnualPercent: normalizeReturn(scenario.inflationAnnualPercent) ?? 2,
     horizonYears: Number.isFinite(horizon) ? Math.min(50, Math.max(1, Math.round(horizon))) : 20,
@@ -87,6 +97,18 @@ export function normalizeStrategyScenario(scenario = {}) {
         scenario.selectedLiabilityId :
         null,
   }
+}
+
+/** Keeps return assumptions independent from the allocation of new contributions. */
+export function normalizeInvestmentReturns(returns = {}, legacyMix = {}) {
+  return Object.fromEntries(
+    investmentTypeDefinitions.map(({ id, returnPercent }) => [
+      id,
+      normalizeReturn(returns?.[id]) ??
+        normalizeReturn(legacyMix?.[id]?.annualReturnPercent) ??
+        returnPercent,
+    ]),
+  )
 }
 
 /** Resolves a manual Cash return override, otherwise returning the current asset-model suggestion. */

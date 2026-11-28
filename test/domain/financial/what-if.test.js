@@ -8,6 +8,7 @@ import {
   normalizeWhatIfConfig,
   normalizeStrategyForOptions,
   resolveCashAnnualReturnPercent,
+  normalizeInvestmentReturns,
 } from '../../../functions/shared/plan/what-if.js'
 
 describe('What If calculations', () => {
@@ -182,5 +183,14 @@ describe('What If calculations', () => {
     expect(resolveCashAnnualReturnPercent({}, -1.5)).toBe(-1.5)
     expect(resolveCashAnnualReturnPercent({ cashAnnualReturnPercent: 3 }, 2)).toBe(3)
     expect(resolveCashAnnualReturnPercent({ cashAnnualReturnPercent: 3 }, 4)).toBe(3)
+  })
+
+  it('keeps investment returns independent from the contribution allocation', () => {
+    expect(
+      normalizeInvestmentReturns(
+        { crypto: 11 },
+        { stockMarket: { allocation: 100, annualReturnPercent: 6 } },
+      ),
+    ).toMatchObject({ stockMarket: 6, crypto: 11, fixedIncome: 3 })
   })
 })

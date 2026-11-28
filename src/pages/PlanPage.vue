@@ -37,37 +37,32 @@
           </template>
         </AppPageHeader>
 
-        <section class="capacity-card" :class="{ negative: annualSavings < 0 }">
-          <div class="capacity-main">
-            <div class="capacity-heading">
-              <span class="app-kpi-label">{{
-                annualSavings >= 0 ? t('plan.savingsCapacity') : t('plan.shortfall')
-              }}</span>
-              <AppPeriodSwitch
-                v-model="period"
-                class="period-switch"
-                variant="light"
-                :aria-label="t('plan.periodSelector')"
-                :options="periodOptions"
-              />
-            </div>
-            <strong
-              >{{ formatCurrency(displayedSavings) }}<small>{{ displayedPeriod }}</small></strong
-            >
-            <b>{{ formatCurrency(alternateSavings) }} {{ alternatePeriod }}</b>
-            <p>{{ t('plan.capacityDescription') }}</p>
-          </div>
-          <div class="capacity-breakdown">
-            <div>
-              <span>{{ t('plan.availableIncome') }}</span
-              ><strong>{{ formatCurrency(displayedIncome) }}</strong>
-            </div>
-            <div>
-              <span>{{ t('plan.costOfLife') }}</span
-              ><strong>−{{ formatCurrency(displayedCostOfLife) }}</strong>
-            </div>
-          </div>
-        </section>
+        <SavingsCapacityKpi
+          :label="annualSavings >= 0 ? t('plan.savingsCapacity') : t('plan.shortfall')"
+          :primary-value="formatCurrency(displayedSavings)"
+          :primary-period="displayedPeriod"
+          :description="t('plan.capacityDescription')"
+          :negative="annualSavings < 0"
+          :chart-title="t('plan.capacityChartTitle')"
+          :income-label="t('plan.availableIncome')"
+          :cost-of-life-label="t('plan.costOfLife')"
+          :income-value="displayedIncome"
+          :cost-of-life-value="displayedCostOfLife"
+          :savings-value="displayedSavings"
+          :metrics="[
+            { label: t('plan.availableIncome'), value: formatCurrency(displayedIncome) },
+            { label: t('plan.costOfLife'), value: `−${formatCurrency(displayedCostOfLife)}` },
+          ]"
+        >
+          <template #actions>
+            <AppPeriodSwitch
+              v-model="period"
+              variant="light"
+              :aria-label="t('plan.periodSelector')"
+              :options="periodOptions"
+            />
+          </template>
+        </SavingsCapacityKpi>
 
         <h2 class="section-label">{{ t('plan.actionsTitle') }}</h2>
         <section class="plan-actions">
@@ -159,6 +154,7 @@ import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 import AppPageHeader from '@/components/layout/AppPageHeader.vue'
+import SavingsCapacityKpi from '@/components/financial/SavingsCapacityKpi.vue'
 import AppPeriodSwitch from '@/components/ui/AppPeriodSwitch.vue'
 import { getLiabilityCategory } from '@/config/liability-categories'
 import {
@@ -270,12 +266,6 @@ const displayedSavings = computed(() =>
 )
 const displayedPeriod = computed(() =>
   period.value === 'annual' ? t('plan.perYear') : t('whatIf.perMonth'),
-)
-const alternateSavings = computed(() =>
-  period.value === 'annual' ? monthlySavings.value : annualSavings.value,
-)
-const alternatePeriod = computed(() =>
-  period.value === 'annual' ? t('whatIf.perMonth') : t('plan.perYear'),
 )
 const activeScenario = computed(
   () =>
@@ -545,68 +535,6 @@ function liabilityCategoryName(categoryId) {
 .state {
   color: var(--color-copy);
 }
-.capacity-card {
-  @include dashboard-card;
-  position: relative;
-  display: grid;
-  grid-template-columns: minmax(0, 1.25fr) minmax(19rem, 0.9fr);
-  gap: 2.5rem;
-  margin-top: 1.1rem;
-  padding: clamp(1.5rem, 4vw, 2.5rem);
-  color: var(--color-ink);
-}
-.period-switch {
-  position: absolute;
-  top: 0.85rem;
-  right: 1rem;
-}
-.capacity-main {
-  display: grid;
-  align-content: center;
-  gap: 0.35rem;
-}
-.capacity-heading > span {
-  display: block;
-}
-.capacity-main > strong {
-  font-size: clamp(2.8rem, 7vw, 4.8rem);
-  line-height: 1;
-  letter-spacing: -0.055em;
-}
-.capacity-main > strong small {
-  margin-left: 0.45rem;
-  font-size: 1rem;
-  font-weight: 500;
-  letter-spacing: 0;
-}
-.capacity-main b {
-  font-size: 1rem;
-}
-.capacity-main p {
-  margin: 0.3rem 0 0;
-  color: var(--color-copy);
-  font-size: var(--font-size-kpi-supporting);
-}
-.capacity-card.negative .capacity-main > strong {
-  color: var(--color-danger);
-}
-.capacity-breakdown {
-  display: grid;
-  align-content: center;
-  gap: 0.8rem;
-  padding: 2.1rem 0 0 2.5rem;
-  border-left: 1px solid var(--color-line);
-  font-size: var(--font-size-kpi-supporting);
-}
-.capacity-breakdown > div {
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-}
-.capacity-breakdown span {
-  color: var(--color-copy);
-}
-
 .section-label {
   margin: 1.25rem 0 0.4rem 0.25rem;
   color: var(--color-copy);
@@ -835,41 +763,6 @@ function liabilityCategoryName(categoryId) {
     align-content: start;
   }
 
-  .capacity-card {
-    grid-template-columns: minmax(0, 1.15fr) minmax(17rem, 0.85fr);
-    gap: clamp(1.25rem, 3vw, 2rem);
-    min-height: 0;
-    margin-top: clamp(0.5rem, 1.2vh, 0.75rem);
-    padding: clamp(1rem, 2.2vh, 1.35rem) clamp(1.25rem, 2.5vw, 1.75rem);
-  }
-
-  .capacity-main {
-    gap: 0.2rem;
-  }
-
-  .capacity-main > strong {
-    font-size: clamp(2.6rem, 5.6vh, 3.8rem);
-  }
-
-  .capacity-main > strong small,
-  .capacity-main b {
-    font-size: var(--font-size-kpi-supporting);
-  }
-
-  .capacity-main p {
-    margin-top: 0.15rem;
-  }
-
-  .period-switch {
-    top: 0.7rem;
-    right: 0.8rem;
-  }
-
-  .capacity-breakdown {
-    gap: 0.45rem;
-    padding: 1.65rem 0 0 1.5rem;
-  }
-
   .section-label {
     margin: clamp(0.5rem, 1.2vh, 0.75rem) 0 0.3rem 0.25rem;
     font-size: 0.74rem;
@@ -931,69 +824,17 @@ function liabilityCategoryName(categoryId) {
 }
 
 @media (max-width: 850px) {
-  .capacity-card {
-    grid-template-columns: 1fr;
-    gap: 1.5rem;
-  }
-  .capacity-breakdown {
-    padding: 1.5rem 0 0;
-    border-top: 1px solid var(--color-line);
-    border-left: 0;
-  }
   .plan-actions {
     grid-template-columns: 1fr;
   }
 }
 
 @media (max-width: bp.$xs-max) {
-  .capacity-card {
-    gap: 1rem;
-    margin-top: var(--space-2);
-    padding: 1.1rem;
-  }
-
   .section-label {
     margin: var(--space-3) 0 var(--space-2) var(--space-1);
     line-height: 1.2;
   }
 
-  .capacity-heading {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.75rem;
-  }
-  .capacity-heading > span {
-    font-size: var(--font-size-kpi-label-compact);
-  }
-  .period-switch {
-    position: static;
-    flex-shrink: 0;
-  }
-  .capacity-main {
-    gap: 0.3rem;
-  }
-  .capacity-main > strong {
-    margin-top: 0.45rem;
-    font-size: clamp(2.25rem, 12vw, 3rem);
-  }
-  .capacity-main > strong small {
-    margin-left: 0.35rem;
-    font-size: var(--font-size-kpi-supporting-compact);
-  }
-  .capacity-main b {
-    font-size: var(--font-size-kpi-supporting-compact);
-  }
-  .capacity-main p {
-    margin-top: 0.25rem;
-    font-size: var(--font-size-kpi-supporting-compact);
-    line-height: 1.4;
-  }
-  .capacity-breakdown {
-    gap: 0.6rem;
-    padding-top: 0.9rem;
-    font-size: var(--font-size-kpi-supporting-compact);
-  }
   .allocation-summary li {
     gap: 0.65rem;
     min-height: 2.15rem;

@@ -2,8 +2,8 @@
 
 Validated on 2026-11-27 against the current repository using the supplied
 `worthward-demo-10y.json` and `README-demo-10y.md`. The referenced generator was not supplied and
-was not recreated. The fixture was written only to an ephemeral local Firestore emulator; no
-production operation was performed.
+was not recreated. After emulator validation and a user-confirmed deployment, the fixture was
+seeded into the production project on 2026-11-27 with explicit project-scoped authorization.
 
 ## Result
 
@@ -11,9 +11,9 @@ The fixture is structurally compatible with the current financial models after t
 normalization. Its 65 documents are all below `workspaces/worthward_demo`, and its largest document
 is about 171 KB as JSON, comfortably below Firestore's 1 MiB document limit.
 
-The repository now implements the shared authenticated read-only workspace protections described
-below. The production project remains unchanged: no functions, rules, application build, or data
-were deployed.
+The repository implements the shared authenticated read-only workspace protections described
+below. The user confirmed completion of the rules, Functions, and application deployment before
+the 65 production documents were created under `workspaces/worthward_demo`.
 
 ### Implementation status
 
@@ -106,8 +106,9 @@ The utility:
 - refuses a non-emulator write unless both `--allow-production` and
   `WORTHWARD_DEMO_PRODUCTION_CONFIRM=worthward_demo:<project-id>` authorize the exact project.
 
-Production authorization is an emergency gate, not deployment approval. It was not used during
-this work.
+Production authorization is an emergency gate, not deployment approval. It was used only after the
+user explicitly confirmed the deployment and authorized the production seed for
+`cost-of-life-f23b2`.
 
 ## Local emulator preview
 
@@ -242,13 +243,14 @@ service guards deny persistence.
 - the integrated Auth, Firestore, and Functions suite starts under `worthward-local`; an ephemeral
   authenticated emulator identity can read `worthward_demo`, while an attempted model write is
   rejected with `PERMISSION_DENIED`.
+- production seed: 65 documents created without overwrite authorization after explicit user
+  approval; a production read confirmed the workspace, `demo-balanced` strategy, dividend years
+  2022–2026, and €2,056.25 cumulative gross dividends.
 
-## Remaining work before production availability
+## Post-deployment acceptance
 
-- Deploy the reviewed rules, functions, and client together; deploying only part of the protection
-  set would be unsafe.
-- Perform the authenticated browser acceptance matrix against the integrated emulator: All/Alex/Emma,
-  all ten history years, expense reconciliation display, cached portfolio, local simulations,
-  direct setup URL redirection, and reload/logout behavior.
-- Seed production only after that review using explicit project-scoped authorization. This report
-  does not authorize a deployment or production write.
+- Refresh or sign back into the production application and confirm that `Worthward Demo` appears in
+  the workspace selector.
+- Repeat the final authenticated browser smoke test in production for All/Alex/Emma, history,
+  expense reconciliation, cached portfolio, local simulations, direct setup URL redirection, and
+  reload/logout behavior.

@@ -121,6 +121,7 @@ export function simulateAllocationStrategy({
     startingPosition,
     allocation,
     investmentMix: scenario?.investmentMix || {},
+    investmentReturns: scenario?.investmentReturns || {},
     cashAnnualReturnPercent: scenario?.cashAnnualReturnPercent || 0,
     inflationAnnualPercent: scenario?.inflationAnnualPercent ?? 2,
     horizonYears: scenario?.horizonYears || 20,
@@ -232,6 +233,7 @@ export function projectStrategyAssetPath({
   startingPosition = {},
   allocation = { cash: 0, invest: 100, debt: 0 },
   investmentMix = {},
+  investmentReturns = {},
   cashAnnualReturnPercent = 0,
   inflationAnnualPercent = 0,
   horizonYears = 20,
@@ -273,7 +275,9 @@ export function projectStrategyAssetPath({
     for (const [type, balance] of Object.entries(balances)) {
       const defaultReturn =
         investmentTypeDefinitions.find((definition) => definition.id === type)?.returnPercent || 0
-      const annualReturn = Number(investmentMix[type]?.annualReturnPercent ?? defaultReturn)
+      const annualReturn = Number(
+        investmentReturns[type] ?? investmentMix[type]?.annualReturnPercent ?? defaultReturn,
+      )
       const monthlyReturn = effectiveMonthlyRateFromAnnualPercent(annualReturn)
       balances[type] = balance * (1 + monthlyReturn)
       investmentContributionBalances[type] *= 1 + monthlyReturn
@@ -494,6 +498,26 @@ export function calculateInflationAdjustedCoverage({
     calculateInflationFactorAtMonth(annualInflationPercent, month),
   )
   return money(realValue / cost)
+}
+
+/**
+ * Projects net investable wealth from the canonical current value while
+ * applying the simulated change in gross investable assets. This keeps the
+ * projection's month zero aligned with the current Freedom calculation.
+ */
+export function calculateProjectedNetInvestableWealth({
+  currentNetInvestableWealth = 0,
+  currentGrossInvestableWealth = 0,
+  projectedGrossInvestableWealth = 0,
+} = {}) {
+  return money(
+    Math.max(
+      0,
+      Number(currentNetInvestableWealth || 0) +
+        Number(projectedGrossInvestableWealth || 0) -
+        Number(currentGrossInvestableWealth || 0),
+    ),
+  )
 }
 
 /**

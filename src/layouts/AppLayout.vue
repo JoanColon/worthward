@@ -1,44 +1,50 @@
 <template>
   <q-layout view="hHh Lpr fFf" class="app-layout">
-    <q-header class="app-header">
+    <q-header class="app-header" :class="{ 'welcome-header': welcomeChrome }">
       <q-toolbar class="app-toolbar">
-        <q-btn
-          flat
-          round
-          dense
-          icon="menu"
-          :aria-label="t('navigation.workspaces')"
-          @click="drawerOpen = !drawerOpen"
-        />
-        <div class="mini-mark">{{ BRAND.mark }}</div>
-        <q-toolbar-title class="app-title">{{ BRAND.name }}</q-toolbar-title>
-
-        <div v-if="routeWorkspaceId" class="workspace-context-actions">
+        <template v-if="welcomeChrome">
+          <img class="welcome-logo" src="/brand/logo.svg" :alt="BRAND.name" />
+          <q-space />
+        </template>
+        <template v-else>
           <q-btn
-            v-if="route.name !== 'workspace-dashboard'"
             flat
             round
             dense
-            icon="home"
-            class="gt-sm"
-            :to="workspaceRoute(routeWorkspaceId)"
-            :aria-label="t('navigation.backToWorkspaceHome')"
-          >
-            <q-tooltip>{{ t('navigation.backToWorkspaceHome') }}</q-tooltip>
-          </q-btn>
-          <q-separator
-            v-if="route.name !== 'workspace-dashboard' && members.length"
-            vertical
-            class="gt-sm workspace-home-separator"
+            icon="menu"
+            :aria-label="t('navigation.workspaces')"
+            @click="drawerOpen = !drawerOpen"
           />
-          <MemberScopeSelector
-            v-if="members.length"
-            v-model="selectedMemberId"
-            :members="members"
-            compact
-            class="layout-member-selector"
-          />
-        </div>
+          <div class="mini-mark">{{ BRAND.mark }}</div>
+          <q-toolbar-title class="app-title">{{ BRAND.name }}</q-toolbar-title>
+
+          <div v-if="routeWorkspaceId" class="workspace-context-actions">
+            <q-btn
+              v-if="route.name !== 'workspace-dashboard'"
+              flat
+              round
+              dense
+              icon="home"
+              class="gt-sm"
+              :to="workspaceRoute(routeWorkspaceId)"
+              :aria-label="t('navigation.backToWorkspaceHome')"
+            >
+              <q-tooltip>{{ t('navigation.backToWorkspaceHome') }}</q-tooltip>
+            </q-btn>
+            <q-separator
+              v-if="route.name !== 'workspace-dashboard' && members.length"
+              vertical
+              class="gt-sm workspace-home-separator"
+            />
+            <MemberScopeSelector
+              v-if="members.length"
+              v-model="selectedMemberId"
+              :members="members"
+              compact
+              class="layout-member-selector"
+            />
+          </div>
+        </template>
 
         <q-btn
           flat
@@ -53,7 +59,14 @@
       </q-toolbar>
     </q-header>
 
-    <q-drawer v-model="drawerOpen" show-if-above bordered :width="280" class="app-drawer">
+    <q-drawer
+      v-if="!welcomeChrome"
+      v-model="drawerOpen"
+      show-if-above
+      bordered
+      :width="280"
+      class="app-drawer"
+    >
       <div class="drawer-brand">
         <div class="drawer-mark">{{ BRAND.mark }}</div>
         <div>
@@ -76,18 +89,6 @@
         </q-item>
 
         <q-item
-          v-ripple
-          clickable
-          :to="{ name: 'account' }"
-          exact
-          active-class="active-nav-item"
-          @click="closeMobileDrawer"
-        >
-          <q-item-section avatar><q-icon name="manage_accounts" /></q-item-section>
-          <q-item-section>{{ t('navigation.account') }}</q-item-section>
-        </q-item>
-
-        <q-item
           v-if="canCreateWorkspace"
           v-ripple
           clickable
@@ -98,6 +99,18 @@
         >
           <q-item-section avatar><q-icon name="add_business" /></q-item-section>
           <q-item-section>{{ t('navigation.createWorkspace') }}</q-item-section>
+        </q-item>
+
+        <q-item
+          v-ripple
+          clickable
+          :to="{ name: 'account' }"
+          exact
+          active-class="active-nav-item"
+          @click="closeMobileDrawer"
+        >
+          <q-item-section avatar><q-icon name="manage_accounts" /></q-item-section>
+          <q-item-section>{{ t('navigation.account') }}</q-item-section>
         </q-item>
 
         <q-item
@@ -118,11 +131,11 @@
 
       <q-separator class="q-my-sm" />
 
-      <div v-if="workspaceStore.workspaces.length" class="workspace-list">
+      <div v-if="workspaceStore.realWorkspaces.length" class="workspace-list">
         <div class="workspace-list-label">{{ t('navigation.switchWorkspace') }}</div>
         <q-list dense>
           <q-item
-            v-for="workspace in workspaceStore.workspaces"
+            v-for="workspace in workspaceStore.realWorkspaces"
             :key="workspace.id"
             v-ripple
             clickable
@@ -136,9 +149,6 @@
             </q-item-section>
             <q-item-section>
               {{ workspace.name }}
-              <q-item-label v-if="isDemoWorkspaceId(workspace.id)" caption>
-                {{ t('workspace.demo.readOnly') }}
-              </q-item-label>
             </q-item-section>
             <q-item-section v-if="workspace.id === activeWorkspaceId" side>
               <q-icon name="check" color="primary" />
@@ -174,6 +184,31 @@
     </q-drawer>
 
     <q-page-container>
+      <q-banner v-if="showDemoEntryBanner" class="demo-entry-banner">
+        <template #avatar><q-icon name="visibility" /></template>
+        <div class="demo-entry-copy">
+          <strong>{{ t('workspace.demo.bannerTitle') }}</strong>
+          <span>{{ t('workspace.demo.bannerDescription') }}</span>
+        </div>
+        <template #action>
+          <q-btn
+            v-if="!workspaceStore.hasWorkspaces"
+            flat
+            no-caps
+            color="primary"
+            :label="t('workspace.demo.backToWelcome')"
+            :to="{ name: 'home' }"
+          />
+          <q-btn
+            v-if="canCreateWorkspace"
+            unelevated
+            no-caps
+            color="primary"
+            :label="t('workspace.demo.createAction')"
+            :to="{ name: 'create-workspace' }"
+          />
+        </template>
+      </q-banner>
       <div v-if="workspaceStore.loading" class="loading-state">
         <q-spinner color="primary" size="2rem" />
         <span>{{ t('home.loadingWorkspace') }}</span>
@@ -277,6 +312,9 @@ const ownedWorkspaceCount = computed(
 const canCreateWorkspace = computed(
   () => entitlementsStore.entitlements.isPro || ownedWorkspaceCount.value === 0,
 )
+const welcomeChrome = computed(
+  () => route.name === 'home' && (!workspaceStore.ready || !workspaceStore.hasWorkspaces),
+)
 const members = computed(() => getWorkspaceMembers(activeWorkspace.value))
 const memberIds = computed(() => members.value.map(({ id }) => id))
 const selectedMemberId = computed({
@@ -296,6 +334,9 @@ const proFeatureLocked = computed(() =>
   Boolean(route.meta.requiresPro && routeWorkspaceId.value && !workspaceHasPro.value),
 )
 const showMobileNavigation = computed(() => $q.screen.lt.md && Boolean(routeWorkspaceId.value))
+const showDemoEntryBanner = computed(() =>
+  Boolean(routeWorkspaceId.value && activeWorkspaceIsDemo.value),
+)
 const activeNavigationNode = computed(() => {
   const routeNodes = {
     'workspace-dashboard': 'workspace-home',
@@ -590,6 +631,23 @@ async function finishNativeStartup() {
   padding-left: max(1rem, env(safe-area-inset-left));
 }
 
+.welcome-header {
+  box-shadow: none;
+}
+
+.welcome-header .app-toolbar {
+  width: min(100%, 72rem);
+  margin: 0 auto;
+}
+
+.welcome-logo {
+  display: block;
+  width: 9.25rem;
+  height: 2.1rem;
+  object-fit: contain;
+  object-position: left center;
+}
+
 .mini-mark,
 .drawer-mark {
   display: grid;
@@ -671,6 +729,31 @@ async function finishNativeStartup() {
   color: var(--color-ink);
 }
 
+.demo-entry-banner {
+  border-bottom: 1px solid var(--color-primary-border);
+  background: var(--color-blue-soft);
+  color: var(--color-primary-dark);
+}
+
+.demo-entry-banner :deep(.q-banner__content) {
+  min-height: 3.5rem;
+}
+
+.demo-entry-copy {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.demo-entry-copy strong {
+  color: var(--color-ink);
+}
+
+.demo-entry-copy span {
+  color: var(--color-copy);
+  font-size: var(--font-size-caption);
+}
+
 .workspace-list {
   padding: 0.5rem 0.75rem;
 }
@@ -736,6 +819,24 @@ async function finishNativeStartup() {
   .mini-mark,
   .app-title {
     display: none;
+  }
+
+  .welcome-logo {
+    width: 8.15rem;
+    height: 1.85rem;
+  }
+
+  .demo-entry-banner :deep(.q-banner__content) {
+    min-height: 0;
+  }
+
+  .demo-entry-banner :deep(.q-banner__actions) {
+    padding-top: var(--space-2);
+  }
+
+  .demo-entry-copy {
+    display: grid;
+    gap: 0.1rem;
   }
 
   .layout-member-selector {

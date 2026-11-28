@@ -1,10 +1,6 @@
 <template>
   <q-page class="global-home-page">
-    <WorkspaceForm
-      v-if="!workspaceStore.hasWorkspaces && !workspaceStore.workspaces.length"
-      first-workspace
-      @created="workspaceCreated"
-    />
+    <WelcomeEntry v-if="!workspaceStore.hasWorkspaces" />
 
     <main v-else class="workspace-hub">
       <AppPageHeader
@@ -167,8 +163,8 @@ import { useQuasar } from 'quasar'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import AppPageHeader from '@/components/layout/AppPageHeader.vue'
+import WelcomeEntry from '@/components/onboarding/WelcomeEntry.vue'
 import AppConfirmDialog from '@/components/ui/AppConfirmDialog.vue'
-import WorkspaceForm from '@/components/workspace/WorkspaceForm.vue'
 import { BRAND } from '@/config/brand'
 import { authUser } from '@/services/auth'
 import { createWorkspaceInvite } from '@/services/firebase/workspace.service'
@@ -319,15 +315,6 @@ async function deleteWorkspace() {
     deleting.value = false
   }
 }
-
-async function workspaceCreated({ workspace }) {
-  $q.notify({
-    type: 'positive',
-    message: t('workspace.created'),
-    position: 'top',
-  })
-  await router.replace({ name: 'workspace-dashboard', params: { workspaceId: workspace.id } })
-}
 </script>
 
 <style scoped lang="scss">
@@ -340,9 +327,14 @@ async function workspaceCreated({ workspace }) {
   background: var(--color-page);
 }
 
-.global-home-page:has(> .workspace-card) {
-  display: grid;
-  place-items: center;
+.global-home-page:has(.welcome-shell) {
+  padding-block: clamp(1rem, 2.5vh, 1.75rem);
+  padding-right: max(clamp(1rem, 4vw, 2rem), env(safe-area-inset-right));
+  padding-bottom: max(clamp(1rem, 2.5vh, 1.75rem), env(safe-area-inset-bottom));
+  padding-left: max(clamp(1rem, 4vw, 2rem), env(safe-area-inset-left));
+  background:
+    radial-gradient(circle at 8% 0%, var(--color-primary-glow), transparent 28rem),
+    var(--color-page);
 }
 
 .workspace-hub {
@@ -452,8 +444,5 @@ async function workspaceCreated({ workspace }) {
   margin-top: 1.25rem;
   background: var(--color-red-soft);
   color: var(--color-danger-dark);
-}
-
-@media (max-width: 699px) {
 }
 </style>

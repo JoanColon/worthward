@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   calculateInflationAdjustedCoverage,
+  calculateProjectedNetInvestableWealth,
   findLatestObservedPositionMonth,
   projectStrategyAssetPath,
   simulateAllocationStrategy,
@@ -10,6 +11,24 @@ import {
 } from '../../../functions/shared/plan/strategy-simulation.js'
 
 describe('strategy simulation', () => {
+  it('anchors projected Freedom wealth to the canonical current net investable wealth', () => {
+    expect(
+      calculateProjectedNetInvestableWealth({
+        currentNetInvestableWealth: 260_000,
+        currentGrossInvestableWealth: 300_000,
+        projectedGrossInvestableWealth: 300_000,
+      }),
+    ).toBe(260_000)
+
+    expect(
+      calculateProjectedNetInvestableWealth({
+        currentNetInvestableWealth: 260_000,
+        currentGrossInvestableWealth: 300_000,
+        projectedGrossInvestableWealth: 350_000,
+      }),
+    ).toBe(310_000)
+  })
+
   it('uses the same inflation-adjusted coverage calculation for months and years', () => {
     expect(
       calculateInflationAdjustedCoverage({
@@ -324,5 +343,19 @@ describe('strategy simulation', () => {
     expect(result.strategy.finalValue).toBeGreaterThan(800 * 12 * 10)
     expect(result).not.toHaveProperty('currentPath')
     expect(result).not.toHaveProperty('difference')
+  })
+
+  it('applies a return assumption to a held asset with no contribution allocation', () => {
+    const result = simulateAllocationStrategy({
+      startingPosition: { cash: 0, investmentBalances: { crypto: 10_000 } },
+      scenario: {
+        allocation: { cash: 100, invest: 0, debt: 0 },
+        investmentMix: { stockMarket: { allocation: 100, annualReturnPercent: 7 } },
+        investmentReturns: { crypto: 0 },
+        horizonYears: 1,
+      },
+    })
+
+    expect(result.strategy.points.at(-1).investmentBalances.crypto).toBe(10_000)
   })
 })
