@@ -3,7 +3,10 @@
     <header class="welcome-intro">
       <p class="app-section-label welcome-eyebrow">{{ t('welcome.eyebrow') }}</p>
       <h1 class="app-page-title app-page-title--hero">{{ t('welcome.title') }}</h1>
-      <p class="app-page-subtitle welcome-subtitle">{{ t('welcome.subtitle') }}</p>
+      <p class="app-page-subtitle welcome-subtitle">
+        <span class="desktop-copy">{{ t('welcome.subtitle') }}</span>
+        <span class="mobile-copy">{{ t('welcome.mobileSubtitle') }}</span>
+      </p>
     </header>
 
     <q-banner v-if="demoError" rounded class="demo-error" role="alert">
@@ -57,7 +60,10 @@
 
         <div class="entry-copy">
           <h2 class="app-card-title">{{ t('welcome.demo.title') }}</h2>
-          <p class="app-card-subtitle">{{ t('welcome.demo.description') }}</p>
+          <p class="app-card-subtitle">
+            <span class="desktop-copy">{{ t('welcome.demo.description') }}</span>
+            <span class="mobile-copy">{{ t('welcome.demo.mobileDescription') }}</span>
+          </p>
           <ul class="benefit-list">
             <li v-for="benefit in demoBenefits" :key="benefit">
               <q-icon name="check_circle" />
@@ -93,8 +99,16 @@
         </div>
 
         <div class="entry-copy">
-          <h2 class="app-card-title">{{ t('welcome.create.title') }}</h2>
-          <p class="app-card-subtitle">{{ t('welcome.create.description') }}</p>
+          <div class="create-heading">
+            <span class="app-card__icon mobile-workspace-icon" aria-hidden="true">
+              <q-icon name="account_balance_wallet" />
+            </span>
+            <h2 class="app-card-title">{{ t('welcome.create.title') }}</h2>
+          </div>
+          <p class="app-card-subtitle">
+            <span class="desktop-copy">{{ t('welcome.create.description') }}</span>
+            <span class="mobile-copy">{{ t('welcome.create.mobileDescription') }}</span>
+          </p>
           <ul class="benefit-list benefit-list--create">
             <li v-for="benefit in createBenefits" :key="benefit">
               <q-icon name="check_circle" />
@@ -178,6 +192,15 @@ async function exploreDemo() {
 .welcome-shell {
   width: min(100%, 68rem);
   margin: 0 auto;
+}
+
+.mobile-copy,
+.mobile-workspace-icon {
+  display: none;
+}
+
+.create-heading {
+  display: contents;
 }
 
 .welcome-intro {
@@ -417,27 +440,77 @@ async function exploreDemo() {
 }
 
 @media (max-width: bp.$sm-max) {
+  .desktop-copy {
+    display: none;
+  }
+
+  .mobile-copy {
+    display: inline;
+  }
+
   .welcome-intro {
-    margin-bottom: var(--space-4);
+    margin-bottom: var(--space-3);
     text-align: left;
   }
 
+  .welcome-eyebrow {
+    margin-bottom: 0.375rem;
+  }
+
   .welcome-subtitle {
-    margin-left: 0;
+    margin: 0.375rem 0 0;
   }
 
-  .entry-grid,
+  .entry-grid {
+    gap: var(--space-3);
+  }
+
   .entry-card {
-    gap: var(--space-4);
+    gap: var(--space-3);
+    padding: var(--space-3);
   }
 
-  .financial-preview,
-  .pillars-preview {
-    min-height: 8.5rem;
+  .financial-preview {
+    min-height: 5.75rem;
+    padding: var(--space-3);
+  }
+
+  .preview-heading > div {
+    gap: 0;
+  }
+
+  .preview-value {
+    font-size: 1.35rem;
   }
 
   .history-chart {
-    height: 5.8rem;
+    inset: 2.85rem 0 0;
+    height: calc(100% - 2.85rem);
+  }
+
+  .fictional-data {
+    right: var(--space-2);
+    bottom: var(--space-1);
+  }
+
+  .benefit-list,
+  .entry-card--create .pillars-preview,
+  .entry-card--create .entry-action .app-caption {
+    display: none;
+  }
+
+  .create-heading {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+  }
+
+  .mobile-workspace-icon {
+    display: grid;
+    flex-basis: 2.5rem;
+    width: 2.5rem;
+    height: 2.5rem;
+    font-size: 1.2rem;
   }
 
   .entry-action .q-btn {
@@ -447,15 +520,9 @@ async function exploreDemo() {
   .entry-action .app-caption {
     text-align: center;
   }
-}
 
-@media (max-width: 420px) {
-  .pillars-preview {
-    grid-template-columns: 1fr;
-  }
-
-  .pillar:nth-child(n + 3) {
-    display: none;
+  .welcome-footer {
+    margin-top: var(--space-3);
   }
 }
 </style>

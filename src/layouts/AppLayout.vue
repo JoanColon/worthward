@@ -3,7 +3,7 @@
     <q-header class="app-header" :class="{ 'welcome-header': welcomeChrome }">
       <q-toolbar class="app-toolbar">
         <template v-if="welcomeChrome">
-          <img class="welcome-logo" src="/brand/logo.svg" :alt="BRAND.name" />
+          <img class="welcome-logo" :src="BRAND.logo" :alt="BRAND.name" />
           <q-space />
         </template>
         <template v-else>
@@ -15,7 +15,7 @@
             :aria-label="t('navigation.workspaces')"
             @click="drawerOpen = !drawerOpen"
           />
-          <div class="mini-mark">{{ BRAND.mark }}</div>
+          <img class="mini-mark" :src="BRAND.icon" alt="" aria-hidden="true" />
           <q-toolbar-title class="app-title">{{ BRAND.name }}</q-toolbar-title>
 
           <div v-if="routeWorkspaceId" class="workspace-context-actions">
@@ -67,8 +67,8 @@
       :width="280"
       class="app-drawer"
     >
-      <div class="drawer-brand">
-        <div class="drawer-mark">{{ BRAND.mark }}</div>
+      <div class="drawer-brand lt-md">
+        <img class="drawer-mark" :src="BRAND.icon" alt="" aria-hidden="true" />
         <div>
           <div class="drawer-title">{{ BRAND.name }}</div>
           <div class="drawer-caption">{{ authUser?.email }}</div>
@@ -124,7 +124,16 @@
           <q-item-section avatar><q-icon name="workspace_premium" /></q-item-section>
           <q-item-section>{{ t('navigation.pro') }}</q-item-section>
           <q-item-section v-if="entitlementsStore.entitlements.isPro" side>
-            <q-badge color="positive" :label="t('pro.activeBadge')" />
+            <q-badge
+              color="positive"
+              :label="
+                entitlementsStore.entitlements.trial.active
+                  ? t('pro.trial.menuBadge', {
+                      count: entitlementsStore.entitlements.trial.daysRemaining,
+                    })
+                  : t('pro.activeBadge')
+              "
+            />
           </q-item-section>
         </q-item>
       </q-list>
@@ -225,7 +234,11 @@
           @click="loadWorkspaces(true)"
         />
       </div>
-      <ProFeatureGate v-else-if="workspaceStore.ready" :locked="proFeatureLocked">
+      <ProFeatureGate
+        v-else-if="workspaceStore.ready"
+        :locked="proFeatureLocked"
+        :action-label="proGateActionLabel"
+      >
         <router-view :key="`${route.fullPath}:${financialPeriodKey}`" />
       </ProFeatureGate>
     </q-page-container>
@@ -235,6 +248,23 @@
     </q-footer>
 
     <LearnPanel />
+
+    <AppConfirmDialog
+      v-model="trialEndedDialog"
+      :title="t('pro.trial.endedTitle')"
+      :cancel-label="t('pro.trial.continueFree')"
+      :confirm-label="t('pro.trial.continuePro')"
+      confirm-icon="workspace_premium"
+      persistent
+      width="34rem"
+      @confirm="continueWithPro"
+    >
+      <p>{{ t('pro.trial.endedDescription') }}</p>
+      <p>
+        <strong>{{ t('pro.trial.dataPreservedTitle') }}</strong>
+      </p>
+      <p>{{ t('pro.trial.dataPreservedDescription') }}</p>
+    </AppConfirmDialog>
   </q-layout>
 </template>
 
@@ -247,6 +277,7 @@ import MemberScopeSelector from '@/components/dashboard/MemberScopeSelector.vue'
 import LearnPanel from '@/components/learn/LearnPanel.vue'
 import MobileBottomNav from '@/components/dashboard/MobileBottomNav.vue'
 import ProFeatureGate from '@/components/layout/ProFeatureGate.vue'
+import AppConfirmDialog from '@/components/ui/AppConfirmDialog.vue'
 import { useLearn } from '@/composables/useLearn'
 import { BRAND } from '@/config/brand'
 import {
@@ -257,6 +288,7 @@ import { authUser, signOut } from '@/services/auth'
 import { resolveWorkspaceHasPro } from '@/domain/access/workspace-entitlements'
 import { hideNativeSplashWhenReady } from '@/services/splash-screen'
 import { restoreAnnualSubscription } from '@/services/google-play-subscriptions'
+import { claimProTrialEndNotice } from '@/services/firebase/trial.service'
 import { syncWorkspaceInvestmentPortfolios } from '@/services/firebase/investment-portfolios.service'
 import { useAssetsStore } from '@/stores/assets-store'
 import { useExpensesStore } from '@/stores/expenses-store'
@@ -295,6 +327,8 @@ const { closeLearn } = useLearn()
 
 const drawerOpen = ref($q.screen.gt.sm)
 const loggingOut = ref(false)
+const trialEndedDialog = ref(false)
+const claimingTrialEndNotice = ref(false)
 const financialPeriodKey = ref(currentPeriodKey())
 const expandedNavigationNodes = ref(['your-money'])
 let periodTimer = null
@@ -329,9 +363,14 @@ const routeWorkspaceId = computed(() => {
     ? workspaceId
     : null
 })
-const workspaceHasPro = computed(() => resolveWorkspaceHasPro(activeWorkspace.value))
+const workspaceHasPro = computed(() =>
+  resolveWorkspaceHasPro(activeWorkspace.value, { now: entitlementsStore.now }),
+)
 const proFeatureLocked = computed(() =>
   Boolean(route.meta.requiresPro && routeWorkspaceId.value && !workspaceHasPro.value),
+)
+const proGateActionLabel = computed(() =>
+  entitlementsStore.entitlements.trial.eligible ? t('pro.trial.startAction') : t('pro.gate.action'),
 )
 const showMobileNavigation = computed(() => $q.screen.lt.md && Boolean(routeWorkspaceId.value))
 const showDemoEntryBanner = computed(() =>
@@ -395,8 +434,8 @@ onMounted(async () => {
   }
 
   entitlementsStore.start(authUser.value.uid)
-  void revalidateNativeSubscription()
   await loadWorkspaces()
+  void revalidateNativeSubscription()
   await finishNativeStartup()
 })
 
@@ -409,6 +448,11 @@ onBeforeUnmount(() => {
 
 watch(() => route.fullPath, syncWorkspaceFromRoute)
 watch(authUser, handleAuthChange)
+watch(
+  () => [entitlementsStore.ready, entitlementsStore.entitlements],
+  () => void maybeShowTrialEnded(),
+  { deep: true },
+)
 watch(
   () => activeWorkspace.value?.currency,
   (currency) => setWorkspaceCurrency(currency),
@@ -432,8 +476,8 @@ async function handleAuthChange(user, previousUser) {
   if (previousUser?.uid !== user.uid) {
     if (previousUser?.uid) resetApplicationState()
     entitlementsStore.start(user.uid)
-    void revalidateNativeSubscription()
     await loadWorkspaces()
+    void revalidateNativeSubscription()
   }
 }
 
@@ -586,14 +630,45 @@ async function syncPortfoliosOnOpen(workspaceId) {
 
 function revalidateMilestonesOnResume() {
   if (document.visibilityState !== 'visible' || !authUser.value) return
+  entitlementsStore.refreshClock()
+  void loadWorkspaces(true)
   if (activeWorkspaceIsDemo.value) return
   milestonesStore.revalidateAchievements()
+}
+
+async function maybeShowTrialEnded() {
+  const entitlement = entitlementsStore.entitlements
+  if (
+    !entitlementsStore.ready ||
+    claimingTrialEndNotice.value ||
+    entitlement.isPro ||
+    !entitlement.trial.used ||
+    entitlement.trial.active ||
+    entitlement.trial.endedNoticeShown
+  ) {
+    return
+  }
+  claimingTrialEndNotice.value = true
+  try {
+    const result = await claimProTrialEndNotice()
+    if (result.shouldShow) trialEndedDialog.value = true
+  } catch {
+    // The notice can be claimed on a later foreground session.
+  } finally {
+    claimingTrialEndNotice.value = false
+  }
+}
+
+async function continueWithPro() {
+  trialEndedDialog.value = false
+  await router.push({ name: 'pro' })
 }
 
 async function revalidateNativeSubscription() {
   if (!$q.platform.is.capacitor || !$q.platform.is.android) return
   try {
-    await restoreAnnualSubscription()
+    const result = await restoreAnnualSubscription()
+    if (result) await loadWorkspaces(true)
   } catch {
     // Scheduled server reconciliation remains authoritative if Google Play is unavailable.
   }
@@ -650,19 +725,14 @@ async function finishNativeStartup() {
 
 .mini-mark,
 .drawer-mark {
-  display: grid;
-  place-items: center;
-  border-radius: 0.7rem;
-  background: var(--color-primary);
-  color: var(--color-inverse);
-  font-family: var(--font-family-display);
+  display: block;
+  object-fit: contain;
 }
 
 .mini-mark {
   width: 2.25rem;
   height: 2.25rem;
   margin-left: 0.5rem;
-  font-size: 1.2rem;
 }
 
 .app-title {
@@ -701,7 +771,6 @@ async function finishNativeStartup() {
 .drawer-mark {
   width: 2.6rem;
   height: 2.6rem;
-  font-size: 1.35rem;
 }
 
 .drawer-title {

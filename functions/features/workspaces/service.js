@@ -26,13 +26,19 @@ async function createWorkspace(firestore, { userId, displayName = '', name }) {
     const ownedWorkspaces = await transaction.get(
       firestore.collection('workspaces').where('createdBy', '==', userId),
     )
-    const subscription = await transaction.get(
-      firestore.collection('users').doc(userId).collection('private').doc('subscription'),
-    )
+    const [subscription, trial] = await Promise.all([
+      transaction.get(
+        firestore.collection('users').doc(userId).collection('private').doc('subscription'),
+      ),
+      transaction.get(
+        firestore.collection('users').doc(userId).collection('private').doc('trial'),
+      ),
+    ])
+    const entitlementInput = { subscription: subscription.data(), trial: trial.data() }
     const ownedWorkspaceCount = ownedWorkspaces.docs.filter(
       (document) => !document.data()?.deletionPendingAt,
     ).length
-    const capabilities = resolveUserEntitlements(subscription.data(), { ownedWorkspaceCount })
+    const capabilities = resolveUserEntitlements(entitlementInput, { ownedWorkspaceCount })
     if (!capabilities.canCreateWorkspace) {
       throw workspaceError('permission-denied', 'Worthward Pro is required for another workspace')
     }
@@ -44,7 +50,7 @@ async function createWorkspace(firestore, { userId, displayName = '', name }) {
       createdAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
       isPrimaryWorkspace: ownedWorkspaceCount === 0,
-      entitlement: workspaceEntitlementProjection(subscription.data()),
+      entitlement: workspaceEntitlementProjection(entitlementInput),
       milestoneTracking: { status: 'setup' },
       currency: 'EUR',
       memberIds: [userId],

@@ -9,12 +9,18 @@
       v-for="option in options"
       :key="String(option.value)"
       type="button"
-      :class="{ selected: option.value === modelValue }"
+      :class="{
+        selected: option.value === modelValue,
+        'has-compact-label': option.compactLabel,
+      }"
       :aria-pressed="option.value === modelValue"
       :disabled="disabled || option.disabled"
       @click="select(option.value)"
     >
-      {{ option.label }}
+      <span class="app-period-switch__label">{{ option.label }}</span>
+      <span v-if="option.compactLabel" class="app-period-switch__label--compact">
+        {{ option.compactLabel }}
+      </span>
     </button>
   </div>
 </template>
@@ -37,7 +43,7 @@ const props = defineProps({
   size: {
     type: String,
     default: 'default',
-    validator: (value) => ['default', 'small'].includes(value),
+    validator: (value) => ['default', 'small', 'responsive'].includes(value),
   },
   disabled: { type: Boolean, default: false },
 })
@@ -53,6 +59,8 @@ function select(value) {
 </script>
 
 <style scoped lang="scss">
+@use '@/css/foundation/breakpoints' as bp;
+
 .app-period-switch {
   display: flex;
   flex: 0 0 auto;
@@ -99,6 +107,10 @@ button:disabled {
   opacity: 0.5;
 }
 
+.app-period-switch__label--compact {
+  display: none;
+}
+
 .app-period-switch--financial {
   border: 1px solid var(--color-inverse-line);
   background: var(--color-inverse-soft);
@@ -127,5 +139,22 @@ button:disabled {
   min-height: var(--segmented-option-height-small);
   padding: var(--segmented-option-padding-small);
   font-size: var(--segmented-option-font-size-small);
+}
+
+@media (max-width: bp.$content-compact-max) {
+  .app-period-switch--responsive button {
+    min-width: var(--segmented-option-min-width-small);
+    min-height: var(--segmented-option-height-small);
+    padding: var(--segmented-option-padding-small);
+    font-size: var(--segmented-option-font-size-small);
+  }
+
+  .app-period-switch--responsive .has-compact-label .app-period-switch__label {
+    display: none;
+  }
+
+  .app-period-switch--responsive .app-period-switch__label--compact {
+    display: inline;
+  }
 }
 </style>

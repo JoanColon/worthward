@@ -91,6 +91,11 @@ service cloud.firestore {
         allow read: if isSignedIn() && request.auth.uid == userId;
         allow write: if false;
       }
+
+      match /private/trial {
+        allow read: if isSignedIn() && request.auth.uid == userId;
+        allow write: if false;
+      }
     }
 
     match /workspaces/{workspaceId} {

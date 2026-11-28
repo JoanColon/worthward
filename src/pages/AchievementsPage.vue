@@ -296,6 +296,7 @@ import { useRoute } from 'vue-router'
 import AppPageHeader from '@/components/layout/AppPageHeader.vue'
 import MilestoneBadge from '@/components/milestones/MilestoneBadge.vue'
 import MilestoneSummary from '@/components/milestones/MilestoneSummary.vue'
+import { BRAND } from '@/config/brand'
 import { milestoneBadgeAssets } from '@/config/milestone-badges'
 import { milestoneFamilies } from '@/config/milestone-families'
 import { calculateMilestoneProgress } from '@/domain/milestones/calculations'
@@ -607,9 +608,8 @@ async function createAchievementShareImage(milestone) {
   context.lineWidth = 4
   context.strokeRect(42, 42, 996, 1266)
 
-  context.fillStyle = '#0b1633'
-  context.font = '700 40px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif'
-  context.fillText('Worthward', 78, 108)
+  const logo = await loadImage(BRAND.logoPng)
+  context.drawImage(logo, 78, 68, 300, 100)
 
   const image = await loadImage(milestoneBadgeAssets[milestone.id])
   context.drawImage(image, 230, 135, 620, 620)

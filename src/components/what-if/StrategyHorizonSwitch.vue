@@ -2,7 +2,7 @@
   <AppPeriodSwitch
     class="horizon-options"
     variant="compact"
-    :size="compact ? 'small' : 'default'"
+    size="responsive"
     :model-value="switchValue"
     :options="switchOptions"
     :aria-label="t('whatIf.strategy.horizonSelector')"
@@ -18,7 +18,6 @@ import AppPeriodSwitch from '@/components/ui/AppPeriodSwitch.vue'
 const props = defineProps({
   modelValue: { type: Number, required: true },
   options: { type: Array, default: () => [10, 20, 30] },
-  compact: { type: Boolean, default: false },
 })
 
 const emit = defineEmits(['update:modelValue', 'custom'])
@@ -30,7 +29,8 @@ const switchValue = computed(() =>
 const switchOptions = computed(() => [
   ...props.options.map((years) => ({
     value: years,
-    label: props.compact ? `${years}y` : `${years} years`,
+    label: t('whatIf.strategy.yearsValue', { years }),
+    compactLabel: `${years}y`,
   })),
   { value: customValue, label: t('whatIf.reduction.custom') },
 ])

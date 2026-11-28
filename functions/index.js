@@ -5,6 +5,7 @@ export { mutateFinancialModel } from './features/financial-model/callable.js'
 export { deleteAccount } from './features/accounts/callable.js'
 export { verifyGooglePlaySubscription } from './features/billing/callable.js'
 export { reconcileGooglePlaySubscriptions } from './features/billing/reconcile.schedule.js'
+export { claimProTrialEndNotice, startProTrial } from './features/trials/callable.js'
 export { ensureFinancialYear } from './features/financial-years/callable.js'
 export {
   readInvestmentPortfolioSheet,

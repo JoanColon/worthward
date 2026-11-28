@@ -14,7 +14,7 @@
           no-caps
           color="primary"
           icon="workspace_premium"
-          :label="t('pro.gate.action')"
+          :label="actionLabel || t('pro.gate.action')"
           :to="{ name: 'pro' }"
         />
       </q-card>
@@ -27,6 +27,7 @@ import { useI18n } from 'vue-i18n'
 
 defineProps({
   locked: { type: Boolean, default: false },
+  actionLabel: { type: String, default: '' },
 })
 
 const { t } = useI18n()

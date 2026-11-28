@@ -53,6 +53,10 @@ describe.skipIf(!hasEmulator)('Firestore demo workspace rules', () => {
         milestoneTracking: { active: false },
         entitlement: { tier: 'free' },
       })
+      await setDoc(doc(firestore, 'users', 'member', 'private', 'trial'), {
+        startedAt: new Date('2026-11-01T00:00:00Z'),
+        expiresAt: new Date('2026-12-01T00:00:00Z'),
+      })
     })
   })
 
@@ -145,5 +149,16 @@ describe.skipIf(!hasEmulator)('Firestore demo workspace rules', () => {
         updatedAt: serverTimestamp(),
       }),
     )
+  })
+
+  test('allows owners to read but never write private trial records', async () => {
+    const member = environment.authenticatedContext('member').firestore()
+    const outsider = environment.authenticatedContext('outsider').firestore()
+    const trial = doc(member, 'users', 'member', 'private', 'trial')
+
+    await assertSucceeds(getDoc(trial))
+    await assertFails(getDoc(doc(outsider, 'users', 'member', 'private', 'trial')))
+    await assertFails(updateDoc(trial, { expiresAt: new Date('2099-01-01T00:00:00Z') }))
+    await assertFails(deleteDoc(trial))
   })
 })

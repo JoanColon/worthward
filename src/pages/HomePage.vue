@@ -3,6 +3,27 @@
     <WelcomeEntry v-if="!workspaceStore.hasWorkspaces" />
 
     <main v-else class="workspace-hub">
+      <q-banner v-if="showTrialEndingNotice" rounded class="trial-ending-banner">
+        <template #avatar><q-icon name="schedule" /></template>
+        <div>
+          <strong>{{
+            t('pro.trial.endingTitle', {
+              count: entitlementsStore.entitlements.trial.daysRemaining,
+            })
+          }}</strong>
+          <div>{{ t('pro.trial.endingDescription') }}</div>
+        </div>
+        <template #action>
+          <q-btn
+            flat
+            no-caps
+            color="primary"
+            :label="t('pro.trial.viewPro')"
+            :to="{ name: 'pro' }"
+          />
+        </template>
+      </q-banner>
+
       <AppPageHeader
         :title="t('home.workspacesTitle')"
         :subtitle="t('home.workspacesDescription')"
@@ -191,6 +212,11 @@ const canShare = computed(() => typeof navigator.share === 'function')
 const canCreateWorkspace = computed(
   () => entitlementsStore.entitlements.isPro || !workspaceStore.hasWorkspaces,
 )
+const showTrialEndingNotice = computed(
+  () =>
+    entitlementsStore.entitlements.trial.active &&
+    entitlementsStore.entitlements.trial.daysRemaining <= 7,
+)
 
 async function openWorkspace(workspaceId) {
   await workspaceStore.setActiveWorkspace(workspaceId)
@@ -341,6 +367,18 @@ async function deleteWorkspace() {
   width: 100%;
   max-width: var(--content-max-width);
   margin: 0 auto;
+}
+
+.trial-ending-banner {
+  margin-bottom: var(--space-5);
+  border: 1px solid var(--color-primary-border);
+  background: var(--color-blue-soft);
+  color: var(--color-ink);
+}
+
+.trial-ending-banner strong {
+  display: block;
+  margin-bottom: var(--space-1);
 }
 
 .workspace-grid {

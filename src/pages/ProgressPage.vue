@@ -94,6 +94,7 @@
                 :aria-label="t('progress.filters.period')"
                 :options="periodOptions"
                 variant="light"
+                size="responsive"
               />
             </div>
 
@@ -289,9 +290,21 @@ const tabs = computed(() => [
   { id: 'achievements', icon: 'emoji_events', label: t('progress.tabs.achievements') },
 ])
 const periodOptions = computed(() => [
-  { value: '1', label: t('progress.filters.oneYear') },
-  { value: '3', label: t('progress.filters.threeYears') },
-  { value: '5', label: t('progress.filters.fiveYears') },
+  {
+    value: '1',
+    label: `1 ${t('progress.year')}`,
+    compactLabel: t('progress.filters.oneYear'),
+  },
+  {
+    value: '3',
+    label: `3 ${t('progress.years')}`,
+    compactLabel: t('progress.filters.threeYears'),
+  },
+  {
+    value: '5',
+    label: `5 ${t('progress.years')}`,
+    compactLabel: t('progress.filters.fiveYears'),
+  },
   { value: 'all', label: t('progress.filters.all') },
 ])
 const perspectives = computed(() => [
@@ -1123,7 +1136,7 @@ function signedCurrency(value) {
   }
   .period-switch {
     grid-row: 1;
-    width: 100%;
+    width: auto;
   }
   .perspective-header {
     grid-template-columns: 1fr;

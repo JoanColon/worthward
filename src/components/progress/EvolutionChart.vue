@@ -53,10 +53,19 @@ const hasData = computed(() =>
 )
 let chart = null
 let resizeObserver = null
+let compactBridgeLayout = false
 
 onMounted(() => {
   chart = init(chartElement.value)
-  resizeObserver = new ResizeObserver(() => chart?.resize())
+  compactBridgeLayout = usesCompactBridgeLayout()
+  resizeObserver = new ResizeObserver(() => {
+    const nextCompactLayout = usesCompactBridgeLayout()
+    chart?.resize()
+    if (nextCompactLayout !== compactBridgeLayout) {
+      compactBridgeLayout = nextCompactLayout
+      renderChart()
+    }
+  })
   resizeObserver.observe(chartElement.value)
   renderChart()
 })
@@ -87,6 +96,7 @@ function renderChart() {
     chart.clear()
     return
   }
+  compactBridgeLayout = usesCompactBridgeLayout()
   chart.setOption(props.mode === 'bridge' ? bridgeOptions() : timeSeriesOptions(), true)
 }
 
@@ -130,7 +140,7 @@ function bridgeOptions() {
 
   return {
     ...baseOptions(),
-    grid: { top: 26, right: 16, bottom: 72, left: 76 },
+    grid: { top: 26, right: 16, bottom: compactBridgeLayout ? 112 : 72, left: 76 },
     legend: { show: false },
     tooltip: {
       ...baseOptions().tooltip,
@@ -155,8 +165,11 @@ function bridgeOptions() {
         color: CHART_COLORS.copy,
         fontSize: 10,
         interval: 0,
-        width: 84,
-        overflow: 'break',
+        width: compactBridgeLayout ? 96 : 84,
+        overflow: compactBridgeLayout ? 'truncate' : 'break',
+        rotate: compactBridgeLayout ? 90 : 0,
+        align: compactBridgeLayout ? 'right' : 'center',
+        verticalAlign: compactBridgeLayout ? 'middle' : 'top',
       },
     },
     series: [
@@ -188,6 +201,10 @@ function bridgeOptions() {
       },
     ],
   }
+}
+
+function usesCompactBridgeLayout() {
+  return props.mode === 'bridge' && (chartElement.value?.clientWidth || 0) <= 520
 }
 
 function timeSeriesOptions() {

@@ -26,6 +26,7 @@ export const SUBSCRIPTION_STATUSES = Object.freeze({
 })
 
 const VALID_STATUSES = new Set(Object.values(SUBSCRIPTION_STATUSES))
+export const PRO_TRIAL_DURATION_MS = 30 * 24 * 60 * 60 * 1000
 
 export function defaultSubscription() {
   return {
@@ -49,7 +50,7 @@ export function normalizeSubscription(value) {
     ...subscription,
     plan:
       value.plan === SUBSCRIPTION_PLANS.PRO ? SUBSCRIPTION_PLANS.PRO : SUBSCRIPTION_PLANS.FREE,
-    source: value.source === 'google_play' ? value.source : null,
+    source: ['google_play', 'admin'].includes(value.source) ? value.source : null,
     status: VALID_STATUSES.has(value.status) ? value.status : SUBSCRIPTION_STATUSES.NONE,
     entitlementActive: value.entitlementActive === true,
     currentPeriodEndsAt: value.currentPeriodEndsAt || null,
@@ -59,16 +60,88 @@ export function normalizeSubscription(value) {
   }
 }
 
+export function defaultTrial() {
+  return {
+    startedAt: null,
+    expiresAt: null,
+    endedNoticeShownAt: null,
+  }
+}
+
+export function normalizeTrial(value) {
+  const trial = defaultTrial()
+  if (!value || typeof value !== 'object') return trial
+
+  return {
+    startedAt: value.startedAt || null,
+    expiresAt: value.expiresAt || null,
+    endedNoticeShownAt: value.endedNoticeShownAt || null,
+  }
+}
+
+/** Resolves the winning source of Pro without mixing provider and trial records. */
+export function resolveEffectiveEntitlement(value, { now = Date.now() } = {}) {
+  const isComposite =
+    value &&
+    typeof value === 'object' &&
+    (Object.hasOwn(value, 'subscription') || Object.hasOwn(value, 'trial'))
+  const input = isComposite ? value : { subscription: value }
+  const subscription = normalizeSubscription(input.subscription)
+  const trial = normalizeTrial(input.trial)
+  const clock = Number(now)
+  const subscriptionIsPro =
+    subscription.plan === SUBSCRIPTION_PLANS.PRO &&
+    subscription.entitlementActive === true &&
+    timestampMillis(subscription.currentPeriodEndsAt) > clock
+  const trialIsActive =
+    timestampMillis(trial.startedAt) > 0 && timestampMillis(trial.expiresAt) > clock
+
+  if (subscriptionIsPro) {
+    return {
+      tier: SUBSCRIPTION_PLANS.PRO,
+      isPro: true,
+      source: subscription.source || 'admin',
+      expiresAt: subscription.currentPeriodEndsAt,
+      subscription,
+      trial,
+    }
+  }
+  if (trialIsActive) {
+    return {
+      tier: SUBSCRIPTION_PLANS.PRO,
+      isPro: true,
+      source: 'trial',
+      expiresAt: trial.expiresAt,
+      subscription,
+      trial,
+    }
+  }
+  return {
+    tier: SUBSCRIPTION_PLANS.FREE,
+    isPro: false,
+    source: null,
+    expiresAt: null,
+    subscription,
+    trial,
+  }
+}
+
 /** Resolves account-level capabilities without depending on a billing provider. */
 export function resolveUserEntitlements(
   value,
   { ownedWorkspaceCount = 0, now = Date.now() } = {},
 ) {
-  const subscription = normalizeSubscription(value)
-  const isPro =
-    subscription.plan === SUBSCRIPTION_PLANS.PRO &&
-    subscription.entitlementActive === true &&
-    timestampMillis(subscription.currentPeriodEndsAt) > Number(now)
+  const effective = resolveEffectiveEntitlement(value, { now })
+  const isPro = effective.isPro
+  const trialStartedAt = timestampMillis(effective.trial.startedAt)
+  const trialExpiresAt = timestampMillis(effective.trial.expiresAt)
+  let trialDaysRemaining = 0
+  if (effective.source === 'trial') {
+    trialDaysRemaining = Math.max(
+      1,
+      Math.ceil((trialExpiresAt - Number(now)) / (24 * 60 * 60 * 1000)),
+    )
+  }
   const normalizedWorkspaceCount = Math.max(0, Number(ownedWorkspaceCount) || 0)
 
   return {
@@ -83,10 +156,21 @@ export function resolveUserEntitlements(
     canCreateSharedWorkspace: isPro,
     canInviteMembers: isPro,
     maximumWorkspaceMembers: isPro ? 5 : 1,
+    source: effective.source,
+    expiresAt: effective.expiresAt,
+    trial: {
+      used: trialStartedAt > 0,
+      eligible: trialStartedAt === 0 && !isPro,
+      active: effective.source === 'trial',
+      startedAt: effective.trial.startedAt,
+      expiresAt: effective.trial.expiresAt,
+      endedNoticeShown: Boolean(effective.trial.endedNoticeShownAt),
+      daysRemaining: trialDaysRemaining,
+    },
   }
 }
 
-function timestampMillis(value) {
+export function timestampMillis(value) {
   if (value?.toMillis) return value.toMillis()
   if (value instanceof Date) return value.getTime()
   const timestamp = new Date(value || 0).getTime()
@@ -95,11 +179,10 @@ function timestampMillis(value) {
 
 /** Creates the minimal owner-entitlement projection stored on each workspace. */
 export function workspaceEntitlementProjection(value, { now = Date.now() } = {}) {
-  const subscription = normalizeSubscription(value)
-  const isPro = resolveUserEntitlements(subscription, { now }).isPro
+  const effective = resolveEffectiveEntitlement(value, { now })
   return {
-    tier: isPro ? SUBSCRIPTION_PLANS.PRO : SUBSCRIPTION_PLANS.FREE,
-    expiresAt: isPro ? subscription.currentPeriodEndsAt : null,
+    tier: effective.tier,
+    expiresAt: effective.expiresAt,
   }
 }
 

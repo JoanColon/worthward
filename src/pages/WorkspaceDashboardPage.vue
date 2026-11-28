@@ -7,6 +7,7 @@
 
       <section class="dashboard-grid" :aria-label="t('dashboard.ariaLabel')">
         <FinancialPositionCard
+          v-if="financialPositionReady"
           :data="dashboardData"
           :history-points="historyPoints"
           :history-loading="historyLoading"
@@ -15,12 +16,14 @@
           @open-liabilities="openSection('liabilities')"
         />
         <CostOfLifeCard
+          v-if="cashFlowReady"
           class="cost-summary"
           :data="dashboardData"
           @open-expenses="openSection('expenses')"
           @open-income="openSection('income')"
         />
         <PlanSummaryCard
+          v-if="setupComplete"
           class="plan-summary"
           :data="planData"
           :progress-data="progressData"
@@ -30,7 +33,11 @@
         />
       </section>
 
-      <QuickLinksSection :workspace-id="workspaceId" :candidates="quickLinkCandidates" />
+      <QuickLinksSection
+        v-if="setupComplete"
+        :workspace-id="workspaceId"
+        :candidates="quickLinkCandidates"
+      />
     </main>
   </q-page>
 </template>
@@ -129,14 +136,32 @@ const selectedMemberId = computed({
   get: () => scopeStore.get(workspaceId.value, memberIds.value, authUser.value?.uid),
   set: (memberId) => scopeStore.select(workspaceId.value, memberId),
 })
+const meaningfulHistoryDocuments = computed(() =>
+  historyDocuments.value.map((document) => ({
+    ...document,
+    months: Object.fromEntries(
+      Object.entries(document?.months || {}).filter(
+        ([, month]) => month?.positionStatus !== 'current',
+      ),
+    ),
+  })),
+)
+const observedHistoryPoints = computed(() =>
+  buildNetWorthSeries(meaningfulHistoryDocuments.value, {
+    throughPeriod: `${currentYear.value}-${currentMonth.value}`,
+    memberId: selectedMemberId.value,
+  }),
+)
 const historyPoints = computed(() =>
-  buildNetWorthSeries(
-    withCurrentPosition(historyDocuments.value, financialYear.value, currentMonth.value),
-    {
-      throughPeriod: `${currentYear.value}-${currentMonth.value}`,
-      memberId: selectedMemberId.value,
-    },
-  ),
+  observedHistoryPoints.value.length
+    ? buildNetWorthSeries(
+        withCurrentPosition(historyDocuments.value, financialYear.value, currentMonth.value),
+        {
+          throughPeriod: `${currentYear.value}-${currentMonth.value}`,
+          memberId: selectedMemberId.value,
+        },
+      )
+    : [],
 )
 const progressDocuments = computed(() => {
   if (!financialYear.value) return historyDocuments.value
@@ -396,6 +421,13 @@ const setupItems = computed(() => [
 const showSetup = computed(
   () => !setupLoading.value && setupItems.value.some(({ completed }) => !completed),
 )
+const financialPositionReady = computed(
+  () => !setupLoading.value && assetsStore.setupCompleted && liabilitiesStore.setupCompleted,
+)
+const cashFlowReady = computed(
+  () => !setupLoading.value && incomeStore.setupCompleted && expensesStore.setupCompleted,
+)
+const setupComplete = computed(() => financialPositionReady.value && cashFlowReady.value)
 const quickLinkCandidates = computed(() => [
   ...generalQuickLinks(),
   ...categoryQuickLinks(),
@@ -407,15 +439,25 @@ watch(workspaceId, loadDashboard, { immediate: true })
 const greeting = computed(() => {
   const selectedMember = members.value.find((member) => member.id === selectedMemberId.value)
   const fallbackMember = members.value.find((member) => member.id === authUser.value?.uid)
-  const name = firstName(selectedMember?.name || fallbackMember?.name)
+  const name = firstName(
+    displayNameForMember(selectedMember?.id) ||
+      displayNameForMember(fallbackMember?.id) ||
+      authUser.value?.displayName,
+  )
 
   if (!name) return t('dashboard.greeting.fallback')
   return t('dashboard.greeting.personalized', { name })
 })
 
 function firstName(name = '') {
-  const value = name.trim().split(/\s+/)[0]
+  const normalized = String(name).trim()
+  if (!normalized || normalized.includes('@') || normalized.toLowerCase() === 'member') return ''
+  const value = normalized.split(/\s+/)[0]
   return value ? `${value[0].toUpperCase()}${value.slice(1)}` : ''
+}
+
+function displayNameForMember(memberId) {
+  return memberId ? workspace.value?.members?.[memberId]?.displayName || '' : ''
 }
 
 function openSection(section) {

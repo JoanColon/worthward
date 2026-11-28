@@ -104,7 +104,7 @@ async function submit() {
   padding: clamp(1.75rem, 5vw, 3rem);
   border: 1px solid var(--color-line);
   border-radius: 1.5rem;
-  background: var(--color-surface-raised);
+  background: var(--color-surface);
   box-shadow: var(--shadow-dialog);
 }
 

@@ -9,6 +9,7 @@ export default {
     edit: 'Edit',
     email: 'Email address',
     loading: 'Loading…',
+    noneForNow: 'None for now',
     retry: 'Try again',
     save: 'Save',
   },
@@ -180,6 +181,7 @@ export default {
     switchToSignIn: 'Sign in',
     switchToRegister: 'Create one',
     resetSent: 'We sent you a link to reset your password.',
+    verificationSent: 'We sent you a link to verify your email address.',
     validation: {
       emailRequired: 'Enter your email address',
       emailInvalid: 'Enter a valid email address',
@@ -257,6 +259,45 @@ export default {
     purchaseComplete: 'Worthward Pro is now active.',
     restoreComplete: 'Your Worthward Pro purchase has been restored.',
     nothingToRestore: 'No active Worthward Pro purchase was found for this Google Play account.',
+    trial: {
+      eyebrow: 'Try Worthward Pro',
+      title: '30 days free',
+      description:
+        'Explore your financial future with all the advanced planning and analysis tools.',
+      fullAccess: 'Full access to Pro features',
+      noPayment: 'No payment details required',
+      noRenewal: 'No automatic subscription',
+      dataPreserved: 'Your financial data is always preserved',
+      noCommitment: 'No commitment. Upgrade only if you want to.',
+      startAction: 'Start free trial',
+      confirmTitle: 'Start your 30-day Pro trial?',
+      confirmDescription:
+        'Your 30 days begin now. No payment details are required and there is no automatic subscription.',
+      activeEyebrow: 'Free trial',
+      activeTitle: 'Pro trial · {count} days remaining',
+      activeDescription: 'Full access until {date}. No automatic charges.',
+      menuBadge: 'Trial · {count}d',
+      endingTitle: 'Your Pro trial ends in {count} days',
+      endingDescription: 'Keep exploring your financial future with Worthward Pro.',
+      viewPro: 'View Pro',
+      resendVerification: 'Resend verification email',
+      verifyEmail: 'Verify your email address before starting the trial.',
+      verificationSent: 'We sent you a new email verification link.',
+      started: 'Your 30-day Worthward Pro trial is now active.',
+      proAlreadyActive: 'Worthward Pro is already active for this account.',
+      alreadyUsed: 'This account has already used its Pro trial.',
+      demoUnavailable:
+        'Exploring the demo never starts or consumes your trial. Return to your workspaces when you are ready to begin.',
+      leaveDemo: 'Return to my workspaces',
+      endedTitle: 'Your Pro trial has ended',
+      endedDescription:
+        'Continue with Worthward Pro to keep access to advanced planning, personalized strategies and Pro tools.',
+      dataPreservedTitle: 'All your data is preserved',
+      dataPreservedDescription:
+        'Your financial information, models and settings are safe. You can unlock advanced features again at any time.',
+      continuePro: 'Continue with Pro',
+      continueFree: 'Continue with Free',
+    },
     gate: {
       title: 'This is a Pro feature',
       description: 'You need the Pro plan to access this functionality.',
@@ -376,12 +417,15 @@ export default {
     title: 'Your finances. Your future.',
     subtitle:
       'Understand where you are today, how your finances evolve and what is possible tomorrow.',
+    mobileSubtitle: "Understand your finances today. Explore what's possible tomorrow.",
     optionsLabel: 'Get started with Worthward',
     footer: 'Your finances, always under your control.',
     demo: {
       title: 'Explore an example',
       description:
         "Discover Worthward through Alex and Emma's finances, with ten years of history and interactive financial planning.",
+      mobileDescription:
+        "Discover Alex and Emma's finances and experiment with their financial future.",
       previewLabel: 'Net worth',
       fictional: 'Fictional data',
       action: 'Explore demo',
@@ -397,6 +441,7 @@ export default {
       title: 'Build your own workspace',
       description:
         'Bring your finances together in one place and start building a clearer picture of your financial future.',
+      mobileDescription: 'Start managing your personal or shared finances at your own pace.',
       action: 'Create workspace',
       microcopy: 'Start with as much or as little as you like.',
       benefits: {
@@ -412,7 +457,7 @@ export default {
     snapshotSubtitle: 'Your finances at a glance.',
     greeting: {
       personalized: 'Hi, {name}',
-      fallback: 'Hi',
+      fallback: 'Welcome!',
     },
     memberScope: 'Dashboard scope',
     allMembers: 'All',
@@ -443,14 +488,14 @@ export default {
       liabilities: 'Liabilities',
       historyLoading: 'Loading your net worth history…',
       historyError: 'We could not load your financial history.',
-      historyEmptyTitle: 'Your history will appear here',
-      historyEmptyDescription: 'Added after your first monthly snapshot.',
+      historyEmptyTitle: 'Your financial history will grow over time.',
+      historyEmptyDescription: 'Monthly snapshots will appear here.',
       chartAria: 'Monthly net worth history',
     },
     setup: {
       eyebrow: 'Getting started',
-      title: "Let's build your financial picture",
-      description: 'Start with estimates; refine anytime.',
+      title: 'Build your financial picture',
+      description: 'Start with estimates. Refine anytime.',
       progress: '{completed} of {total}',
       add: 'Add',
       assets: { title: 'Assets', description: 'What you own' },
@@ -741,9 +786,9 @@ export default {
     yearsValue: '{value} years',
     filters: {
       period: 'Progress period',
-      oneYear: '1Y',
-      threeYears: '3Y',
-      fiveYears: '5Y',
+      oneYear: '1y',
+      threeYears: '3y',
+      fiveYears: '5y',
       all: 'All',
       date: 'Choose the comparison snapshot',
       chooseSnapshot: 'Compare from',

@@ -319,6 +319,43 @@ describe('Google Play subscription verification', () => {
     ).resolves.toMatchObject({ status: 'active', entitlementActive: false, plan: 'free' })
   })
 
+  it('does not let an inactive Google Play result invalidate an active Worthward trial', async () => {
+    const trialExpiry = new Date('2026-12-01T12:00:00Z')
+    const subscriptionPath = `users/${USER_ID}/private/subscription`
+    const trialPath = `users/${USER_ID}/private/trial`
+    const workspacePath = 'workspaces/workspace-a'
+    const { firestore, records } = createFirestore({
+      [trialPath]: {
+        startedAt: new Date('2026-11-01T12:00:00Z'),
+        expiresAt: trialExpiry,
+      },
+      [workspacePath]: {
+        createdBy: USER_ID,
+        entitlement: { tier: 'pro', expiresAt: trialExpiry },
+      },
+    })
+    const publisher = createPublisher({
+      subscriptionState: 'SUBSCRIPTION_STATE_ON_HOLD',
+      acknowledgementState: 'ACKNOWLEDGEMENT_STATE_ACKNOWLEDGED',
+    })
+
+    await verifyGooglePlaySubscription(firestore, {
+      publisher,
+      userId: USER_ID,
+      purchaseToken: PURCHASE_TOKEN,
+      now: new Date('2026-11-15T12:00:00Z'),
+    })
+
+    expect(records.get(subscriptionPath)).toMatchObject({
+      source: 'google_play',
+      entitlementActive: false,
+    })
+    expect(records.get(workspacePath).entitlement).toMatchObject({
+      tier: 'pro',
+      expiresAt: trialExpiry,
+    })
+  })
+
   it('removes access immediately when Google Play revokes the subscription', async () => {
     const { firestore } = createFirestore()
     const publisher = createPublisher({

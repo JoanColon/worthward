@@ -2,20 +2,22 @@
   <section class="setup-card">
     <header>
       <div>
-        <span>{{ t('dashboard.setup.eyebrow') }}</span>
-        <h2>{{ t('dashboard.setup.title') }}</h2>
-        <p>{{ t('dashboard.setup.description') }}</p>
+        <span class="app-section-label">{{ t('dashboard.setup.eyebrow') }}</span>
+        <h2 class="app-card-title">{{ t('dashboard.setup.title') }}</h2>
+        <p class="app-card-subtitle">{{ t('dashboard.setup.description') }}</p>
       </div>
-      <strong>{{ t('dashboard.setup.progress', { completed, total: items.length }) }}</strong>
     </header>
 
-    <q-linear-progress
-      rounded
-      size="0.55rem"
-      color="primary"
-      track-color="grey-3"
-      :value="progress"
-    />
+    <div class="setup-progress">
+      <q-linear-progress
+        rounded
+        size="0.45rem"
+        color="primary"
+        track-color="grey-3"
+        :value="progress"
+      />
+      <strong>{{ t('dashboard.setup.progress', { completed, total: items.length }) }}</strong>
+    </div>
 
     <div class="setup-list">
       <router-link v-for="item in items" :key="item.key" :to="item.to" class="setup-row">
@@ -49,53 +51,47 @@ const progress = computed(() => (props.items.length ? completed.value / props.it
 
 <style scoped lang="scss">
 @use '@/css/mixins' as *;
+@use '@/css/foundation/breakpoints' as bp;
+
 .setup-card {
   @include dashboard-card;
-  padding: clamp(1.2rem, 3vw, 1.8rem);
+  padding: var(--card-padding);
 }
 .setup-card header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 1rem;
+  display: block;
 }
 .setup-card header span {
   color: var(--color-primary);
-  font-size: 0.72rem;
-  font-weight: 750;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
 }
 .setup-card h2 {
-  margin: 0.25rem 0 0;
-  font-size: clamp(1.45rem, 3vw, 2rem);
+  margin-top: var(--space-1);
 }
 .setup-card header p {
-  margin: 0.35rem 0 0;
-  color: var(--color-copy);
+  margin-top: var(--space-1);
 }
-.setup-card header > strong {
-  flex: 0 0 auto;
-  padding: 0.45rem 0.75rem;
-  border-radius: 999px;
-  background: var(--color-blue-soft);
+.setup-progress {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+.setup-progress strong {
   color: var(--color-primary);
-  font-size: 0.82rem;
-}
-.setup-card > .q-linear-progress {
-  margin-top: 1.2rem;
+  font-size: var(--font-size-caption);
+  white-space: nowrap;
 }
 .setup-list {
-  margin-top: 0.8rem;
+  margin-top: var(--space-2);
   border-top: 1px solid var(--color-line);
 }
 .setup-row {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  gap: 0.85rem;
-  min-height: 4.6rem;
-  padding: 0.65rem 0;
+  gap: var(--space-3);
+  min-height: 3.75rem;
+  padding: var(--space-2) 0;
   border-bottom: 1px solid var(--color-line);
   color: var(--color-ink);
   text-decoration: none;
@@ -109,8 +105,8 @@ const progress = computed(() => (props.items.length ? completed.value / props.it
 .setup-icon {
   display: grid;
   place-items: center;
-  width: 2.65rem;
-  height: 2.65rem;
+  width: 2.5rem;
+  height: 2.5rem;
   border-radius: 50%;
   background: var(--color-green-soft);
   color: var(--color-success-dark);
@@ -130,39 +126,52 @@ const progress = computed(() => (props.items.length ? completed.value / props.it
 }
 .setup-copy {
   display: grid;
+  min-width: 0;
+}
+.setup-copy > strong {
+  font-size: var(--font-size-row-title);
 }
 .setup-copy small {
-  margin-top: 0.15rem;
+  margin-top: 0.1rem;
   color: var(--color-copy);
+  font-size: var(--font-size-caption);
 }
 .setup-value,
 .setup-action {
   display: flex;
   align-items: center;
   gap: 0.4rem;
+  justify-self: end;
+  min-width: 0;
+  text-align: right;
 }
 .setup-value > .q-icon {
   color: var(--color-success-dark);
+}
+.setup-value strong {
+  overflow-wrap: anywhere;
 }
 .setup-action {
   color: var(--color-primary);
   font-size: 0.82rem;
   font-weight: 650;
+  white-space: nowrap;
 }
-@media (max-width: 599px) {
-  .setup-card header {
-    display: grid;
-  }
-  .setup-card header > strong {
-    justify-self: start;
-  }
+@media (max-width: bp.$xs-max) {
   .setup-row {
-    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-columns: auto minmax(0, 1fr) minmax(4.75rem, auto);
+    gap: var(--space-2);
   }
-  .setup-value,
-  .setup-action {
-    grid-column: 2;
-    justify-self: start;
+
+  .setup-icon {
+    width: 2.25rem;
+    height: 2.25rem;
+    font-size: 1.05rem;
+  }
+
+  .setup-value {
+    gap: var(--space-1);
+    font-size: var(--font-size-caption);
   }
 }
 </style>

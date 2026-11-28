@@ -1,5 +1,5 @@
 <template>
-  <div class="chart-shell">
+  <div class="chart-shell" :class="{ 'chart-shell--empty': !loading && !error && !points.length }">
     <div ref="chartElement" class="net-worth-chart" />
 
     <div v-if="loading" class="chart-state">
@@ -248,6 +248,12 @@ function compactCurrency(value) {
 .net-worth-chart {
   width: 100%;
   height: 15.5rem;
+}
+
+.chart-shell--empty,
+.chart-shell--empty .net-worth-chart {
+  min-height: 8.5rem;
+  height: 8.5rem;
 }
 
 .chart-state {

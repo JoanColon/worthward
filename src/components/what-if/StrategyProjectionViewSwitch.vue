@@ -2,6 +2,7 @@
   <AppPeriodSwitch
     class="projection-view-switch"
     variant="compact"
+    :size="size"
     :model-value="modelValue"
     :options="options"
     :aria-label="t('whatIf.strategy.projectionViewSelector')"
@@ -16,6 +17,11 @@ import AppPeriodSwitch from '@/components/ui/AppPeriodSwitch.vue'
 
 defineProps({
   modelValue: { type: String, required: true },
+  size: {
+    type: String,
+    default: 'default',
+    validator: (value) => ['default', 'small'].includes(value),
+  },
 })
 
 const emit = defineEmits(['update:modelValue'])

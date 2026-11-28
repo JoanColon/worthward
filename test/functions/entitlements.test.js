@@ -3,6 +3,7 @@ import {
   GOOGLE_PLAY_SUBSCRIPTION,
   normalizeSubscription,
   resolveUserEntitlements,
+  resolveEffectiveEntitlement,
   resolveWorkspaceEntitlements,
   workspaceEntitlementIsPro,
   workspaceEntitlementProjection,
@@ -123,5 +124,63 @@ describe('subscription entitlements', () => {
 
     expect(workspaceEntitlementIsPro(projection, { now: Date.UTC(2026, 0, 1) })).toBe(true)
     expect(workspaceEntitlementIsPro(projection, { now: Date.UTC(2028, 0, 1) })).toBe(false)
+  })
+
+  it('uses an active trial when no paid entitlement is active', () => {
+    const entitlements = resolveUserEntitlements(
+      {
+        subscription: null,
+        trial: {
+          startedAt: '2026-11-01T00:00:00Z',
+          expiresAt: '2026-12-01T00:00:00Z',
+        },
+      },
+      { now: Date.parse('2026-11-07T00:00:00Z') },
+    )
+
+    expect(entitlements).toMatchObject({
+      tier: 'pro',
+      source: 'trial',
+      trial: { used: true, active: true, eligible: false, daysRemaining: 24 },
+    })
+  })
+
+  it('gives a paid entitlement priority without erasing trial history', () => {
+    const effective = resolveEffectiveEntitlement(
+      {
+        subscription: {
+          plan: 'pro',
+          source: 'google_play',
+          entitlementActive: true,
+          currentPeriodEndsAt: '2027-12-01T00:00:00Z',
+        },
+        trial: {
+          startedAt: '2026-11-01T00:00:00Z',
+          expiresAt: '2026-12-01T00:00:00Z',
+        },
+      },
+      { now: Date.parse('2026-11-07T00:00:00Z') },
+    )
+
+    expect(effective).toMatchObject({ isPro: true, source: 'google_play' })
+    expect(effective.trial.startedAt).toBe('2026-11-01T00:00:00Z')
+  })
+
+  it('keeps an expired trial consumed and ineligible', () => {
+    const entitlements = resolveUserEntitlements(
+      {
+        subscription: null,
+        trial: {
+          startedAt: '2026-10-01T00:00:00Z',
+          expiresAt: '2026-10-31T00:00:00Z',
+        },
+      },
+      { now: Date.parse('2026-11-07T00:00:00Z') },
+    )
+
+    expect(entitlements).toMatchObject({
+      isPro: false,
+      trial: { used: true, active: false, eligible: false },
+    })
   })
 })

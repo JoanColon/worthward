@@ -82,6 +82,11 @@ export async function verifyGooglePlaySubscription(
     .doc(userId)
     .collection('private')
     .doc('subscription')
+  const trialReference = firestore
+    .collection('users')
+    .doc(userId)
+    .collection('private')
+    .doc('trial')
   const expiryTime = validDate(lineItem.expiryTime)
   const basePlanId = lineItem.offerDetails?.basePlanId || null
   const subscriptionProjection = {
@@ -98,11 +103,13 @@ export async function verifyGooglePlaySubscription(
 
   const effectiveSubscription = await firestore.runTransaction(async (transaction) => {
     const ownedWorkspacesQuery = firestore.collection('workspaces').where('createdBy', '==', userId)
-    const [purchaseSnapshot, currentSubscriptionSnapshot, ownedWorkspaces] = await Promise.all([
-      transaction.get(purchaseReference),
-      transaction.get(subscriptionReference),
-      transaction.get(ownedWorkspacesQuery),
-    ])
+    const [purchaseSnapshot, currentSubscriptionSnapshot, trialSnapshot, ownedWorkspaces] =
+      await Promise.all([
+        transaction.get(purchaseReference),
+        transaction.get(subscriptionReference),
+        transaction.get(trialReference),
+        transaction.get(ownedWorkspacesQuery),
+      ])
     if (purchaseSnapshot.exists && purchaseSnapshot.data()?.userId !== userId) {
       throw billingError(
         'permission-denied',
@@ -146,7 +153,10 @@ export async function verifyGooglePlaySubscription(
 
     transaction.set(subscriptionReference, subscriptionProjection, { merge: true })
     const entitlement = {
-      ...workspaceEntitlementProjection(subscriptionProjection),
+      ...workspaceEntitlementProjection(
+        { subscription: subscriptionProjection, trial: trialSnapshot.data() },
+        { now: now.getTime() },
+      ),
       updatedAt: FieldValue.serverTimestamp(),
     }
     for (const workspace of ownedWorkspaces.docs.filter(

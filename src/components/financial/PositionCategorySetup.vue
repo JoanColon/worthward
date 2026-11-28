@@ -50,8 +50,13 @@
         no-caps
         color="primary"
         class="app-btn--wide app-btn--mobile-block"
-        :label="editMode ? t('common.save') : t('common.continue')"
-        :disable="selected.length === 0"
+        :label="
+          editMode
+            ? t('common.save')
+            : selected.length
+              ? t('common.continue')
+              : t('common.noneForNow')
+        "
         :loading="saving"
         @click="$emit('save', selected)"
       />

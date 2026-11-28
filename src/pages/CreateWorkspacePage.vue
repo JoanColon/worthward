@@ -19,12 +19,12 @@ const { t } = useI18n()
 const router = useRouter()
 
 async function workspaceCreated({ workspace }) {
+  await router.replace({ name: 'workspace-dashboard', params: { workspaceId: workspace.id } })
   $q.notify({
     type: 'positive',
     message: t('workspace.created'),
     position: 'top',
   })
-  await router.replace({ name: 'workspace-dashboard', params: { workspaceId: workspace.id } })
 }
 </script>
 
@@ -38,9 +38,7 @@ async function workspaceCreated({ workspace }) {
   padding-right: max(clamp(1rem, 5vw, 3rem), env(safe-area-inset-right));
   padding-bottom: max(clamp(1rem, 5vw, 3rem), env(safe-area-inset-bottom));
   padding-left: max(clamp(1rem, 5vw, 3rem), env(safe-area-inset-left));
-  background:
-    radial-gradient(circle at 12% 12%, var(--color-primary-focus), transparent 34rem),
-    var(--color-page);
+  background: var(--color-page);
 }
 
 @media (max-width: 699px) {

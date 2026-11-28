@@ -55,7 +55,13 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     const workspace = await createWorkspace(payload)
     workspaces.value.push(workspace)
     initializedForUserId.value = workspace.createdBy
-    await setActiveWorkspace(workspace.id)
+    try {
+      await setActiveWorkspace(workspace.id)
+    } catch {
+      // Creating the workspace succeeded. Keep it active in this session even if
+      // persisting the convenience preference fails, so navigation can continue.
+      activeWorkspaceId.value = workspace.id
+    }
     return workspace
   }
 

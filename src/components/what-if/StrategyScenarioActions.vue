@@ -13,14 +13,17 @@
       @update:model-value="emit('select', $event)"
     />
     <q-btn
-      outline
-      no-caps
+      round
+      unelevated
+      color="primary"
       icon="add"
       class="scenario-secondary-action scenario-add-action"
-      :label="t('whatIf.strategy.newScenario')"
+      :aria-label="t('whatIf.strategy.newScenario')"
       :disable="scenarioCount >= 10"
       @click="emit('add')"
-    />
+    >
+      <q-tooltip>{{ t('whatIf.strategy.newScenario') }}</q-tooltip>
+    </q-btn>
     <q-btn
       flat
       round
@@ -70,22 +73,30 @@ const { t } = useI18n()
   width: 13rem;
 }
 
-.scenario-select :deep(.q-field__control),
-.scenario-add-action {
+.scenario-select :deep(.q-field__control) {
   background: var(--color-surface);
 }
 
 @media (max-width: 760px) {
   .scenario-actions {
-    display: block;
+    gap: 0.35rem;
   }
 
   .scenario-select {
-    width: auto;
+    width: 8.75rem;
   }
 
   .scenario-secondary-action {
     display: none;
+  }
+
+  .scenario-add-action {
+    display: inline-flex;
+    width: 2rem;
+    min-width: 2rem;
+    min-height: 2rem;
+    padding: 0;
+    border-radius: 50%;
   }
 }
 </style>

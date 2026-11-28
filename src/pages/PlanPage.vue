@@ -80,8 +80,8 @@
                 <div class="action-result">
                   <span>{{ t('whatIf.result.label') }}</span>
                   <strong
-                    >+{{ formatCurrency(simulation.extraSavings)
-                    }}<small>{{ t('whatIf.perMonth') }}</small></strong
+                    >+{{ formatCurrency(displayedExtraSavings)
+                    }}<small>{{ displayedPeriod }}</small></strong
                   >
                   <small class="positive-result">{{ t('whatIf.result.baseline') }}</small>
                 </div>
@@ -115,8 +115,8 @@
                 <div class="action-result strategy-result">
                   <span>{{ activeScenario.name }}</span>
                   <strong
-                    >{{ formatCurrency(strategyMonthlyAmount)
-                    }}<small>{{ t('whatIf.perMonth') }}</small></strong
+                    >{{ formatCurrency(displayedStrategyAmount)
+                    }}<small>{{ displayedPeriod }}</small></strong
                   >
                 </div>
                 <ul class="allocation-summary" :aria-label="t('plan.outcomes.label')">
@@ -345,6 +345,12 @@ const simulation = computed(() =>
   }),
 )
 const strategyMonthlyAmount = computed(() => Math.max(0, simulation.value.currentSavingsCapacity))
+const displayedExtraSavings = computed(() =>
+  period.value === 'annual' ? simulation.value.extraSavings * 12 : simulation.value.extraSavings,
+)
+const displayedStrategyAmount = computed(() =>
+  period.value === 'annual' ? strategyMonthlyAmount.value * 12 : strategyMonthlyAmount.value,
+)
 const projection = computed(() =>
   simulateAllocationStrategy({
     startingPosition: startingPosition.value,

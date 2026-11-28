@@ -143,6 +143,24 @@ describe('workspace store', () => {
     expect(saveActiveWorkspaceId).toHaveBeenLastCalledWith(null)
   })
 
+  it('keeps a created workspace active when saving the preference fails', async () => {
+    getUserWorkspaces.mockResolvedValueOnce([])
+    createWorkspace.mockResolvedValueOnce({
+      id: 'workspace-new',
+      name: 'Home',
+      createdBy: 'user-a',
+    })
+    saveActiveWorkspaceId.mockRejectedValueOnce(new Error('preference unavailable'))
+    const store = useWorkspaceStore()
+    await store.load({ uid: 'user-a' })
+
+    const workspace = await store.create({ name: 'Home' })
+
+    expect(workspace.id).toBe('workspace-new')
+    expect(store.activeWorkspaceId).toBe('workspace-new')
+    expect(store.workspaces).toContainEqual(workspace)
+  })
+
   it('updates workspace settings in local state', async () => {
     getUserWorkspaces.mockResolvedValueOnce([
       { id: 'workspace-a', currency: 'EUR', members: { user: { displayName: 'Old' } } },

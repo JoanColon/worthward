@@ -3,7 +3,7 @@
     <q-page-container>
       <q-page class="invite-page">
         <q-card flat class="invite-card">
-          <div class="brand-mark" aria-hidden="true">C</div>
+          <img class="brand-logo" :src="BRAND.logo" :alt="BRAND.name" />
 
           <q-card-section v-if="loading" class="invite-state">
             <q-spinner color="primary" size="2.5rem" />
@@ -61,6 +61,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
+import { BRAND } from '@/config/brand'
 import { authUser } from '@/services/auth'
 import { acceptWorkspaceInvite, getWorkspaceInvite } from '@/services/firebase/workspace.service'
 import { hideNativeSplashWhenReady } from '@/services/splash-screen'
@@ -161,17 +162,11 @@ function inviteErrorMessage(error) {
   text-align: center;
 }
 
-.brand-mark {
-  display: grid;
-  place-items: center;
-  width: 2.75rem;
-  height: 2.75rem;
+.brand-logo {
+  display: block;
+  width: min(100%, 13rem);
+  height: auto;
   margin: 0 auto 2rem;
-  border-radius: 0.85rem;
-  background: var(--color-primary);
-  color: var(--color-inverse);
-  font-family: var(--font-family-display);
-  font-size: 1.5rem;
 }
 
 .eyebrow {

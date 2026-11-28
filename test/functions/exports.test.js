@@ -3,6 +3,7 @@ import * as firebaseFunctions from '../../functions/index.js'
 
 const publicFunctionNames = [
   'acceptWorkspaceInvite',
+  'claimProTrialEndNotice',
   'closeMonthlyFinancialPositions',
   'createWorkspace',
   'createWorkspaceInvite',
@@ -15,6 +16,7 @@ const publicFunctionNames = [
   'onModelConfigWritten',
   'readInvestmentPortfolioSheet',
   'reconcileGooglePlaySubscriptions',
+  'startProTrial',
   'syncWorkspaceInvestmentPortfolios',
   'updateInvestmentPortfolio',
   'updateWorkspaceSettings',

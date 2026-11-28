@@ -221,6 +221,12 @@ const { t } = useI18n()
       min-height: 9.5rem;
       height: 100%;
     }
+
+    .chart-shell--empty,
+    .chart-shell--empty .net-worth-chart {
+      min-height: 8.5rem;
+      height: 8.5rem;
+    }
   }
 
   @media (max-width: 800px) {

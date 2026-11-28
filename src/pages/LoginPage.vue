@@ -3,11 +3,8 @@
     <q-page-container>
       <q-page class="auth-page">
         <section class="auth-intro">
-          <div class="brand-mark" aria-hidden="true">{{ BRAND.mark }}</div>
-          <div>
-            <div class="brand-name">{{ BRAND.name }}</div>
-            <p class="brand-copy">{{ t('auth.brandMessage') }}</p>
-          </div>
+          <img class="brand-logo" :src="BRAND.logo" :alt="BRAND.name" />
+          <p class="brand-copy">{{ t('auth.brandMessage') }}</p>
         </section>
 
         <q-card flat class="auth-card">
@@ -177,6 +174,7 @@ async function submitEmail() {
   try {
     if (isRegistering.value) {
       await createAccount(email.value, password.value)
+      $q.notify({ type: 'positive', message: t('auth.verificationSent'), position: 'top' })
     } else {
       await signIn(email.value, password.value)
     }
@@ -270,9 +268,7 @@ async function finishNativeStartup() {
 
 <style scoped lang="scss">
 .auth-layout {
-  background:
-    radial-gradient(circle at 12% 12%, var(--color-primary-focus), transparent 34rem),
-    var(--color-page);
+  background: var(--color-page);
 }
 
 .auth-page {
@@ -288,31 +284,13 @@ async function finishNativeStartup() {
 }
 
 .auth-intro {
-  display: flex;
-  align-items: flex-start;
-  gap: 1.25rem;
   color: var(--color-ink);
 }
 
-.brand-mark {
-  display: grid;
-  place-items: center;
-  flex: 0 0 3.75rem;
-  width: 3.75rem;
-  height: 3.75rem;
-  border-radius: 1.15rem;
-  background: var(--color-primary);
-  color: var(--color-inverse);
-  font-family: var(--font-family-display);
-  font-size: 2rem;
-  box-shadow: 0 14px 30px var(--color-primary-focus);
-}
-
-.brand-name {
-  font-family: var(--font-family-display);
-  font-size: clamp(2.25rem, 5vw, 4.5rem);
-  line-height: 1;
-  letter-spacing: -0.04em;
+.brand-logo {
+  display: block;
+  width: min(100%, 27rem);
+  height: auto;
 }
 
 .brand-copy {
@@ -327,9 +305,8 @@ async function finishNativeStartup() {
   padding: clamp(1.75rem, 5vw, 3rem);
   border: 1px solid var(--color-line);
   border-radius: 1.5rem;
-  background: var(--color-surface-raised);
+  background: var(--color-surface);
   box-shadow: var(--shadow-dialog);
-  backdrop-filter: blur(10px);
 }
 
 h1 {
@@ -405,8 +382,8 @@ h1 {
     margin: 0 auto;
   }
 
-  .brand-name {
-    font-size: 2.5rem;
+  .brand-logo {
+    width: min(100%, 18rem);
   }
 
   .brand-copy {
@@ -426,20 +403,12 @@ h1 {
   }
 
   .auth-intro {
-    align-items: center;
-    gap: 0.9rem;
+    width: 100%;
   }
 
-  .brand-mark {
-    flex-basis: 3rem;
-    width: 3rem;
-    height: 3rem;
-    border-radius: 0.9rem;
-    font-size: 1.6rem;
-  }
-
-  .brand-name {
-    font-size: 2rem;
+  .brand-logo {
+    width: min(100%, 15rem);
+    margin: 0 auto;
   }
 
   .auth-card {

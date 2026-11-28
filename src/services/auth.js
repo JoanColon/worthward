@@ -4,6 +4,8 @@ import {
   createUserWithEmailAndPassword,
   getRedirectResult,
   onAuthStateChanged,
+  reload,
+  sendEmailVerification,
   sendPasswordResetEmail,
   signInWithCredential,
   signInWithEmailAndPassword,
@@ -37,8 +39,23 @@ export function signIn(email, password) {
   return signInWithEmailAndPassword(auth, email, password)
 }
 
-export function createAccount(email, password) {
-  return createUserWithEmailAndPassword(auth, email, password)
+export async function createAccount(email, password) {
+  const credential = await createUserWithEmailAndPassword(auth, email, password)
+  await sendEmailVerification(credential.user)
+  return credential
+}
+
+export function resendVerificationEmail() {
+  if (!auth.currentUser) throw new Error('Authentication is required')
+  return sendEmailVerification(auth.currentUser)
+}
+
+export async function refreshVerificationStatus() {
+  if (!auth.currentUser) throw new Error('Authentication is required')
+  await reload(auth.currentUser)
+  await auth.currentUser.getIdToken(true)
+  authUser.value = auth.currentUser
+  return auth.currentUser.emailVerified
 }
 
 export async function signInWithGoogle({ native = false, redirect = false } = {}) {

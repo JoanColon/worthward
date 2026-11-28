@@ -22,6 +22,7 @@
           :title="t('whatIf.strategy.title')"
           :back-label="t('navigation.plan')"
           :back-to="{ name: 'plan', params: { workspaceId } }"
+          inline-actions
         >
           <template #actions>
             <StrategyScenarioActions
@@ -691,7 +692,6 @@
         <q-card-section class="strategy-sheet-scroll detail-sheet-content">
           <section v-if="detailSheetKind === 'cash'" class="detail-sheet-section">
             <StrategyHorizonSwitch
-              compact
               class="detail-horizon-options"
               :model-value="activeScenario.horizonYears"
               @update:model-value="updateScenario({ horizonYears: $event })"
@@ -746,19 +746,19 @@
             v-if="['investment', 'projection'].includes(detailSheetKind)"
             class="detail-sheet-section"
           >
-            <div class="detail-section-heading investment-detail-heading">
+            <div class="detail-section-heading investment-detail-controls">
+              <StrategyHorizonSwitch
+                class="detail-horizon-options"
+                :model-value="activeScenario.horizonYears"
+                @update:model-value="updateScenario({ horizonYears: $event })"
+                @custom="setCustomHorizon"
+              />
               <StrategyProjectionViewSwitch
                 v-model="projectionChartMode"
+                size="small"
                 class="detail-view-switch"
               />
             </div>
-            <StrategyHorizonSwitch
-              compact
-              class="detail-horizon-options"
-              :model-value="activeScenario.horizonYears"
-              @update:model-value="updateScenario({ horizonYears: $event })"
-              @custom="setCustomHorizon"
-            />
             <StrategyProjectionChart
               :strategy-points="investmentProjectionPoints"
               :baseline-points="baselineInvestmentProjectionPoints"
@@ -798,7 +798,6 @@
           <section v-if="detailSheetKind === 'netWorth'" class="detail-sheet-section">
             <div class="detail-section-heading net-worth-detail-controls">
               <StrategyHorizonSwitch
-                compact
                 class="detail-horizon-options"
                 :model-value="activeScenario.horizonYears"
                 @update:model-value="updateScenario({ horizonYears: $event })"
@@ -2202,6 +2201,7 @@ function liabilityCategoryName(categoryId) {
 
 <style scoped lang="scss">
 @use '@/css/mixins' as *;
+@use '@/css/foundation/breakpoints' as bp;
 
 .strategy-page {
   @include financial-page;
@@ -2282,8 +2282,8 @@ function liabilityCategoryName(categoryId) {
 }
 .allocation-bar {
   display: flex;
-  height: 1.25rem;
-  margin: 0 0 var(--space-4);
+  height: var(--financial-chart-bar-height);
+  margin: 0 0 var(--space-6);
   overflow: hidden;
   border-radius: 999px;
   background: var(--color-surface-soft);
@@ -3016,14 +3016,14 @@ function liabilityCategoryName(categoryId) {
   }
 }
 
-@media (max-width: 760px) {
+@media (max-width: bp.$content-compact-max) {
   .strategy-header {
-    align-items: stretch;
-    flex-direction: column;
+    align-items: flex-end;
+    flex-direction: row;
+    gap: var(--space-2);
   }
   .strategy-header :deep(.app-page-header__actions) {
-    align-self: stretch;
-    width: 100%;
+    width: auto;
   }
   .strategy-overview {
     grid-template-columns: minmax(0, 1fr);
@@ -3038,6 +3038,10 @@ function liabilityCategoryName(categoryId) {
   }
   .overview-section-heading p {
     max-width: 15rem;
+  }
+  .allocation-bar {
+    height: var(--financial-chart-bar-height-compact);
+    margin-bottom: var(--space-4);
   }
   .allocation-overview-metrics article {
     padding: 0 0.35rem;
@@ -3085,13 +3089,14 @@ function liabilityCategoryName(categoryId) {
     align-items: stretch;
     flex-direction: column;
   }
-  .investment-detail-heading {
+  .investment-detail-controls {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
-    flex-direction: row;
+    gap: var(--space-2);
   }
-  .investment-detail-heading .detail-view-switch {
-    align-self: center;
-    margin-left: auto;
+  .investment-detail-controls .detail-horizon-options {
+    min-width: 0;
   }
   .net-worth-detail-controls {
     grid-template-columns: 1fr;

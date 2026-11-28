@@ -102,10 +102,13 @@
   --segmented-option-height: 1.75rem;
   --segmented-option-padding: 0.25rem 0.65rem;
   --segmented-option-font-size: 0.75rem;
-  --segmented-option-min-width-small: 2.75rem;
+  --segmented-option-min-width-small: 2.5rem;
   --segmented-option-height-small: 1.5rem;
-  --segmented-option-padding-small: 0.125rem 0.4rem;
+  --segmented-option-padding-small: 0.125rem 0.3rem;
   --segmented-option-font-size-small: 0.6875rem;
+  // Financial charts use one bar weight per responsive composition.
+  --financial-chart-bar-height: 0.6875rem;
+  --financial-chart-bar-height-compact: 0.5625rem;
   --radius-sm: 0.85rem;
   --radius-md: 1.15rem;
   --radius-lg: 1.35rem;

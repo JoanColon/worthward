@@ -13,6 +13,7 @@
         :aria-label="t('dashboard.costOfLife.period')"
         :options="periodOptions"
         variant="compact"
+        :size="$q.screen.lt.sm ? 'small' : 'default'"
       />
     </template>
 
@@ -23,6 +24,7 @@
         :aria-label="t('dashboard.costOfLife.period')"
         :options="periodOptions"
         variant="compact"
+        :size="$q.screen.lt.sm ? 'small' : 'default'"
       />
 
       <div class="cost-equation">
@@ -265,23 +267,20 @@ const periodLabel = computed(() =>
   }
 
   @media (max-width: 599px) {
-    .card-header {
-      position: relative;
+    .app-card__header {
       align-items: flex-start;
+      flex-wrap: nowrap;
       margin-bottom: 0.8rem;
     }
 
-    .card-heading {
+    .app-card__heading {
+      flex: 1 1 auto;
       gap: 0.55rem;
-      padding-right: 6.8rem;
+      min-width: 0;
     }
 
-    .card-action {
-      position: absolute;
-      top: 0.05rem;
-      right: 0;
-      display: flex;
-      width: auto;
+    .app-card__actions {
+      flex: 0 0 auto;
     }
 
     .desktop-period-switch {
@@ -295,18 +294,19 @@ const periodLabel = computed(() =>
       display: none;
     }
 
-    .card-icon {
+    .app-card__icon {
       flex-basis: 2.35rem;
       width: 2.35rem;
       height: 2.35rem;
     }
 
-    .card-header h2 {
+    .app-card__header h2 {
       font-size: 0.88rem;
       letter-spacing: -0.025em;
+      white-space: nowrap;
     }
 
-    .card-header p {
+    .app-card__header p {
       font-size: 0.68rem;
     }
 
